@@ -1,37 +1,52 @@
-import numpy as np
-import pandas as pd
-from shapely.geometry.point import Point
-import shapely.affinity
-
 #Dummy player data (should be fetched from DB)
-player1_units = ["ant","ant"]
-player2_units = ["ant","ant","spider"]
+player_units = [["ant","ant","spider"], ["ant","ant"]]
 
 #Dummy_game_settings
 map_size = [1080,1080]
 level_id = 7
 
 #Load unit attributes from somewhere (to be determined)
-unit_db = {"ant":{"max_hp":100,"shape":{"type":"ellipse","width":2,"height":7}}}
+unit_db = {
+        "ant":{
+            "max_hp":100,
+            "shape":{
+                "type":"ellipse",
+                "width":2,
+                "height":7}
+            },
+        "spider":{
+            "max_hp":150,
+            "shape":{
+                "type":"ellipse",
+                "width":5,
+                "height":7}
+            }
+        }
 
 #Initialize game state
-unit = {"id":"","type":"","player":"","unit_health":"","past_action":"","lock_out_ticks":"","location_x":"","location_y":"","orientation":"","shape":""}
+unit_template = {"id":"","type":"","player":"","unit_health":"","past_action":"","lock_out_ticks":"","location_x":"","location_y":"","orientation":"","shape":""}
 
 game_state = {"units":[]}
 
-i=0
-for entity in player1_units:
-    unit["id"] = i
-    unit["type"] = entity
-    unit["player"] = 1
-    unit["unit_health"] = unit_db[entity]["max_hp"]
-    unit["past_action"] = ""
-    unit["lock_out_ticks"] = 0
-    unit["location_x"] = 100
-    unit["location_y"] = (1080 / len(player1_units)+2) * i+1
-    unit["orientation"] = 90
-    unit["shape"] = unit_db[entity]["shape"]
+for player, units in enumerate(player_units):
+    for i, entity in enumerate(units):
+        unit = unit_template.copy()
+        unit["id"] = i
+        unit["type"] = entity
+        unit["player"] = player+1
+        unit["unit_health"] = unit_db[entity]["max_hp"]
+        unit["past_action"] = ""
+        unit["lock_out_ticks"] = 0
+        if(player == 0):
+            unit["location_x"] = 100
+        else:
+            unit["location_x"] = map_size[0]-100
+        unit["location_y"] = round((map_size[1] / (len(units)+1)) * (i+1))
+        if(player == 0):
+            unit["orientation"] = 90
+        else:
+            unit["orientation"] = 270
+        unit["shape"] = unit_db[entity]["shape"]
+        game_state["units"].append(unit)
 
-    game_state["units"].append(unit)
-
-    i+=1
+print(game_state)
