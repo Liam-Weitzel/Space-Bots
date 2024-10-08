@@ -11,7 +11,7 @@ def compile_cpp(cpp_file, output_file):
 def start_player_script(lang, player_number):
     if lang == "cpp":
         # Compile the C++ script into an executable
-        output_binary = "player_" + str(player_number)
+        output_binary = "player" + str(player_number) + "_out"
         compile_cpp("player_code_runner.cpp", output_binary)
 
         # Return the process of the compiled C++ binary
@@ -24,6 +24,7 @@ def send_game_state(player_process, game_state):
     # Send the game state to the player process and read the action from stdout.
     player_process.stdin.write(game_state + "\n")
     player_process.stdin.flush()
+    #TODO: Wait for action to come out, pass back print statements seperately
     return player_process.stdout.readline().strip()
 
 def stop_process(player_process, stop_signal="STOP"):
@@ -49,11 +50,11 @@ for tick in range(10000):
     #      at some point it will be faster to multithread. For now, not
 
     # Send game state to both players and get their actions
-    action_player_1 = send_game_state(player1_process, game_state)
-    action_player_2 = send_game_state(player2_process, game_state)
+    player1_action = send_game_state(player1_process, game_state)
+    player2_action = send_game_state(player2_process, game_state)
 
     # Log the actions for this tick
-    ticklog.append({"tick": tick, "player1": action_player_1, "player2": action_player_2})
+    ticklog.append({"tick": tick, "player1": player1_action, "player2": player2_action})
 
 print(ticklog)
 
