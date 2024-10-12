@@ -1,14 +1,14 @@
 import subprocess
-import os
 import select
+import sys
 
 def start_player_script(lang, player_number):
     if lang == "cpp":
         output_binary = "player" + str(player_number) + "_out"
-        compile_process = subprocess.run(["g++", "player_code_runner.cpp", "player2\/knight.cpp" "-o", output_binary], capture_output=True)
+        subprocess.run(["g++", "player_code_runner.cpp", "player2/knight.cpp" "-o", output_binary], capture_output=True)
         return subprocess.Popen(["./"+output_binary, str(player_number)], stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
     elif lang == "py":
-        return subprocess.Popen(["python", "player_code_runner.py", str(player_number)], stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
+        return subprocess.Popen([sys.executable, "player_code_runner.py", str(player_number)], stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
 
 def split_game_state_into_unit_states(game_state):
     return [game_state, game_state, game_state] #TODO: implement
@@ -37,7 +37,6 @@ def send_unit_state(player_process, unit_state, unit_id):
 
     return action, output_lines
 
-# Start both player scripts (C++ and Python)
 player1_process = start_player_script("py", 1)
 player2_process = start_player_script("cpp", 2)
 

@@ -1,5 +1,4 @@
 import sys
-from enum import Enum
 from player1 import knight
 
 def main():
