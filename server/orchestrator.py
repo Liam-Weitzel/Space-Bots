@@ -107,10 +107,10 @@ try:
             if client_socket in readable:
                 try:  # Try to receive data (to detect disconnection)
                     data = client_socket.recv(1024).decode('utf-8')
+                    client_addr = client_addresses.get(client_socket, "Unknown Client")
                     if data:
-                        print(f"Received data from client: {data}")
+                        print(f"Received data from {client_addr}: {data}")
                     else: # Client has disconnected
-                        client_addr = client_addresses.get(client_socket, "Unknown Client")
                         print(f"Client {client_addr} has disconnected")
                         client_sockets.remove(client_socket)
                         client_socket.close()
