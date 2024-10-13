@@ -1,12 +1,13 @@
 import sys
-from player1 import knight
+from player0 import knight
+import json
 
 def main():
     memory = [{}, {}, {}] #NOTE: one dict per game object, pass the right one into the object
 
     while True:
-        unit_state = sys.stdin.readline().strip()
-        unit_id = unit_state
+        unit_state = json.loads(sys.stdin.readline().strip())
+        unit_id = unit_state.get("units")[0].get("id")
         player_number = sys.argv[1]
 
         #TODO: recognize what unit I am fron unit_state, call the correct function
