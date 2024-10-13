@@ -1,6 +1,6 @@
 def main():
     #Dummy player data (should be fetched from DB)
-    player_units = [["ant","ant","spider"], ["ant","ant"]]
+    player_units = [["acid_ant","acid_ant","rhino_beetle"], ["lava_ant","lava_ant"]]
 
     #Dummy_game_settings
     map_size = [1080,1080]
@@ -8,7 +8,7 @@ def main():
 
     #Load unit attributes from somewhere (to be determined)
     unit_db = {
-            "ant":{
+            "acid_ant":{
                 "max_hp":"100",
                 "shape":{
                     "type":"ellipse",
@@ -17,7 +17,16 @@ def main():
                     },
                 "mass":"5"
                 },
-            "spider":{
+            "lava_ant":{
+                "max_hp":"200",
+                "shape":{
+                    "type":"ellipse",
+                    "width":"2",
+                    "height":"7"
+                    },
+                "mass":"5"
+                },
+            "rhino_beetle":{
                 "max_hp":"150",
                 "shape":{
                     "type":"ellipse",
@@ -45,9 +54,9 @@ def main():
                 unit["location_x"] = str(map_size[0]-100)
             unit["location_y"] = str(round((map_size[1] / (len(units)+1)) * (i+1)))
             if(player == 0):
-                unit["orientation"] = "90"
+                unit["orientation"] = "right"
             else:
-                unit["orientation"] = "270"
+                unit["orientation"] = "left"
             unit["shape"] = unit_db[entity]["shape"]
             unit["mass"] = unit_db[entity]["mass"]
             game_state["units"].append(unit)
