@@ -5,6 +5,6 @@ def main(unit_state: dict, memory: dict) -> (int, int, float, str):
     action = "move" #Possible actions: move, attack, block
 
     #Your code goes here
-    # print("running from python")
+    print("running from python")
 
     return x_direction, y_direction, velocity, action

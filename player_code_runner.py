@@ -7,7 +7,7 @@ def main():
 
     while True:
         unit_state = json.loads(sys.stdin.readline().strip())
-        unit_id = unit_state.get("units")[0].get("id")
+        unit_id = unit_state.get("self").get("id")
         player_number = sys.argv[1]
 
         #TODO: recognize what unit I am fron unit_state, call the correct function

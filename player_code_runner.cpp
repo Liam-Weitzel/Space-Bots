@@ -20,7 +20,7 @@ int main(int argc, char** argv) {
     while (std::getline(std::cin, unit_state_str)) {
 
         unit_state = nlohmann::json::parse(unit_state_str);
-        unit_id = unit_state["units"][0]["id"];
+        unit_id = unit_state["self"]["id"];
 
         // TODO: Recognize what unit I am from unit_state, call the correct function
 
