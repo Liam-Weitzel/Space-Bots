@@ -51,7 +51,7 @@ def main():
             unit["shape"] = unit_db[entity]["shape"]
             unit["mass"] = unit_db[entity]["mass"]
             game_state["units"].append(unit)
-    
+
     return game_state
 
 if __name__=="__main__":

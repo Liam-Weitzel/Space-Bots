@@ -1,9 +1,7 @@
 import subprocess
-import select
 import sys
 import init_game_state
 import json
-import time
 
 def start_player_script(lang, player_number):
     if lang == "cpp":
@@ -15,27 +13,29 @@ def start_player_script(lang, player_number):
 
 def split_game_state_into_unit_states(game_state):
     units = game_state.get("units", [])
-    unit_states = [{"units": [unit]} for unit in units]
+    unit_states = []
+
+    for current_unit in units:
+        unit_dict = {
+            'self': current_unit,
+            'units': []
+        }
+
+        # Add all other units (excluding the current one) to the 'units' list
+        unit_dict['units'] = [unit for unit in units if unit['id'] != current_unit['id']]
+        unit_states.append(unit_dict)
     return unit_states
 
-def send_unit_state(player_process, unit_state, unit_id): #FIX: print statements are breaking this function currently...
+def send_unit_state(player_process, unit_state, unit_id): #TODO: Add timeout
     player_process.stdin.write(unit_state + "\n")
     player_process.stdin.flush()
     output_lines = []
     action = None
-    timeout = 0.05
-    start_time = time.time()
 
     while True:
-        ready_to_read, _, _ = select.select([player_process.stdout], [], [], timeout)
+        line = player_process.stdout.readline().strip()
 
-        if time.time() - start_time > timeout:
-            action = f"{unit_id}:timeout"
-            break
-
-        if ready_to_read:
-            line = player_process.stdout.readline().strip()
-
+        if line:
             if line.startswith(f"{unit_id}:"):
                 action = line
                 break
@@ -56,13 +56,14 @@ for tick in range(10000):
     actions = []
 
     for unit_state in unit_states:
-        id = unit_state.get("units")[0].get("id") #TODO: HOW DO WE MARK THE UNIT THAT IS CURRENTLY BEING PROCESSED??
-        player = unit_state.get("units")[0].get("player")
+        id = unit_state.get("self").get("id")
+        player = unit_state.get("self").get("player")
         unit_state = json.dumps(unit_state)
         if(player == 0):
-            actions.append(send_unit_state(player0_process, unit_state, id))
+            action = send_unit_state(player0_process, unit_state, id)
         else: 
-            actions.append(send_unit_state(player1_process, unit_state, id))
+            action = send_unit_state(player1_process, unit_state, id)
+        actions.append(action)
 
     ticklog.append([tick, actions])
 

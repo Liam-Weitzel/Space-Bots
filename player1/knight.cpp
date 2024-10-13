@@ -11,7 +11,7 @@ std::tuple<int, int, float, std::string> knight_main(const nlohmann::json& unit_
     std::string action = "move"; // Possible actions: move, attack, block
 
     // Your code goes here
-    // std::cout << "running from cpp" << std::endl;
+    std::cout << "running from cpp" << std::endl;
 
     return std::make_tuple(x_direction, y_direction, velocity, action);
 }
