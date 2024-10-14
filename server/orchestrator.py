@@ -9,7 +9,27 @@ import time
 def start_player_script(lang, player_number):
     if lang == "cpp":
         output_binary = "player" + str(player_number) + "_out"
-        subprocess.run(["g++", "player_code_runner.cpp", "player1/knight.cpp", "json.hpp", "-o", output_binary], capture_output=True)
+        subprocess.run([
+            "g++",
+            "player_code_runner.cpp",
+            "player1/acid_ant.cpp",
+            "player1/bloated_bedbug.cpp",
+            "player1/dung_beetle.cpp",
+            "player1/engorged_tick.cpp",
+            "player1/famished_tick.cpp",
+            "player1/foraging_maggot.cpp",
+            "player1/infected_mouse.cpp",
+            "player1/lava_ant.cpp",
+            "player1/mantis.cpp",
+            "player1/mawing_beaver.cpp",
+            "player1/plague_bat.cpp",
+            "player1/rhino_beetle.cpp",
+            "player1/swooping_bat.cpp",
+            "player1/tainted_cockroach.cpp",
+            "player1/tunneling_mole.cpp",
+            "json.hpp",
+            "-o", output_binary
+        ], capture_output=True)
         return subprocess.Popen(["./" + output_binary, str(player_number)], stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
     elif lang == "py":
         return subprocess.Popen([sys.executable, "player_code_runner.py", str(player_number)], stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True)

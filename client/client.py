@@ -52,8 +52,20 @@ def send_inputs_to_server(client_socket, inputs):
     except (BrokenPipeError, ConnectionResetError, OSError) as e:
         print(f"Error sending inputs to server: {e}")
 
-units = load_sprites_folder('./sprites/units_48x48', 48, 48)
-units_animations = {key: {'frames': frames, 'current_frame': 0, 'frame_time': 0, 'animation_speed': 300} for key, frames in units.items()}
+small_units = load_sprites_folder('./sprites/units_48x48', 48, 48)
+large_units = load_sprites_folder('./sprites/units_96x96', 96, 96)
+
+units_animations = {}
+for key, frames in list(small_units.items()) + list(large_units.items()):
+    if key not in units_animations:
+        units_animations[key] = {
+            'frames': [],
+            'current_frame': 0,
+            'frame_time': 0,
+            'animation_speed': 300
+        }
+    units_animations[key]['frames'].extend(frames)
+
 client_socket = connect_to_server("localhost", 65432)
 bg = pygame.image.load("sprites/bg.jpg")
 small_rocks = load_spritesheet('./sprites/rocks_48x48.png', 48, 48)
@@ -89,8 +101,13 @@ while running:
     screen.blit(small_rocks[1], (10, 10))
     screen.blit(small_rocks[0], (200, 200))
     screen.blit(small_rocks[3], (1000, 500))
-    screen.blit(large_rocks[3], (600, 100))
-    screen.blit(extralarge_rocks[0], (1000, 1000))
+    screen.blit(large_rocks[0], (600, 100))
+    screen.blit(large_rocks[1], (500, 100))
+    screen.blit(large_rocks[2], (400, 100))
+    screen.blit(large_rocks[3], (300, 100))
+    screen.blit(extralarge_rocks[0], (900, 900))
+    screen.blit(extralarge_rocks[2], (500, 500))
+    screen.blit(extralarge_rocks[1], (680, 340))
 
     for unit in game_state.get('units', []):
         unit_type = unit['type']
