@@ -1,6 +1,6 @@
 def main():
     #Dummy player data (should be fetched from DB)
-    player_units = [["acid_ant","acid_ant","rhino_beetle"], ["lava_ant","lava_ant"]]
+    player_units = [["acid_ant","acid_ant","rhino_beetle"], ["lava_ant","lava_ant", "mantis"]]
 
     #Dummy_game_settings
     map_size = [1080,1080]
@@ -9,31 +9,40 @@ def main():
     #Load unit attributes from somewhere (to be determined)
     unit_db = {
             "acid_ant":{
-                "max_hp":"100",
+                "max_hp":100,
                 "shape":{
                     "type":"ellipse",
-                    "width":"2",
-                    "height":"7"
+                    "width":2,
+                    "height":7
                     },
-                "mass":"5"
+                "mass":5
                 },
             "lava_ant":{
-                "max_hp":"200",
+                "max_hp":200,
                 "shape":{
                     "type":"ellipse",
-                    "width":"2",
-                    "height":"7"
+                    "width":2,
+                    "height":7
                     },
-                "mass":"5"
+                "mass":5
                 },
             "rhino_beetle":{
-                "max_hp":"150",
+                "max_hp":150,
                 "shape":{
                     "type":"ellipse",
-                    "width":"5",
-                    "height":"7"
+                    "width":5,
+                    "height":7
                     },
-                "mass":"10"
+                "mass":10
+                },
+            "mantis":{
+                "max_hp":450,
+                "shape":{
+                    "type":"ellipse",
+                    "width":15,
+                    "height":5
+                    },
+                "mass":10
                 }
             }
 
@@ -48,9 +57,9 @@ def main():
             unit["player"] = player
             unit["unit_health"] = unit_db[entity]["max_hp"]
             unit["past_action"] = ""
-            unit["lock_out_ticks"] = "0"
+            unit["lock_out_ticks"] = 0
             if(player == 0):
-                unit["location_x"] = "100"
+                unit["location_x"] = 100
             else:
                 unit["location_x"] = str(map_size[0]-100)
             unit["location_y"] = str(round((map_size[1] / (len(units)+1)) * (i+1)))
@@ -62,6 +71,7 @@ def main():
             unit["mass"] = unit_db[entity]["mass"]
             game_state["units"].append(unit)
             i+=1
+    print(game_state)
 
     return game_state
 
