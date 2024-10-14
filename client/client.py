@@ -58,6 +58,7 @@ client_socket = connect_to_server("localhost", 65432)
 bg = pygame.image.load("sprites/bg.jpg")
 small_rocks = load_spritesheet('./sprites/rocks_48x48.png', 48, 48)
 large_rocks = load_spritesheet('./sprites/rocks_48x96.png', 48, 96)
+extralarge_rocks = load_spritesheet('./sprites/rocks_96x96.png', 96, 96)
 
 running = True
 while running:
@@ -86,9 +87,10 @@ while running:
 
     screen.blit(bg, (0, 0))
     screen.blit(small_rocks[1], (10, 10))
-    screen.blit(small_rocks[2], (200, 200))
+    screen.blit(small_rocks[0], (200, 200))
     screen.blit(small_rocks[3], (1000, 500))
     screen.blit(large_rocks[3], (600, 100))
+    screen.blit(extralarge_rocks[0], (1000, 1000))
 
     for unit in game_state.get('units', []):
         unit_type = unit['type']

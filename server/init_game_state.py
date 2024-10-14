@@ -40,7 +40,8 @@ def main():
     game_state = {"units":[]}
 
     for player, units in enumerate(player_units):
-        for i, entity in enumerate(units):
+        i = 0;
+        for entity in units:
             unit = {}
             unit["id"] = i
             unit["type"] = entity
@@ -60,6 +61,7 @@ def main():
             unit["shape"] = unit_db[entity]["shape"]
             unit["mass"] = unit_db[entity]["mass"]
             game_state["units"].append(unit)
+            i+=1
 
     return game_state
 
