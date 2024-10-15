@@ -38,7 +38,7 @@ def connect_to_server(host, port):
 
 def receive_game_state(client_socket):
     try:
-        data = client_socket.recv(8192).decode('utf-8').strip()
+        data = client_socket.recv(16384).decode('utf-8').strip()
         if data:
             game_state = json.loads(data)
             return game_state
