@@ -2,9 +2,10 @@ import pygame
 import socket
 import json
 import os
+import time
 
 pygame.init()
-screen = pygame.display.set_mode((1080, 1080)) #NOTE: Maybe get this from game_state?
+screen = pygame.display.set_mode((1080, 1080)) # NOTE: Maybe get this from game_state?
 pygame.display.set_caption("Game Client")
 clock = pygame.time.Clock()
 
@@ -37,7 +38,7 @@ def connect_to_server(host, port):
 
 def receive_game_state(client_socket):
     try:
-        data = client_socket.recv(4096).decode('utf-8').strip()
+        data = client_socket.recv(8192).decode('utf-8').strip()
         if data:
             game_state = json.loads(data)
             return game_state
@@ -72,6 +73,17 @@ small_rocks = load_spritesheet('./sprites/rocks_48x48.png', 48, 48)
 large_rocks = load_spritesheet('./sprites/rocks_48x96.png', 48, 96)
 extralarge_rocks = load_spritesheet('./sprites/rocks_96x96.png', 96, 96)
 
+def get_rock_sprites(rock_type):
+    """Return the appropriate spritesheet based on rock type."""
+    if "48x48" in rock_type:
+        return small_rocks
+    elif "48x96" in rock_type:
+        return large_rocks
+    elif "96x96" in rock_type:
+        return extralarge_rocks
+    else:
+        return None
+
 running = True
 while running:
     for event in pygame.event.get():
@@ -98,17 +110,8 @@ while running:
         print("Received game state:", game_state)
 
     screen.blit(bg, (0, 0))
-    screen.blit(small_rocks[1], (10, 10))
-    screen.blit(small_rocks[0], (200, 200))
-    screen.blit(small_rocks[3], (1000, 500))
-    screen.blit(large_rocks[0], (600, 100))
-    screen.blit(large_rocks[1], (500, 100))
-    screen.blit(large_rocks[2], (400, 100))
-    screen.blit(large_rocks[3], (300, 100))
-    screen.blit(extralarge_rocks[0], (900, 900))
-    screen.blit(extralarge_rocks[2], (500, 500))
-    screen.blit(extralarge_rocks[1], (680, 340))
 
+    # Draw units
     for unit in game_state.get('units', []):
         unit_type = unit['type']
         location_x = int(unit['location_x'])
@@ -128,6 +131,24 @@ while running:
             sprite = frames[animation['current_frame']]
 
             if orientation == 'left':
+                sprite = pygame.transform.flip(sprite, True, False)
+
+            rect = sprite.get_rect(center=(location_x, location_y))
+            screen.blit(sprite, rect)
+
+    # Draw terrain (rocks)
+    for terrain in game_state.get('terrain', []):
+        rock_type = terrain['type']
+        variation = terrain['variation']
+        location_x = int(terrain['location_x'])
+        location_y = int(terrain['location_y'])
+        orientation = terrain['orientation']
+
+        rock_sprites = get_rock_sprites(rock_type)
+        if rock_sprites:
+            sprite = rock_sprites[variation]  # Get the sprite based on the variation
+
+            if orientation == 'right':
                 sprite = pygame.transform.flip(sprite, True, False)
 
             rect = sprite.get_rect(center=(location_x, location_y))
