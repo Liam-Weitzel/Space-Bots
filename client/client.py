@@ -2,7 +2,6 @@ import pygame
 import socket
 import json
 import os
-import time
 
 pygame.init()
 screen = pygame.display.set_mode((1080, 1080)) # NOTE: Maybe get this from game_state?
@@ -146,7 +145,7 @@ while running:
 
         rock_sprites = get_rock_sprites(rock_type)
         if rock_sprites:
-            sprite = rock_sprites[variation]  # Get the sprite based on the variation
+            sprite = rock_sprites[variation]
 
             if orientation == 'right':
                 sprite = pygame.transform.flip(sprite, True, False)

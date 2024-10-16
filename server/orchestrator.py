@@ -49,7 +49,7 @@ def split_game_state_into_unit_states(game_state):
         unit_states.append(unit_dict)
     return unit_states
 
-def send_unit_state(player_process, unit_state, unit_id): #TODO: Add timeout
+def send_unit_state(player_process, unit_state, unit_id): #TODO: Add timeout for player's code
     player_process.stdin.write(unit_state + "\n")
     player_process.stdin.flush()
     output_lines = []
@@ -65,7 +65,7 @@ def send_unit_state(player_process, unit_state, unit_id): #TODO: Add timeout
                 output_lines.append(line)
     return action, output_lines
 
-def send_game_state_to_client(client_socket, game_state):
+def send_game_state_to_client(client_socket, game_state): #TODO: Make web socket version of IPC between player's code and orchestrator for debugging
     try:
         serialized_data = json.dumps(game_state).encode('utf-8')
         client_socket.sendall(serialized_data + b'\n')
@@ -91,7 +91,7 @@ TICK_INTERVAL = 1.0 / TICK_RATE
 player0_process = start_player_script("py", 0)
 player1_process = start_player_script("cpp", 1)
 
-ticklog = []  #NOTE: Only needed for offline play
+ticklog = []  #NOTE: Only needed for offline/ auto play, in this case also remove the sleep which sync each tick and don't send anything to front-end until match is done
 game_state = init_game_state.main()
 server_socket = socket_server(HOST, PORT)
 client_sockets = []
