@@ -1,14 +1,20 @@
 import random
+import math
 
-def check_collision(rock, existing_rocks):
+def check_rock_proximity(rock, existing_rocks, min_distance=150):
+    rock_center_x = rock["location_x"] + rock["shape"]["width"] / 2
+    rock_center_y = rock["location_y"] + rock["shape"]["height"] / 2
+
     for existing_rock in existing_rocks:
-        left1, right1 = rock["location_x"], rock["location_x"] + rock["shape"]["width"]
-        top1, bottom1 = rock["location_y"], rock["location_y"] + rock["shape"]["height"]
+        existing_center_x = existing_rock["location_x"] + existing_rock["shape"]["width"] / 2
+        existing_center_y = existing_rock["location_y"] + existing_rock["shape"]["height"] / 2
 
-        left2, right2 = existing_rock["location_x"], existing_rock["location_x"] + existing_rock["shape"]["width"]
-        top2, bottom2 = existing_rock["location_y"], existing_rock["location_y"] + existing_rock["shape"]["height"]
+        # Calculate the Euclidean distance between the centers
+        distance = math.sqrt(
+            (rock_center_x - existing_center_x) ** 2 + (rock_center_y - existing_center_y) ** 2
+        )
 
-        if left1 < right2 and right1 > left2 and top1 < bottom2 and bottom1 > top2:
+        if distance < min_distance:
             return True
     return False
 
@@ -32,29 +38,33 @@ def generate_terrain(map_size, units):
     }
 
     formations = [
-        {   # Concave shape made up of 6 large rocks
-            "name": "concave",
+        { #Vertical gate
             "rocks": [
+                {"type": "rocks_48x96", "offset_x": -60, "offset_y": 0},
+                {"type": "rocks_48x96", "offset_x": 170, "offset_y": 0},
+                {"type": "rocks_48x48", "offset_x": -30, "offset_y": 0},
+                {"type": "rocks_48x48", "offset_x": 0, "offset_y": 0},
+                {"type": "rocks_48x48", "offset_x": 110, "offset_y": 0},
+                {"type": "rocks_48x48", "offset_x": 140, "offset_y": 0}
+            ]
+        },
+        { #The wall
+            "rocks": [
+                {"type": "rocks_96x96", "offset_x": -80, "offset_y": 0},
                 {"type": "rocks_96x96", "offset_x": 0, "offset_y": 0},
-                {"type": "rocks_96x96", "offset_x": 96, "offset_y": 0},
-                {"type": "rocks_96x96", "offset_x": 192, "offset_y": 0},
-                {"type": "rocks_96x96", "offset_x": 48, "offset_y": 96},
-                {"type": "rocks_96x96", "offset_x": 144, "offset_y": 96},
-                {"type": "rocks_96x96", "offset_x": 96, "offset_y": 192}
+                {"type": "rocks_96x96", "offset_x": 80, "offset_y": 0},
             ]
         },
-        {   # L shape formation
-            "name": "l_shape",
+        { #Horizontal gate
             "rocks": [
-                {"type": "rocks_48x96", "offset_x": 0, "offset_y": 0},
-                {"type": "rocks_48x96", "offset_x": 0, "offset_y": 96},
-                {"type": "rocks_48x96", "offset_x": 0, "offset_y": 192},
-                {"type": "rocks_48x96", "offset_x": 48, "offset_y": 192},
-                {"type": "rocks_48x48", "offset_x": 48, "offset_y": 240}
+                {"type": "rocks_48x96", "offset_x": 0, "offset_y": 160},
+                {"type": "rocks_48x96", "offset_x": 0, "offset_y": 80},
+                {"type": "rocks_48x96", "offset_x": 0, "offset_y": -160},
+                {"type": "rocks_48x96", "offset_x": 0, "offset_y": -80},
+                {"type": "rocks_48x48", "offset_x": 130, "offset_y": 0}
             ]
         },
-        {   # Random cluster formation
-            "name": "cluster",
+        { #Cluster
             "rocks": [
                 {"type": "rocks_48x48", "offset_x": 0, "offset_y": 0},
                 {"type": "rocks_96x96", "offset_x": 96, "offset_y": 48},
@@ -65,17 +75,20 @@ def generate_terrain(map_size, units):
     ]
 
     terrain = []
-    half_map_width = map_size[0] // 2
-    num_formations = 3
+    num_formations = random.randint(2, 5)
 
     for _ in range(num_formations):
         placed_successfully = False
+        attempt_count = 0;
         while not placed_successfully:
+            if(attempt_count > 10):
+                break
+            attempt_count += 1
             formation = random.choice(formations)
 
-            # Generate random position on the left half of the map
-            location_x = random.randint(0, half_map_width - 200)
-            location_y = random.randint(0, map_size[1] - 200)
+            # Generate random position on the left half of the map, that is somewhat in the middle
+            location_x = random.randint(150, (map_size[0] // 2) - 150)
+            location_y = random.randint(150, map_size[1] - 150)
 
             new_rocks = []
 
@@ -98,7 +111,7 @@ def generate_terrain(map_size, units):
                     "orientation": "left"
                 }
 
-                if check_collision(left_rock, terrain) or check_unit_collision(left_rock, units):
+                if check_rock_proximity(left_rock, terrain) or check_unit_collision(left_rock, units):
                     collision_detected = True
                     break
 
@@ -114,7 +127,7 @@ def generate_terrain(map_size, units):
                     "orientation": "right"
                 }
 
-                if check_collision(right_rock, terrain) or check_unit_collision(right_rock, units):
+                if check_rock_proximity(right_rock, terrain) or check_unit_collision(right_rock, units):
                     collision_detected = True #NOTE: Not really needed as its already done on left side
                     break
 
