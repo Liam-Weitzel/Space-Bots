@@ -4,7 +4,7 @@ import json
 import os
 
 pygame.init()
-screen = pygame.display.set_mode((1080, 1080)) # NOTE: Maybe get this from game_state?
+screen = pygame.display.set_mode((1080, 1080)) # TODO: Maybe get this from game_state?
 pygame.display.set_caption("Game Client")
 clock = pygame.time.Clock()
 
@@ -73,7 +73,7 @@ large_rocks = load_spritesheet('./sprites/rocks_48x96.png', 48, 96)
 extralarge_rocks = load_spritesheet('./sprites/rocks_96x96.png', 96, 96)
 
 def get_rock_sprites(rock_type):
-    """Return the appropriate spritesheet based on rock type."""
+    #Return the appropriate spritesheet based on rock type.
     if "48x48" in rock_type:
         return small_rocks
     elif "48x96" in rock_type:
