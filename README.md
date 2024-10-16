@@ -1,36 +1,37 @@
 # Gamefied-Code-Dev
 
-TODO:
-Game state init:
--input: player data, game settings
--output: initial game state (dictionairy of dataframe)
--game state columns: HP, Location, Shape, Size, Orientation, Type, Previous action, Previous death, Remaining Cooldowns, Lockout
-
-Write orchestrator:
+orchestrator:
 -input: 2 scripts, initial game state
 -output: all games states, match results in auto mode
--output: visualization in live mode
--computes all game logic
--initializes two child processes, and runs input functions on iterative game states until game concludes.
+-output: game_state sent to clients every tick through websockets, in live mode
+-spawn two child processes (player_code_runner), and runs player's functions on iterative game states until game concludes.
+-calls game_engine
+-calls game_state_init
 
-Game engine:
--Input: game state, player actions (auto or live)
+game_state_init:
+-input: player data, game settings
+-output: initial game state
+-game state columns: HP, Location, Shape, Size, Orientation, Type, Previous action, Previous death, Remaining Cooldowns, Lockout
+
+game_engine:
+-Input: game state, player actions
 -Output: next game state
 
-Renderer:
--input: next game state
--output: visuals
-
-Player code runner:
+player_code_runner:
 -Runs code from user file
 
-Player controlled:
--Listens for user inputs
-
-User file:
--Prototype (done)
+client:
+-input: next game state
+-output: visuals
+-listens for user inputs, sends it back to orchestrator
 
 Later:
 -Web app
 -GUI
 -Database
+
+TODO:
+- Refactor code with return types and type defs
+- Add asserts everywhere for simulation testing
+- Create some unit tests
+- Detect which player the client is, reconnecting as the same player, and flip screen for right player
