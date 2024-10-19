@@ -5,11 +5,13 @@ import json
 import socket
 import select
 import time
+import math
 
 def start_player_script(lang, player_number):
     if lang == "cpp":
         output_binary = "player" + str(player_number) + "_out"
         subprocess.run([
+            "sudo",
             "g++",
             "player_code_runner.cpp",
             "player1/acid_ant.cpp",
@@ -24,6 +26,7 @@ def start_player_script(lang, player_number):
             "player1/mawing_beaver.cpp",
             "player1/plague_bat.cpp",
             "player1/rhino_beetle.cpp",
+            "player1/spider.cpp",
             "player1/swooping_bat.cpp",
             "player1/tainted_cockroach.cpp",
             "player1/tunneling_mole.cpp",
@@ -36,17 +39,47 @@ def start_player_script(lang, player_number):
 
 def split_game_state_into_unit_states(game_state):
     units = game_state.get("units", [])
+    terrain = game_state.get("terrain", [])
     unit_states = []
+
+    def is_within_fov(unit1, unit2):
+        # Calculate the Euclidean distance between two units
+        distance = math.sqrt((unit1['location_x'] - unit2['location_x']) ** 2 +
+                             (unit1['location_y'] - unit2['location_y']) ** 2)
+        # Check if the distance is within the FOV range
+        return distance <= unit1['fov']
 
     for current_unit in units:
         unit_dict = {
             'self': current_unit,
-            'units': []
+            'units': [],
+            'terrain': terrain
         }
 
-        # Add all other units (excluding the current one) to the 'units' list
-        unit_dict['units'] = [unit for unit in units if unit['id'] != current_unit['id']]
+        # Track visible units (self and allies can extend vision)
+        visible_units = set()
+        to_check = [current_unit]
+
+        while to_check:
+            unit = to_check.pop()
+            visible_units.add(unit['id'])
+
+            for other_unit in units:
+                # Find allied units within the FOV and extend our vision by theirs
+                if other_unit['player'] == current_unit['player']:
+                    if other_unit['id'] not in visible_units:
+                        if is_within_fov(unit, other_unit):
+                            to_check.append(other_unit)
+                else: # Find enemy units within the FOV
+                    if other_unit['id'] not in visible_units:
+                        if is_within_fov(unit, other_unit):
+                            visible_units.add(other_unit['id'])
+
+        # Add visible units to 'units' list (excluding the current unit)
+        unit_dict['units'] = [unit for unit in units if unit['id'] != current_unit['id'] and unit['id'] in visible_units]
+
         unit_states.append(unit_dict)
+
     return unit_states
 
 def send_unit_state(player_process, unit_state, unit_id): #TODO: Add timeout for player's code
@@ -65,7 +98,7 @@ def send_unit_state(player_process, unit_state, unit_id): #TODO: Add timeout for
                 output_lines.append(line)
     return action, output_lines
 
-def send_game_state_to_client(client_socket, game_state): #TODO: Make web socket version of IPC between player's code and orchestrator for debugging
+def send_game_state_to_client(client_socket, game_state): #TODO: Make web socket version of IPC between player's code and orchestrator for debug mode
     try:
         serialized_data = json.dumps(game_state).encode('utf-8')
         client_socket.sendall(serialized_data + b'\n')

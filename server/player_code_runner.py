@@ -3,7 +3,7 @@ from player0 import (
     acid_ant, bloated_bedbug, dung_beetle, engorged_tick, 
     famished_tick, foraging_maggot, infected_mouse, 
     lava_ant, mantis, mawing_beaver, plague_bat, rhino_beetle, 
-    swooping_bat, tainted_cockroach, tunneling_mole
+    spider, swooping_bat, tainted_cockroach, tunneling_mole
 )
 import json
 
@@ -23,6 +23,7 @@ def main():
         "mawing_beaver": mawing_beaver.mawing_beaver,
         "plague_bat": plague_bat.plague_bat,
         "rhino_beetle": rhino_beetle.rhino_beetle,
+        "spider": spider.spider,
         "swooping_bat": swooping_bat.swooping_bat,
         "tainted_cockroach": tainted_cockroach.tainted_cockroach,
         "tunneling_mole": tunneling_mole.tunneling_mole
