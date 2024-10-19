@@ -20,11 +20,11 @@ def check_rock_proximity(rock, existing_rocks, min_distance=150):
 
 def check_unit_collision(rock, units):
     for unit in units:
-        left1, right1 = rock["location_x"], rock["location_x"] + rock["shape"]["width"]
-        top1, bottom1 = rock["location_y"], rock["location_y"] + rock["shape"]["height"]
+        left1, right1 = rock["location_x"] - rock["shape"]["width"] / 2, rock["location_x"] + rock["shape"]["width"] / 2
+        top1, bottom1 = rock["location_y"] - rock["shape"]["height"] / 2, rock["location_y"] + rock["shape"]["height"] / 2
 
-        left2, right2 = unit["location_x"], unit["location_x"] + unit["shape"]["sprite"]
-        top2, bottom2 = unit["location_y"], unit["location_y"] + unit["shape"]["sprite"]
+        left2, right2 = unit["location_x"] - rock["shape"]["width"] / 2, unit["location_x"] + unit["shape"]["sprite"] / 2
+        top2, bottom2 = unit["location_y"] - rock["shape"]["height"] / 2, unit["location_y"] + unit["shape"]["sprite"] / 2
 
         if left1 < right2 and right1 > left2 and top1 < bottom2 and bottom1 > top2:
             return True
@@ -381,7 +381,8 @@ def main():
             unit["id"] = unit_id
             unit["type"] = entity
             unit["player"] = player
-            unit["unit_health"] = unit_db[entity]["max_hp"]
+            unit["max_hp"] = unit_db[entity]["max_hp"]
+            unit["hp"] = unit_db[entity]["max_hp"]
             unit["damage"] = unit_db[entity]["damage"]
             unit["attack_speed"] = unit_db[entity]["attack_speed"]
             unit["move_speed"] = unit_db[entity]["move_speed"]

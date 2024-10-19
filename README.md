@@ -34,4 +34,4 @@ TODO:
 - Refactor code with return types and type defs
 - Add asserts everywhere for simulation testing
 - Create some unit tests
-- Detect which player the client is, reconnecting as the same player, and flip screen for right player
+- Detect which player the client is, reconnecting as the same player
