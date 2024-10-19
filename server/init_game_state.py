@@ -140,7 +140,7 @@ def generate_terrain(map_size, units):
     return terrain
 
 def main():
-    player_units = [["acid_ant", "acid_ant", "rhino_beetle", "bloated_bedbug", "dung_beetle"],
+    player_units = [["acid_ant", "spider", "rhino_beetle", "bloated_bedbug", "dung_beetle"],
                     ["lava_ant", "lava_ant", "mantis", "foraging_maggot"]]
     map_size = [1080,1080]
 
@@ -151,6 +151,7 @@ def main():
                 "damage":15,
                 "attack_speed":2,
                 "move_speed":2,
+                "fov":100,
                 "shape":{
                     "type":"ellipse",
                     "width":5,
@@ -164,6 +165,7 @@ def main():
                 "damage":50,
                 "attack_speed":4,
                 "move_speed":2,
+                "fov":100,
                 "shape":{
                     "type":"ellipse",
                     "width":5,
@@ -177,6 +179,7 @@ def main():
                 "damage":5,
                 "attack_speed":2,
                 "move_speed":0.5,
+                "fov":100,
                 "shape":{
                     "type":"ellipse",
                     "width":5,
@@ -190,6 +193,7 @@ def main():
                 "damage":5,
                 "attack_speed":0.4,
                 "move_speed":3,
+                "fov":100,
                 "shape":{
                     "type":"ellipse",
                     "width":5,
@@ -203,6 +207,7 @@ def main():
                 "damage":10,
                 "attack_speed":1.5,
                 "move_speed":5,
+                "fov":100,
                 "shape":{
                     "type":"ellipse",
                     "width":5,
@@ -216,6 +221,7 @@ def main():
                 "damage":5,
                 "attack_speed":2,
                 "move_speed":2,
+                "fov":100,
                 "shape":{
                     "type":"ellipse",
                     "width":5,
@@ -229,6 +235,7 @@ def main():
                 "damage":25,
                 "attack_speed":2,
                 "move_speed":2,
+                "fov":100,
                 "shape":{
                     "type":"ellipse",
                     "width":5,
@@ -242,6 +249,7 @@ def main():
                 "damage":20,
                 "attack_speed":2,
                 "move_speed":2,
+                "fov":100,
                 "shape":{
                     "type":"ellipse",
                     "width":5,
@@ -255,6 +263,7 @@ def main():
                 "damage":50,
                 "attack_speed":3,
                 "move_speed":1.5,
+                "fov":100,
                 "shape":{
                     "type":"ellipse",
                     "width":10,
@@ -268,6 +277,7 @@ def main():
                 "damage":5,
                 "attack_speed":1,
                 "move_speed":2.5,
+                "fov":100,
                 "shape":{
                     "type":"ellipse",
                     "width":5,
@@ -281,6 +291,7 @@ def main():
                 "damage":12,
                 "attack_speed":1,
                 "move_speed":5,
+                "fov":100,
                 "shape":{
                     "type":"ellipse",
                     "width":5,
@@ -294,6 +305,7 @@ def main():
                 "damage":150,
                 "attack_speed":15,
                 "move_speed":1,
+                "fov":100,
                 "shape":{
                     "type":"ellipse",
                     "width":5,
@@ -302,11 +314,26 @@ def main():
                     },
                 "mass":10
                 },
+            "spider":{ #Ultimate unit, way too expensive
+                "max_hp":450,
+                "damage":50,
+                "attack_speed":3,
+                "move_speed":1.5,
+                "fov":100,
+                "shape":{
+                    "type":"ellipse",
+                    "width":10,
+                    "height":10,
+                    "sprite": 96
+                    },
+                "mass":15
+                },
             "swooping_bat":{ #expensive, super fast, very low mass, good dps
                 "max_hp":50,
                 "damage":36,
                 "attack_speed":3,
                 "move_speed":5,
+                "fov":100,
                 "shape":{
                     "type":"ellipse",
                     "width":5,
@@ -320,6 +347,7 @@ def main():
                 "damage":30,
                 "attack_speed":1.75,
                 "move_speed":2,
+                "fov":100,
                 "shape":{
                     "type":"ellipse",
                     "width":5,
@@ -333,6 +361,7 @@ def main():
                 "damage":15,
                 "attack_speed":2.5,
                 "move_speed":1,
+                "fov":100,
                 "shape":{
                     "type":"ellipse",
                     "width":5,
@@ -345,17 +374,18 @@ def main():
 
     game_state = {"units":[], "terrain":[]}
 
+    unit_id = 0;
     for player, units in enumerate(player_units):
-        i = 0;
-        for entity in units:
+        for i, entity in enumerate(units):
             unit = {}
-            unit["id"] = i
+            unit["id"] = unit_id
             unit["type"] = entity
             unit["player"] = player
             unit["unit_health"] = unit_db[entity]["max_hp"]
             unit["damage"] = unit_db[entity]["damage"]
             unit["attack_speed"] = unit_db[entity]["attack_speed"]
             unit["move_speed"] = unit_db[entity]["move_speed"]
+            unit["fov"] = unit_db[entity]["fov"]
             unit["mass"] = unit_db[entity]["mass"]
             unit["past_action"] = ""
             unit["lock_out_ticks"] = 0

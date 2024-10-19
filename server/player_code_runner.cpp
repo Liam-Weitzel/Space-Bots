@@ -18,6 +18,7 @@
 #include "player1/mawing_beaver.h"
 #include "player1/plague_bat.h"
 #include "player1/rhino_beetle.h"
+#include "player1/spider.h"
 #include "player1/swooping_bat.h"
 #include "player1/tainted_cockroach.h"
 #include "player1/tunneling_mole.h"
@@ -45,6 +46,7 @@ int main(int argc, char** argv) {
         {"mawing_beaver", mawing_beaver},
         {"plague_bat", plague_bat},
         {"rhino_beetle", rhino_beetle},
+        {"spider", spider},
         {"swooping_bat", swooping_bat},
         {"tainted_cockroach", tainted_cockroach},
         {"tunneling_mole", tunneling_mole}
