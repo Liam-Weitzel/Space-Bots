@@ -82,7 +82,7 @@ def split_game_state_into_unit_states(game_state):
 
     return unit_states
 
-def send_unit_state(player_process, unit_state, unit_id): #TODO: Add timeout for player's code
+def send_unit_state(player_process, unit_state, unit_id): #TODO: Add timeout for player's code, make web socket version of IPC between player's code and orchestrator for debug mode
     player_process.stdin.write(unit_state + "\n")
     player_process.stdin.flush()
     output_lines = []
@@ -98,7 +98,18 @@ def send_unit_state(player_process, unit_state, unit_id): #TODO: Add timeout for
                 output_lines.append(line)
     return action, output_lines
 
-def send_game_state_to_client(client_socket, game_state): #TODO: Make web socket version of IPC between player's code and orchestrator for debug mode
+def send_init_state_to_client(client_socket, player_number): #TODO: Also send terrain data to front_end this way... Implement the same concept with the player_code_runners
+    try:
+        data = {}
+        data["player"] = player_number #NOTE: This is a horrible way to assign player numbers to clients
+        serialized_data = json.dumps(data).encode('utf-8')
+        client_socket.sendall(serialized_data + b'\n')
+    except (BrokenPipeError, ConnectionResetError, OSError) as e:
+        print(f"Connection error: {e}")
+        return False  # Indicate that the client has disconnected
+    return True  # Indicate that the data was sent successfully
+
+def send_game_state_to_client(client_socket, game_state):
     try:
         serialized_data = json.dumps(game_state).encode('utf-8')
         client_socket.sendall(serialized_data + b'\n')
@@ -106,6 +117,13 @@ def send_game_state_to_client(client_socket, game_state): #TODO: Make web socket
         print(f"Connection error: {e}")
         return False  # Indicate that the client has disconnected
     return True  # Indicate that the data was sent successfully
+
+def disconnect_client(client_addresses, client_sockets, client_socket):
+    client_addr = client_addresses.get(client_socket, "Unknown Client")
+    print(f"Removing client {client_addr} due to send failure")
+    client_sockets.remove(client_socket)
+    client_socket.close()
+    client_addresses.pop(client_socket, None)
 
 def socket_server(host, port):
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -129,6 +147,8 @@ game_state = init_game_state.main()
 server_socket = socket_server(HOST, PORT)
 client_sockets = []
 client_addresses = {}
+uninitialized_client_sockets = []
+uninitialized_client_addresses = {}
 
 try:
     for tick in range(10000):
@@ -147,18 +167,26 @@ try:
             client_sockets = [sock for sock in client_sockets if sock.fileno() != -1]
             continue
 
+        for client_socket in uninitialized_client_sockets: #NOTE: Don't send game_state to clients that got connected this tick, send the init_state instead
+            client_sockets.append(client_socket)
+            client_addresses[client_socket] = uninitialized_client_addresses[client_socket]
+            uninitialized_client_addresses[client_socket] = ''
+            uninitialized_client_sockets.remove(client_socket)
+
         # Accept new connections
         if server_socket in readable:
             client_socket, addr = server_socket.accept()
             client_socket.setblocking(False)
-            client_sockets.append(client_socket)
-            client_addresses[client_socket] = addr
+            uninitialized_client_sockets.append(client_socket)
+            uninitialized_client_addresses[client_socket] = addr
             print(f"Client connected from {addr}")
+            if not send_init_state_to_client(client_socket, len(client_sockets)):
+                disconnect_client(uninitialized_client_addresses, uninitialized_client_sockets, client_socket)
 
         # Handle sending game state to all connected clients
         for client_socket in client_sockets[:]:
             if client_socket in readable:
-                try:  # Try to receive data (to detect disconnection)
+                try:
                     data = client_socket.recv(1024).decode('utf-8')
                     client_addr = client_addresses.get(client_socket, "Unknown Client")
                     if data:
@@ -175,12 +203,7 @@ try:
 
             # Send the current game state
             if not send_game_state_to_client(client_socket, game_state):
-                # If sending fails, remove the socket and close it
-                client_addr = client_addresses.get(client_socket, "Unknown Client")
-                print(f"Removing client {client_addr} due to send failure")
-                client_sockets.remove(client_socket)
-                client_socket.close()
-                client_addresses.pop(client_socket, None)
+                disconnect_client(client_addresses, client_sockets, client_socket)
 
         unit_states = split_game_state_into_unit_states(game_state)
         actions = []
