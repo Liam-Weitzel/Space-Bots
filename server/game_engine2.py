@@ -11,23 +11,26 @@ class game_engine:
         self.space = pymunk.Space()
         self.object_mapping = {}
         
-        # Init pymunk objects
+        # Init game_state into pymunk objects
         for unit in self.game_state['units']:
-            self.spawn_object(self.space, (unit['location_x'], unit['location_y']), unit['id'], self.object_mapping)
+            self.spawn_object(self.space, unit['position'], unit['id'])
 
         for x in self.space.shapes:
             x.body.apply_impulse_at_local_point(Vec2d(1, 2))
-        
-        self.tick()
-        self.tick()
 
-    def tick(self):
-        for x in self.object_mapping.keys():
-            print(f"{x}: {self.object_mapping[x].body.position}")
+    def parse_space_to_game_state(self):
+        for obj in self.object_mapping.keys():
+            print(f"{obj}: {self.object_mapping[obj].body.position}")
+            self.game_state['units'][obj]['position'] = obj.body.position
+
+        return ""
+
+    def run_tick(self):
 
         self.space.step(self.dt)
+        return self.parse_space_to_game_state()
     
-    def spawn_object(self, space, position, id, object_mapping):
+    def spawn_object(self, space, position, id):
         ball_body = pymunk.Body(1, float("inf"))
         ball_body.position = position
 
@@ -41,6 +44,8 @@ class game_engine:
         ball_body.velocity_func = constant_velocity
 
         space.add(ball_body, ball_shape)
-        object_mapping[id] = ball_shape
+        self.object_mapping[id] = ball_shape
 
 game_engine = game_engine("test", init_game_state.main(), 60)
+game_engine.run_tick()
+game_engine.run_tick()

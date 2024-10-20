@@ -44,8 +44,8 @@ def split_game_state_into_unit_states(game_state):
 
     def is_within_fov(unit1, unit2):
         # Calculate the Euclidean distance between two units
-        distance = math.sqrt((unit1['location_x'] - unit2['location_x']) ** 2 +
-                             (unit1['location_y'] - unit2['location_y']) ** 2)
+        distance = math.sqrt((unit1['position'][0] - unit2['position'][0]) ** 2 +
+                             (unit1['position'][1] - unit2['position'][1]) ** 2)
         # Check if the distance is within the FOV range
         return distance <= unit1['fov']
 
