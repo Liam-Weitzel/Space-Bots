@@ -14,22 +14,22 @@ def start_player_script(lang, player_number):
             "sudo",
             "g++",
             "player_code_runner.cpp",
-            "player1/acid_ant.cpp",
-            "player1/bloated_bedbug.cpp",
-            "player1/dung_beetle.cpp",
-            "player1/engorged_tick.cpp",
-            "player1/famished_tick.cpp",
-            "player1/foraging_maggot.cpp",
-            "player1/infected_mouse.cpp",
-            "player1/lava_ant.cpp",
-            "player1/mantis.cpp",
-            "player1/mawing_beaver.cpp",
-            "player1/plague_bat.cpp",
-            "player1/rhino_beetle.cpp",
-            "player1/spider.cpp",
-            "player1/swooping_bat.cpp",
-            "player1/tainted_cockroach.cpp",
-            "player1/tunneling_mole.cpp",
+            f"player{player_number}/acid_ant.cpp",
+            f"player{player_number}/bloated_bedbug.cpp",
+            f"player{player_number}/dung_beetle.cpp",
+            f"player{player_number}/engorged_tick.cpp",
+            f"player{player_number}/famished_tick.cpp",
+            f"player{player_number}/foraging_maggot.cpp",
+            f"player{player_number}/infected_mouse.cpp",
+            f"player{player_number}/lava_ant.cpp",
+            f"player{player_number}/mantis.cpp",
+            f"player{player_number}/mawing_beaver.cpp",
+            f"player{player_number}/plague_bat.cpp",
+            f"player{player_number}/rhino_beetle.cpp",
+            f"player{player_number}/spider.cpp",
+            f"player{player_number}/swooping_bat.cpp",
+            f"player{player_number}/tainted_cockroach.cpp",
+            f"player{player_number}/tunneling_mole.cpp",
             "json.hpp",
             "-o", output_binary
         ], capture_output=True)
@@ -139,8 +139,20 @@ PORT = 65432
 TICK_RATE = 60
 TICK_INTERVAL = 1.0 / TICK_RATE
 
-player0_process = start_player_script("py", 0)
-player1_process = start_player_script("cpp", 1)
+# Detect player language this:
+player_0_python = bool(input("player 1 python?"))
+player_1_python = bool(input("player 2 python?"))
+if player_0_python: 
+    player0_process = start_player_script("py", 0)
+else: 
+    player0_process = start_player_script("cpp", 0)
+
+if player_1_python: 
+    player1_process = start_player_script("py", 1)
+else: 
+    player1_process = start_player_script("cpp", 1)
+
+
 
 ticklog = []  #NOTE: Only needed for offline/ auto play, in this case also remove the sleep which sync each tick and don't send anything to front-end until match is done
 game_state = init_game_state.main()
