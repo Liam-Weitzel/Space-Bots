@@ -182,8 +182,6 @@ def get_rock_sprites(rock_type):
     else:
         return None
 
-#TODO: Visualize fog of war when unit is selected, also display their full stats
-
 init_state = receive_game_state(client_socket)
 if init_state is not None:
     print("Received init state:", init_state)
@@ -298,9 +296,9 @@ while running:
             rect = sprite.get_rect(center=(location_x, location_y))
             buffer_surface.blit(sprite, rect)
 
-    draw_unit_attributes(buffer_surface, selected_unit)
     draw_selection_rectangle(buffer_surface, selected_unit)
     draw_fov(buffer_surface, game_state, selected_unit)
+    draw_unit_attributes(buffer_surface, selected_unit)
 
     # Flip the buffer surface if player_number is 1
     if player_number == 1:
