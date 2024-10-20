@@ -305,7 +305,7 @@ def main():
                 "damage":150,
                 "attack_speed":15,
                 "move_speed":1,
-                "fov":100,
+                "fov":150,
                 "shape":{
                     "type":"ellipse",
                     "width":5,
@@ -319,7 +319,7 @@ def main():
                 "damage":50,
                 "attack_speed":3,
                 "move_speed":1.5,
-                "fov":100,
+                "fov":200,
                 "shape":{
                     "type":"ellipse",
                     "width":10,
@@ -402,7 +402,7 @@ def main():
             unit["shape"] = unit_db[entity]["shape"]
             unit["mass"] = unit_db[entity]["mass"]
             game_state["units"].append(unit)
-            i+=1
+            unit_id+=1
 
     game_state["terrain"] = generate_terrain(map_size, game_state["units"])
     print(game_state)
