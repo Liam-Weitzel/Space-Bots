@@ -5,7 +5,9 @@ import os
 import math
 
 pygame.init()
-screen = pygame.display.set_mode((1080, 1080)) #TODO: Maybe get this from game_state?
+screen_width = 1080
+screen_height = 1080
+screen = pygame.display.set_mode((screen_width, screen_height)) #TODO: Maybe get this from game_state?
 pygame.display.set_caption("Game Client")
 clock = pygame.time.Clock()
 
@@ -55,13 +57,12 @@ def send_inputs_to_server(client_socket, inputs):
 
 def get_unit_at_position(units, pos):
     for unit in units:
-        unit_type = unit['type']
-        location_x = int(unit['location_x'])
-        location_y = int(unit['location_y'])
+        if player_number == 1:
+            position[0] = screen_width-position[0]
         
-        if unit_type in units_animations:
+        if unit['type'] in units_animations:
             sprite = units_animations[unit_type]['frames'][0]
-            rect = sprite.get_rect(center=(location_x, location_y))
+            rect = sprite.get_rect(center=unit['position'])
             if rect.collidepoint(pos):
                 return unit
     return None
@@ -75,7 +76,7 @@ def draw_unit_attributes(surface, unit):
         f"{unit['type']}",
         f"HP: {unit['hp']} / {unit['max_hp']}",
         f"Player: {unit['player']}",
-        f"Location: ({unit['location_x']}, {unit['location_y']})",
+        f"Position: {unit['position']}",
         f"Mass: {unit['mass']}",
         f"Damage: {unit['damage']}",
         f"Attack speed: {unit['attack_speed']}",
@@ -93,12 +94,10 @@ def draw_selection_rectangle(surface, unit):
         return
     
     unit_type = unit['type']
-    location_x = int(unit['location_x'])
-    location_y = int(unit['location_y'])
     
     if unit_type in units_animations:
         sprite = units_animations[unit_type]['frames'][0]
-        rect = sprite.get_rect(center=(location_x, location_y))
+        rect = sprite.get_rect(center=unit['position'])
         pygame.draw.rect(surface, (255, 0, 0), rect, 2)
 
 def calculate_combined_fov(game_state, selected_unit):
@@ -109,8 +108,8 @@ def calculate_combined_fov(game_state, selected_unit):
 
     def is_within_fov(unit1, unit2):
         # Calculate the Euclidean distance between two units
-        distance = math.sqrt((unit1['location_x'] - unit2['location_x']) ** 2 +
-                             (unit1['location_y'] - unit2['location_y']) ** 2)
+        distance = math.sqrt((unit1['position'][0] - unit2['position'][0]) ** 2 +
+                             (unit1['position'][1] - unit2['position'][1]) ** 2)
         # Check if the distance is within the FOV range
         return distance <= unit1['fov']
 
@@ -140,15 +139,13 @@ def draw_fov(surface, game_state, selected_unit):
     # Lighten the areas within the combined FOV
     for unit in visible_units:
         fov_radius = unit['fov']
-        unit_x = int(unit['location_x'])
-        unit_y = int(unit['location_y'])
 
         # Create a light circle for each unit's FOV
         light_circle = pygame.Surface((fov_radius * 2, fov_radius * 2), pygame.SRCALPHA)
         pygame.draw.circle(light_circle, (0, 0, 0), (fov_radius, fov_radius), fov_radius)
         light_circle.set_colorkey((0, 0, 0))
 
-        dark_overlay.blit(light_circle, (unit_x - fov_radius, unit_y - fov_radius), special_flags=pygame.BLEND_RGBA_SUB)
+        dark_overlay.blit(light_circle, (unit['position'][0] - fov_radius, unit['position'][1] - fov_radius), special_flags=pygame.BLEND_RGBA_SUB)
 
     surface.blit(dark_overlay, (0, 0))
 
@@ -224,8 +221,7 @@ while running:
     # Draw units
     for unit in game_state['units']:
         unit_type = unit['type']
-        location_x = int(unit['location_x'])
-        location_y = int(unit['location_y'])
+        position = unit['position']
         orientation = unit['orientation']
         current_hp = unit['hp']
         max_hp = unit['max_hp']
@@ -246,7 +242,7 @@ while running:
             if orientation == 'left':
                 sprite = pygame.transform.flip(sprite, True, False)
 
-            rect = sprite.get_rect(center=(location_x, location_y))
+            rect = sprite.get_rect(center=position)
             buffer_surface.blit(sprite, rect)
 
             # Draw health bar above the unit
@@ -262,8 +258,8 @@ while running:
 
             # Full health background bar
             background_bar_rect = pygame.Rect(
-                location_x - health_bar_width // 2,
-                location_y - rect.height // 2 - health_bar_height - 5,
+                position[0] - health_bar_width // 2,
+                position[1] - rect.height // 2 - health_bar_height - 5,
                 health_bar_width,
                 health_bar_height
             )
@@ -271,8 +267,8 @@ while running:
 
             # Current health bar
             health_bar_rect = pygame.Rect(
-                location_x - health_bar_width // 2,
-                location_y - rect.height // 2 - health_bar_height - 5,
+                position[0] - health_bar_width // 2,
+                position[1] - rect.height // 2 - health_bar_height - 5,
                 int(health_bar_width * health_ratio),
                 health_bar_height
             )
@@ -298,11 +294,12 @@ while running:
 
     draw_selection_rectangle(buffer_surface, selected_unit)
     draw_fov(buffer_surface, game_state, selected_unit)
-    draw_unit_attributes(buffer_surface, selected_unit)
 
     # Flip the buffer surface if player_number is 1
     if player_number == 1:
         buffer_surface = pygame.transform.flip(buffer_surface, True, False)
+
+    draw_unit_attributes(buffer_surface, selected_unit)
 
     # Blit the buffer surface to the main screen
     screen.blit(buffer_surface, (0, 0))

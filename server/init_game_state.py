@@ -2,12 +2,12 @@ import random
 import math
 
 def check_rock_proximity(rock, existing_rocks, min_distance=150):
-    rock_center_x = rock["location_x"] + rock["shape"]["width"] / 2
-    rock_center_y = rock["location_y"] + rock["shape"]["height"] / 2
+    rock_center_x = rock["position"][0] + rock["shape"]["width"] / 2
+    rock_center_y = rock["position"][1] + rock["shape"]["height"] / 2
 
     for existing_rock in existing_rocks:
-        existing_center_x = existing_rock["location_x"] + existing_rock["shape"]["width"] / 2
-        existing_center_y = existing_rock["location_y"] + existing_rock["shape"]["height"] / 2
+        existing_center_x = existing_rock["position"][0] + existing_rock["shape"]["width"] / 2
+        existing_center_y = existing_rock["position"][1] + existing_rock["shape"]["height"] / 2
 
         # Calculate the Euclidean distance between the centers
         distance = math.sqrt(
@@ -20,11 +20,11 @@ def check_rock_proximity(rock, existing_rocks, min_distance=150):
 
 def check_unit_collision(rock, units):
     for unit in units:
-        left1, right1 = rock["location_x"] - rock["shape"]["width"] / 2, rock["location_x"] + rock["shape"]["width"] / 2
-        top1, bottom1 = rock["location_y"] - rock["shape"]["height"] / 2, rock["location_y"] + rock["shape"]["height"] / 2
+        left1, right1 = rock["position"][0] - rock["shape"]["width"] / 2, rock["position"][0] + rock["shape"]["width"] / 2
+        top1, bottom1 = rock["position"][1] - rock["shape"]["height"] / 2, rock["position"][1] + rock["shape"]["height"] / 2
 
-        left2, right2 = unit["location_x"] - rock["shape"]["width"] / 2, unit["location_x"] + unit["shape"]["sprite"] / 2
-        top2, bottom2 = unit["location_y"] - rock["shape"]["height"] / 2, unit["location_y"] + unit["shape"]["sprite"] / 2
+        left2, right2 = rock["position"][0] - rock["shape"]["width"] / 2, rock["position"][0] + unit["shape"]["sprite"] / 2
+        top2, bottom2 = rock["position"][1] - rock["shape"]["height"] / 2, rock["position"][1] + unit["shape"]["sprite"] / 2
 
         if left1 < right2 and right1 > left2 and top1 < bottom2 and bottom1 > top2:
             return True
@@ -101,8 +101,7 @@ def generate_terrain(map_size, units):
                 left_rock = {
                     "type": rock_type,
                     "variation": rock_variation,
-                    "location_x": location_x + rock["offset_x"],
-                    "location_y": location_y + rock["offset_y"],
+                    "position": [location_x + rock["offset_x"], location_y + rock["offset_y"]],
                     "shape": {
                         "type": rock_types[rock_type]["type"],
                         "width": rock_types[rock_type]["width"],
@@ -121,8 +120,7 @@ def generate_terrain(map_size, units):
                 right_rock = {
                     "type": rock_type,
                     "variation": rock_variation,
-                    "location_x": map_size[0] - (location_x + rock["offset_x"]),
-                    "location_y": location_y + rock["offset_y"],
+                    "position": [map_size[0] - (location_x + rock["offset_x"]), location_y + rock["offset_y"]],
                     "shape": left_rock["shape"],
                     "orientation": "right"
                 }
@@ -391,10 +389,11 @@ def main():
             unit["past_action"] = ""
             unit["lock_out_ticks"] = 0
             if(player == 0):
-                unit["location_x"] = 100
+                x = 100
             else:
-                unit["location_x"] = map_size[0]-100
-            unit["location_y"] = round((map_size[1] / (len(units)+1)) * (i+1))
+                x = map_size[0]-100
+            y = round((map_size[1] / (len(units)+1)) * (i+1))
+            unit["position"] = [x, y]
             if(player == 0):
                 unit["orientation"] = "right"
             else:
