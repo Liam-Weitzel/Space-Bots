@@ -6,6 +6,7 @@ import socket
 import select
 import time
 import math
+import game_engine
 
 def start_player_script(lang, player_number):
     if lang == "cpp":
@@ -14,22 +15,22 @@ def start_player_script(lang, player_number):
             "sudo",
             "g++",
             "player_code_runner.cpp",
-            f"player{player_number}/acid_ant.cpp",
-            f"player{player_number}/bloated_bedbug.cpp",
-            f"player{player_number}/dung_beetle.cpp",
-            f"player{player_number}/engorged_tick.cpp",
-            f"player{player_number}/famished_tick.cpp",
-            f"player{player_number}/foraging_maggot.cpp",
-            f"player{player_number}/infected_mouse.cpp",
-            f"player{player_number}/lava_ant.cpp",
-            f"player{player_number}/mantis.cpp",
-            f"player{player_number}/mawing_beaver.cpp",
-            f"player{player_number}/plague_bat.cpp",
-            f"player{player_number}/rhino_beetle.cpp",
-            f"player{player_number}/spider.cpp",
-            f"player{player_number}/swooping_bat.cpp",
-            f"player{player_number}/tainted_cockroach.cpp",
-            f"player{player_number}/tunneling_mole.cpp",
+            f"player{player_number}_cpp/acid_ant.cpp",
+            f"player{player_number}_cpp/bloated_bedbug.cpp",
+            f"player{player_number}_cpp/dung_beetle.cpp",
+            f"player{player_number}_cpp/engorged_tick.cpp",
+            f"player{player_number}_cpp/famished_tick.cpp",
+            f"player{player_number}_cpp/foraging_maggot.cpp",
+            f"player{player_number}_cpp/infected_mouse.cpp",
+            f"player{player_number}_cpp/lava_ant.cpp",
+            f"player{player_number}_cpp/mantis.cpp",
+            f"player{player_number}_cpp/mawing_beaver.cpp",
+            f"player{player_number}_cpp/plague_bat.cpp",
+            f"player{player_number}_cpp/rhino_beetle.cpp",
+            f"player{player_number}_cpp/spider.cpp",
+            f"player{player_number}_cpp/swooping_bat.cpp",
+            f"player{player_number}_cpp/tainted_cockroach.cpp",
+            f"player{player_number}_cpp/tunneling_mole.cpp",
             "json.hpp",
             "-o", output_binary
         ], capture_output=True)
@@ -98,7 +99,7 @@ def send_unit_state(player_process, unit_state, unit_id): #TODO: Add timeout for
                 output_lines.append(line)
     return action, output_lines
 
-def send_init_state_to_client(client_socket, player_number): #TODO: Also send terrain data to front_end this way... Implement the same concept with the player_code_runners
+def send_init_state_to_client(client_socket, player_number): #TODO: Also send terrain data to front_end this way... Implement the same concept with the player_code_runners?
     try:
         data = {}
         data["player"] = player_number #NOTE: This is a horrible way to assign player numbers to clients
@@ -139,20 +140,9 @@ PORT = 65432
 TICK_RATE = 60
 TICK_INTERVAL = 1.0 / TICK_RATE
 
-# Detect player language this:
-player_0_python = bool(input("player 1 python?"))
-player_1_python = bool(input("player 2 python?"))
-if player_0_python: 
-    player0_process = start_player_script("py", 0)
-else: 
-    player0_process = start_player_script("cpp", 0)
-
-if player_1_python: 
-    player1_process = start_player_script("py", 1)
-else: 
-    player1_process = start_player_script("cpp", 1)
-
-
+# Detect player language:
+player0_process = start_player_script(input("player 0 language: "), 0)
+player1_process = start_player_script(input("player 1 language: "), 1)
 
 ticklog = []  #NOTE: Only needed for offline/ auto play, in this case also remove the sleep which sync each tick and don't send anything to front-end until match is done
 game_state = init_game_state.main()
@@ -161,6 +151,7 @@ client_sockets = []
 client_addresses = {}
 uninitialized_client_sockets = []
 uninitialized_client_addresses = {}
+game_engine = game_engine.game_engine("test", init_game_state.main(), 60)
 
 try:
     for tick in range(10000):
@@ -231,7 +222,7 @@ try:
             actions.append(action)
 
         ticklog.append([tick, actions])
-        # game_state = game_engine(game_state, actions)
+        game_state = game_engine.run_tick()
 
         # Sleep to make sure client and server are in sync
         elapsed_time = time.time() - start_time

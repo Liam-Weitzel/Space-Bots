@@ -23,8 +23,8 @@ def check_unit_collision(rock, units):
         left1, right1 = rock["position"][0] - rock["shape"]["width"] / 2, rock["position"][0] + rock["shape"]["width"] / 2
         top1, bottom1 = rock["position"][1] - rock["shape"]["height"] / 2, rock["position"][1] + rock["shape"]["height"] / 2
 
-        left2, right2 = rock["position"][0] - rock["shape"]["width"] / 2, rock["position"][0] + unit["shape"]["sprite"] / 2
-        top2, bottom2 = rock["position"][1] - rock["shape"]["height"] / 2, rock["position"][1] + unit["shape"]["sprite"] / 2
+        left2, right2 = unit["position"][0] - rock["shape"]["width"] / 2, unit["position"][0] + unit["shape"]["sprite"] / 2
+        top2, bottom2 = unit["position"][1] - rock["shape"]["height"] / 2, unit["position"][1] + unit["shape"]["sprite"] / 2
 
         if left1 < right2 and right1 > left2 and top1 < bottom2 and bottom1 > top2:
             return True
@@ -404,7 +404,6 @@ def main():
             unit_id+=1
 
     game_state["terrain"] = generate_terrain(map_size, game_state["units"])
-    print(game_state)
 
     return game_state
 

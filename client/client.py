@@ -7,7 +7,7 @@ import math
 pygame.init()
 screen_width = 1080
 screen_height = 1080
-screen = pygame.display.set_mode((screen_width, screen_height)) #TODO: Maybe get this from game_state?
+screen = pygame.display.set_mode((screen_width, screen_height)) #TODO: Maybe get this from game_state?, and decouple screen and map size
 pygame.display.set_caption("Game Client")
 clock = pygame.time.Clock()
 
@@ -57,12 +57,13 @@ def send_inputs_to_server(client_socket, inputs):
 
 def get_unit_at_position(units, pos):
     for unit in units:
+        unit_pos = unit['position'].copy()
         if player_number == 1:
-            position[0] = screen_width-position[0]
-        
+            unit_pos[0] = screen_width-unit_pos[0]
+
         if unit['type'] in units_animations:
             sprite = units_animations[unit_type]['frames'][0]
-            rect = sprite.get_rect(center=unit['position'])
+            rect = sprite.get_rect(center=unit_pos)
             if rect.collidepoint(pos):
                 return unit
     return None
@@ -211,8 +212,14 @@ while running:
         if event.type == pygame.QUIT:
             running = False
         elif event.type == pygame.MOUSEBUTTONDOWN:
-                mouse_pos = pygame.mouse.get_pos()
-                selected_unit = get_unit_at_position(game_state['units'], mouse_pos)
+            mouse_pos = pygame.mouse.get_pos()
+            selected_unit = get_unit_at_position(game_state['units'], mouse_pos)
+
+    # Refresh selected unit's data
+    if selected_unit != None:
+        for unit in game_state['units']:
+            if unit['id'] == selected_unit['id']:
+                selected_unit = unit
 
     # Create a buffer surface to draw everything
     buffer_surface = pygame.Surface((1080, 1080))
@@ -276,20 +283,14 @@ while running:
 
     # Draw terrain (rocks)
     for terrain in game_state['terrain']:
-        rock_type = terrain['type']
-        variation = terrain['variation']
-        location_x = int(terrain['location_x'])
-        location_y = int(terrain['location_y'])
-        orientation = terrain['orientation']
-
-        rock_sprites = get_rock_sprites(rock_type)
+        rock_sprites = get_rock_sprites(terrain['type'])
         if rock_sprites:
-            sprite = rock_sprites[variation]
+            sprite = rock_sprites[terrain['variation']]
 
-            if orientation == 'right':
+            if terrain['orientation'] == 'right':
                 sprite = pygame.transform.flip(sprite, True, False)
 
-            rect = sprite.get_rect(center=(location_x, location_y))
+            rect = sprite.get_rect(center=terrain['position'])
             buffer_surface.blit(sprite, rect)
 
     draw_selection_rectangle(buffer_surface, selected_unit)
