@@ -6,31 +6,40 @@
 
 #include "json.hpp"
 
-#include "player1/acid_ant.h"
-#include "player1/bloated_bedbug.h"
-#include "player1/dung_beetle.h"
-#include "player1/engorged_tick.h"
-#include "player1/famished_tick.h"
-#include "player1/foraging_maggot.h"
-#include "player1/infected_mouse.h"
-#include "player1/lava_ant.h"
-#include "player1/mantis.h"
-#include "player1/mawing_beaver.h"
-#include "player1/plague_bat.h"
-#include "player1/rhino_beetle.h"
-#include "player1/spider.h"
-#include "player1/swooping_bat.h"
-#include "player1/tainted_cockroach.h"
-#include "player1/tunneling_mole.h"
+// Macro to declare a unit function prototype
+#define DECLARE_UNIT_FUNCTION(unit) \
+    std::tuple<int, int, float, std::string> unit(const nlohmann::json&, std::unordered_map<std::string, std::string>&)
+
+// Declare all unit functions
+DECLARE_UNIT_FUNCTION(acid_ant);
+DECLARE_UNIT_FUNCTION(bloated_bedbug);
+DECLARE_UNIT_FUNCTION(dung_beetle);
+DECLARE_UNIT_FUNCTION(engorged_tick);
+DECLARE_UNIT_FUNCTION(famished_tick);
+DECLARE_UNIT_FUNCTION(foraging_maggot);
+DECLARE_UNIT_FUNCTION(infected_mouse);
+DECLARE_UNIT_FUNCTION(lava_ant);
+DECLARE_UNIT_FUNCTION(mantis);
+DECLARE_UNIT_FUNCTION(mawing_beaver);
+DECLARE_UNIT_FUNCTION(plague_bat);
+DECLARE_UNIT_FUNCTION(rhino_beetle);
+DECLARE_UNIT_FUNCTION(spider);
+DECLARE_UNIT_FUNCTION(swooping_bat);
+DECLARE_UNIT_FUNCTION(tainted_cockroach);
+DECLARE_UNIT_FUNCTION(tunneling_mole);
 
 using UnitFunction = std::function<std::tuple<int, int, float, std::string>(const nlohmann::json&, std::unordered_map<std::string, std::string>&)>;
 
 int main(int argc, char** argv) {
-    std::string unit_state_str;
-    int unit_id;
+    if (argc < 2) {
+        std::cerr << "Usage: " << argv[0] << " <player_number>" << std::endl;
+        return 1;
+    }
+
     std::string player_number = argv[1];
     nlohmann::json unit_state;
-
+    std::string unit_state_str;
+    int unit_id;
     std::unordered_map<int, std::unordered_map<std::string, std::string>> memory;
 
     std::unordered_map<std::string, UnitFunction> unit_functions = {
@@ -52,6 +61,7 @@ int main(int argc, char** argv) {
         {"tunneling_mole", tunneling_mole}
     };
 
+    // Main loop to process unit states
     while (std::getline(std::cin, unit_state_str)) {
         unit_state = nlohmann::json::parse(unit_state_str);
         unit_id = unit_state["self"]["id"];
@@ -59,11 +69,10 @@ int main(int argc, char** argv) {
 
         auto it = unit_functions.find(unit_type);
         if (it != unit_functions.end()) {
-
             UnitFunction unit_function = it->second;
-            std::tuple<int, int, float, std::string> instruction = unit_function(unit_state, memory[unit_id]);
+            auto instruction = unit_function(unit_state, memory[unit_id]);
 
-            std::cout << unit_id << ":" << "attack" << std::endl;
+            std::cout << unit_id << ":" << std::get<3>(instruction) << std::endl;
             std::cout.flush();
         } else {
             std::cerr << "Unknown unit type: " << unit_type << std::endl;

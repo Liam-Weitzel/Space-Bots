@@ -35,3 +35,5 @@ TODO:
 - Add asserts everywhere for simulation testing
 - Create some unit tests
 - Detect which player the client is, reconnecting as the same player
+
+- fix web socket crashing when one mis read!!
