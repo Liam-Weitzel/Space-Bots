@@ -7,6 +7,7 @@ import select
 import time
 import math
 import game_engine
+import ast
 
 def start_player_script(lang, player_number):
     if lang == "cpp":
@@ -210,17 +211,19 @@ try:
 
         unit_states = split_game_state_into_unit_states(game_state)
         actions = []
+        tick_print_statements = {}
 
         for unit_state in unit_states:
             id = unit_state.get("self").get("id")
             player = unit_state.get("self").get("player")
             unit_state = json.dumps(unit_state)
             if player == 0:
-                action = send_unit_state(player0_process, unit_state, id)
+                player_input = send_unit_state(player0_process, unit_state, id)
             else:
-                action = send_unit_state(player1_process, unit_state, id)
+                player_input = send_unit_state(player1_process, unit_state, id)
+            action, unit_print_statements = player_input
             actions.append(action)
-
+            tick_print_statements[id] = unit_print_statements
         
         ticklog.append([tick, actions])
         game_state = game_engine.run_tick(actions)
