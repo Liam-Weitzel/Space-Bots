@@ -37,3 +37,6 @@ TODO:
 - Detect which player the client is, reconnecting as the same player
 
 - fix web socket crashing when one mis read!!
+
+- Create function that reads tile map jsons and blits on screen
+- When blitting on screen, use the layers to determine the order (all at once at the end of the draw loop)
