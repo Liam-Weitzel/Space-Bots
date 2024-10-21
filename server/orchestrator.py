@@ -221,8 +221,9 @@ try:
                 action = send_unit_state(player1_process, unit_state, id)
             actions.append(action)
 
+        
         ticklog.append([tick, actions])
-        game_state = game_engine.run_tick()
+        game_state = game_engine.run_tick(actions)
 
         # Sleep to make sure client and server are in sync
         elapsed_time = time.time() - start_time
