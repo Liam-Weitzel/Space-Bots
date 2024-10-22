@@ -14,18 +14,18 @@ class game_engine:
         for unit in self.game_state['units']:
             self.spawn_object(self.space, unit)
 
-        for x in self.space.shapes:
-            x.body.apply_impulse_at_local_point(Vec2d(1, 2))
+        # for x in self.space.shapes:
+            # x.body.apply_impulse_at_local_point(Vec2d(1, 2))
 
         walls = [
-        pymunk.Segment(self.space.static_body, (0, 0), (0, 1080), 2), #TODO: fetch map_size using init_game_state
-        pymunk.Segment(self.space.static_body, (0, 1080), (1080, 1080), 2),
-        pymunk.Segment(self.space.static_body, (1080, 1080), (1080, 0), 2),
-        pymunk.Segment(self.space.static_body, (1080, 0), (0, 0), 2)
+        pymunk.Segment(self.space.static_body, (0, 0), (0, 1080), 20), #TODO: fetch map_size using init_game_state
+        pymunk.Segment(self.space.static_body, (0, 1080), (1080, 1080), 20),
+        pymunk.Segment(self.space.static_body, (1080, 1080), (1080, 0), 20),
+        pymunk.Segment(self.space.static_body, (1080, 0), (0, 0), 20)
         ]
 
         for wall in walls:
-            wall.elasticity = 1.0
+            wall.elasticity = 0.1
         self.space.add(*walls)
 
     def parse_space_to_game_state(self):
@@ -40,6 +40,11 @@ class game_engine:
 
     def compute_player_actions(self, actions):
         print(actions)
+        for unit in self.game_state["units"]:
+            action_unit_id = str(unit['id'])
+            # self.object_mapping[unit['id']].body.velocity = (actions[action_unit_id]['x']*500, actions[action_unit_id]['y']*500)
+            # if actions[action_unit_id] == 'MOVE':
+            self.object_mapping[unit['id']].body.apply_impulse_at_local_point((actions[action_unit_id]['x']*300, actions[action_unit_id]['y']*300)) #FIX:
         return
     
     def spawn_object(self, space, unit):
@@ -51,7 +56,12 @@ class game_engine:
         ball_shape.collision_type = 1
 
         def constant_velocity(body, gravity, damping, dt):
-            body.velocity = body.velocity.normalized() * 400
+            max_velocity = unit['move_speed']*50 #FIX:
+            pymunk.Body.update_velocity(body, (0,0), damping, dt)
+            l = body.velocity.length
+            if l > max_velocity:
+                scale = max_velocity / l
+                body.velocity = body.velocity * scale
 
         ball_body.velocity_func = constant_velocity
 
