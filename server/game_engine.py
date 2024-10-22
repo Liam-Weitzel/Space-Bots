@@ -39,7 +39,8 @@ class game_engine:
         return self.game_state
 
     def compute_player_actions(self, actions):
-        return 
+        print(actions)
+        return
     
     def spawn_object(self, space, unit):
         ball_body = pymunk.Body(unit['mass'], float("inf"))

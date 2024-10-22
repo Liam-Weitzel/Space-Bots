@@ -48,8 +48,15 @@ def main():
         unit_function = unit_functions.get(unit_type)
 
         if unit_function:
-            instruction = unit_function(unit_state, memory[unit_id])
-            print(f"{unit_id}:{instruction}")
+            x, y, velocity, action = unit_function(unit_state, memory[unit_id])
+            instruction = {}
+            unit = {}
+            unit['x'] = x
+            unit['y'] = y
+            unit['velocity'] = velocity
+            unit['action'] = action
+            instruction[str(unit_id)] = unit
+            print(json.dumps(instruction))
             sys.stdout.flush()
         else:
             print(f"Unknown unit type: {unit_type}", file=sys.stderr)

@@ -72,7 +72,7 @@ int main(int argc, char** argv) {
             UnitFunction unit_function = it->second;
             auto instruction = unit_function(unit_state, memory[unit_id]);
 
-            std::cout << unit_id << ":" << std::get<3>(instruction) << std::endl;
+            std::cout << unit_id << ":" << std::get<3>(instruction) << std::endl; //FIX: not the right format anymore, json now
             std::cout.flush();
         } else {
             std::cerr << "Unknown unit type: " << unit_type << std::endl;
