@@ -87,18 +87,18 @@ def split_game_state_into_unit_states(game_state):
 def send_unit_state(player_process, unit_state, unit_id): #TODO: Add timeout for player's code, make web socket version of IPC between player's code and orchestrator for debug mode
     player_process.stdin.write(unit_state + "\n")
     player_process.stdin.flush()
-    output_lines = []
+    print_statements = []
     action = None
 
     while True:
         line = player_process.stdout.readline().strip()
         if line:
-            if line.startswith(f"{unit_id}:"):
+            if line.startswith("{\""+str(unit_id)+"\": "):
                 action = line
                 break
             else:
-                output_lines.append(line)
-    return action, output_lines
+                print_statements.append(line)
+    return action, print_statements
 
 def send_init_state_to_client(client_socket, player_number): #TODO: Also send terrain data to front_end this way... Implement the same concept with the player_code_runners?
     try:
@@ -210,7 +210,7 @@ try:
                 disconnect_client(client_addresses, client_sockets, client_socket)
 
         unit_states = split_game_state_into_unit_states(game_state)
-        actions = []
+        actions = {}
         tick_print_statements = {}
 
         for unit_state in unit_states:
@@ -222,7 +222,8 @@ try:
             else:
                 player_input = send_unit_state(player1_process, unit_state, id)
             action, unit_print_statements = player_input
-            actions.append(action)
+            action = json.loads(action)
+            actions[str(id)] = action[str(id)]
             tick_print_statements[id] = unit_print_statements
         
         ticklog.append([tick, actions])
