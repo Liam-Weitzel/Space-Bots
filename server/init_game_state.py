@@ -247,7 +247,7 @@ def main():
                 "damage":20,
                 "attack_speed":2,
                 "move_speed":2,
-                "fov":100,
+                "fov":250,
                 "shape":{
                     "type":"ellipse",
                     "width":5,
@@ -261,7 +261,7 @@ def main():
                 "damage":50,
                 "attack_speed":3,
                 "move_speed":1.5,
-                "fov":100,
+                "fov":250,
                 "shape":{
                     "type":"ellipse",
                     "width":10,
