@@ -13,6 +13,7 @@
           packages = with pkgs; [
             python312
             python312Packages.pygame-ce
+            python312Packages.requests
           ];
         };
       });
