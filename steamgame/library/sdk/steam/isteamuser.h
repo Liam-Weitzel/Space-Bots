@@ -6,6 +6,7 @@
 
 #ifndef ISTEAMUSER_H
 #define ISTEAMUSER_H
+#include "steamnetworkingtypes.h"
 #ifdef _WIN32
 #pragma once
 #endif
@@ -124,7 +125,7 @@ public:
 
 	// Retrieve ticket to be sent to the entity who wishes to authenticate you. 
 	// pcbTicket retrieves the length of the actual ticket.
-	virtual HAuthTicket GetAuthSessionTicket( void *pTicket, int cbMaxTicket, uint32 *pcbTicket ) = 0;
+	virtual HAuthTicket GetAuthSessionTicket( void *pTicket, int cbMaxTicket, uint32 *pcbTicket, SteamNetworkingIdentity *identity ) = 0;
 
 	// Authenticate ticket from entity steamID to be sure it is valid and isnt reused
 	// Registers for callbacks if the entity goes offline or cancels the ticket ( see ValidateAuthTicketResponse_t callback and EAuthSessionResponse )

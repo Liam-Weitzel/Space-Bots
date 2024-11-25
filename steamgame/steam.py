@@ -1,5 +1,6 @@
 import ctypes
 import os
+import requests
 
 current_dir = os.path.dirname(__file__)
 libsteam_api = ctypes.CDLL(os.path.join(current_dir, 'libsteam_api.so'))
@@ -14,6 +15,3 @@ try:
     steamworks.initialize()
 except SteamNotRunningException:
     exit()
-
-print(steamworks.Users.GetSteamID())
-print(steamworks.Users.GetAuthSessionTicket())

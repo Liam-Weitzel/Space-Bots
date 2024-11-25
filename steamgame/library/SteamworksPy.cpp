@@ -985,7 +985,8 @@ SW_PY int GetAuthSessionTicket(char* buffer) {
         return 0;
     }
     uint32 size{};
-    SteamUser()->GetAuthSessionTicket(buffer, 1024, &size);
+    SteamNetworkingIdentity identity;
+    SteamUser()->GetAuthSessionTicket(buffer, 1024, &size, &identity);
     return size;
 }
 
