@@ -269,6 +269,9 @@ STEAMWORKS_METHODS = {
     'GetNumAchievements': {
         'restype': int
     },
+    'GetAchievementIcon': {
+        'restype': c_int
+    },
     'GetAchievementName': {
         'restype': c_char_p
     },

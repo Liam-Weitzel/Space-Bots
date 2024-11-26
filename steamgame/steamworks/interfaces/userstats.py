@@ -34,6 +34,15 @@ class SteamUserStats(object):
         return self.steam.GetNumAchievements()
 
 
+    def GetAchievementIcon(self, pchName: str) -> int:
+        """
+        Gets the icon index for an achievement by its name.
+        :param pchName: str
+        :return: int
+        """
+        return self.steam.GetAchievementIcon(pchName.encode('utf-8'))
+
+
     def GetAchievementName(self, index: int) -> str:
         """Gets the 'API name' for an achievement index between 0 and GetNumAchievements.
 

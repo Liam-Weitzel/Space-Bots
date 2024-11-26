@@ -985,8 +985,7 @@ SW_PY int GetAuthSessionTicket(char* buffer) {
         return 0;
     }
     uint32 size{};
-    SteamNetworkingIdentity identity;
-    SteamUser()->GetAuthSessionTicket(buffer, 1024, &size, &identity);
+    SteamUser()->GetAuthSessionTicket(buffer, 1024, &size);
     return size;
 }
 
@@ -1015,6 +1014,10 @@ SW_PY int GetNumAchievements(){
         return 0;
     }
     return SteamUserStats()->GetNumAchievements();
+}
+
+SW_PY int GetAchievementIcon(const char * pchName){
+    return SteamUserStats()->GetAchievementIcon(pchName);
 }
 
 SW_PY const char *GetAchievementName(int index){
@@ -1470,3 +1473,5 @@ SW_PY void MicroTxn_SetAuthorizationResponseCallback(MicroTxnAuthorizationRespon
     }
     microtxn.SetAuthorizationResponseCallback(callback);
 }
+
+
