@@ -3,34 +3,39 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "rules.tmx",
+    "activeFile": "map.tmx",
     "expandedProjectPaths": [
-        "."
+        "steamgame/library/sdk/steam",
+        "steamgame/library",
+        "steamgame",
+        ".",
+        "Rules",
+        "steamgame/library/sdk"
     ],
     "file.lastUsedOpenFilter": "All Files (*)",
     "fileStates": {
         "full.tsx": {
-            "scaleInDock": 1,
-            "scaleInEditor": 1
+            "scaleInDock": 1.2459,
+            "scaleInEditor": 2.74
         },
         "ground.tsx": {
-            "scaleInDock": 1,
-            "scaleInEditor": 1
+            "scaleInDock": 5.1754,
+            "scaleInEditor": 2.74
         },
         "map.tmx": {
-            "scale": 2,
-            "selectedLayer": 0,
+            "scale": 3.2456,
+            "selectedLayer": 1,
             "viewCenter": {
-                "x": 141.25,
-                "y": 67.25
+                "x": 101.36800591570126,
+                "y": 100.28962287404488
             }
         },
         "rules.tmx": {
-            "scale": 1.5,
-            "selectedLayer": 0,
+            "scale": 2.1966,
+            "selectedLayer": 2,
             "viewCenter": {
-                "x": 472.66666666666674,
-                "y": 45.66666666666663
+                "x": 63.27961394882999,
+                "y": -7.511608850040972
             }
         }
     },
@@ -43,15 +48,16 @@
     "openFiles": [
         "map.tmx",
         "ground.tsx",
-        "rules.tmx",
-        "full.tsx"
-    ],
-    "project": "map.tiled-project",
-    "recentFiles": [
-        "map.tmx",
-        "ground.tsx",
         "full.tsx",
         "rules.tmx"
+    ],
+    "project": "map.tiled-project",
+    "property.type": "bool",
+    "recentFiles": [
+        "rules.tmx",
+        "full.tsx",
+        "ground.tsx",
+        "map.tmx"
     ],
     "tileset.lastUsedFormat": "tsx",
     "tileset.tileSize": {
