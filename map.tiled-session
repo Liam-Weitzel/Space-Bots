@@ -1,67 +1,35 @@
 {
-    "Map/SizeTest": {
-        "height": 4300,
-        "width": 2
-    },
-    "activeFile": "map.tmx",
+    "activeFile": "rules.tmx",
     "expandedProjectPaths": [
-        "steamgame/library/sdk/steam",
-        "steamgame/library",
-        "steamgame",
-        ".",
-        "Rules",
-        "steamgame/library/sdk"
+        "."
     ],
-    "file.lastUsedOpenFilter": "All Files (*)",
     "fileStates": {
-        "full.tsx": {
-            "scaleInDock": 1.2459,
-            "scaleInEditor": 2.74
-        },
-        "ground.tsx": {
-            "scaleInDock": 5.1754,
-            "scaleInEditor": 2.74
+        "atlas.tsx": {
+            "scaleInDock": 1
         },
         "map.tmx": {
-            "scale": 3.2456,
-            "selectedLayer": 1,
+            "scale": 1.304,
+            "selectedLayer": 0,
             "viewCenter": {
-                "x": 101.36800591570126,
-                "y": 100.28962287404488
+                "x": 113.49693251533742,
+                "y": 299.46319018404904
             }
         },
         "rules.tmx": {
-            "scale": 2.1966,
-            "selectedLayer": 2,
+            "scale": 0.3409423828125,
+            "selectedLayer": 0,
             "viewCenter": {
-                "x": 63.27961394882999,
-                "y": -7.511608850040972
+                "x": 1399.0633727175082,
+                "y": 1368.2663802363054
             }
         }
     },
-    "last.imagePath": "/home/liamw/Gamefied-Code-Dev/Caverns - Rogue Adventure/Tilesets",
-    "map.height": 128,
-    "map.lastUsedFormat": "tmx",
-    "map.tileHeight": 16,
-    "map.tileWidth": 16,
-    "map.width": 128,
     "openFiles": [
-        "map.tmx",
-        "ground.tsx",
-        "full.tsx",
         "rules.tmx"
     ],
     "project": "map.tiled-project",
-    "property.type": "bool",
     "recentFiles": [
         "rules.tmx",
-        "full.tsx",
-        "ground.tsx",
         "map.tmx"
-    ],
-    "tileset.lastUsedFormat": "tsx",
-    "tileset.tileSize": {
-        "height": 16,
-        "width": 16
-    }
+    ]
 }
