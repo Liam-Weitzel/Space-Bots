@@ -5,22 +5,23 @@
     ],
     "fileStates": {
         "atlas.tsx": {
-            "scaleInDock": 1
+            "scaleInDock": 1,
+            "scaleInEditor": 1
         },
         "map.tmx": {
-            "scale": 1.304,
-            "selectedLayer": 0,
+            "scale": 2.3318,
+            "selectedLayer": 3,
             "viewCenter": {
-                "x": 113.49693251533742,
-                "y": 299.46319018404904
+                "x": 188.48100180118362,
+                "y": 187.19444206192642
             }
         },
         "rules.tmx": {
-            "scale": 0.3409423828125,
-            "selectedLayer": 0,
+            "scale": 3.6779,
+            "selectedLayer": 3,
             "viewCenter": {
-                "x": 1399.0633727175082,
-                "y": 1368.2663802363054
+                "x": 646.700562821175,
+                "y": 62.127844693982965
             }
         }
     },
@@ -29,6 +30,7 @@
     ],
     "project": "map.tiled-project",
     "recentFiles": [
+        "atlas.tsx",
         "rules.tmx",
         "map.tmx"
     ]
