@@ -1,0 +1,17 @@
+[
+  {
+    "arguments": [
+      "/nix/store/xcn9p4xxfbvlkpah7pwchpav4ab9d135-gcc-wrapper-14-20241116/bin/gcc",
+      "-c",
+      "-I",
+      "./external/raylib/src/",
+      "-I",
+      "./external/",
+      "-I",
+      "./src/",
+      "src/main.c"
+    ],
+    "directory": "/home/liam-w/Gamefied-Code-Dev/client",
+    "file": "/home/liam-w/Gamefied-Code-Dev/client/src/main.c"
+  }
+]

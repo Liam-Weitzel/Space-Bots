@@ -11,10 +11,8 @@
       devShells = forEachSupportedSystem ({ pkgs }: {
         default = pkgs.mkShell {
           packages = with pkgs; [
-            gcc
-            chipmunk
-            entt
-            steam
+            python312
+            python312Packages.pymunk
           ];
         };
       });
