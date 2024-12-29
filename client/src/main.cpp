@@ -19,18 +19,12 @@ struct Renderable {
     float radius;
 };
 
-int main(void)
-{
+int main(void) {
+    SetRandomSeed(time(NULL));
     const int screenWidth = 800;
     const int screenHeight = 450;
 
-    // Create ENTT registry
     entt::registry registry;
-
-    // Create some example entities
-    auto circle1 = registry.create();
-    registry.emplace<Position>(circle1, Vector2{screenWidth/2.0f, screenHeight/2.0f});
-    registry.emplace<Renderable>(circle1, YELLOW, 50.0f);
 
     // Create some random circles
     for(int i = 0; i < 10; i++) {
@@ -53,9 +47,8 @@ int main(void)
     Camera2D camera = { 0 };
     camera.zoom = 1.0f;
 
-    InitWindow(screenWidth, screenHeight, "raylib [core] example - basic window");
+    InitWindow(screenWidth, screenHeight, "video game");
     
-    GuiLoadStyle("src/style.rgs");
     GuiLoadIcons("src/icons.rgi", "icons");
     GuiGuiState state = InitGuiGui();
 
@@ -81,10 +74,9 @@ int main(void)
             camera.offset = GetMousePosition();
             camera.target = mouseWorldPos;
 
-
             float scaleFactor = 1.0f + (0.25f*fabsf(wheel));
             if (wheel < 0) scaleFactor = 1.0f/scaleFactor;
-            camera.zoom = Clamp(camera.zoom*scaleFactor, 0.125f, 64.0f);
+            camera.zoom = Clamp(camera.zoom*scaleFactor, 0.5f, 5.0f);
         }
 
         // Draw

@@ -1,6 +1,6 @@
 /*******************************************************************************************
 *
-*   Gui v1.0.0 - Tool Description
+*   Gui v1.0.0 - game
 *
 *   MODULE USAGE:
 *       #define GUI_GUI_IMPLEMENTATION
@@ -33,11 +33,17 @@
 
 typedef struct {
     // Define anchors
+    Vector2 anchor01;            // ANCHOR ID:1
+    Vector2 anchor02;            // ANCHOR ID:2
     
     // Define controls variables
+    bool WindowBox001Active;            // WindowBox: WindowBox001
+    int ToggleGroup001Active;            // ToggleGroup: ToggleGroup001
+    bool CheckBoxEx002Checked;            // CheckBoxEx: CheckBoxEx002
+    bool Toggle003Active;            // Toggle: Toggle003
 
     // Define rectangles
-    Rectangle layoutRecs[8];
+    Rectangle layoutRecs[5];
 
     // Custom state variables (depend on development software)
     // NOTE: This variables should be added manually if required
@@ -63,14 +69,22 @@ extern "C" {            // Prevents name mangling of functions
 //----------------------------------------------------------------------------------
 GuiGuiState InitGuiGui(void);
 void GuiGui(GuiGuiState *state);
-static void Button000();                // Button: Button000 logic
-static void Button001();                // Button: Button001 logic
-static void Button002();                // Button: Button002 logic
-static void Button003();                // Button: Button003 logic
 static void Button004();                // Button: Button004 logic
-static void Button005();                // Button: Button005 logic
-static void Button006();                // Button: Button006 logic
-static void Button007();                // Button: Button007 logic
+static const char* styles[] = {
+    "default",
+    "src/styles/ashes.rgs",
+    "src/styles/bluish.rgs",
+    "src/styles/candy.rgs",
+    "src/styles/cherry.rgs",
+    "src/styles/cyber.rgs",
+    "src/styles/dark.rgs",
+    "src/styles/enefete.rgs",
+    "src/styles/jungle.rgs",
+    "src/styles/lavanda.rgs",
+    "src/styles/sunny.rgs",
+    "src/styles/terminal.rgs"
+};
+static int currentStyle = 0;
 
 #ifdef __cplusplus
 }
@@ -105,87 +119,54 @@ GuiGuiState InitGuiGui(void)
     GuiGuiState state = { 0 };
 
     // Init anchors
+    state.anchor01 = (Vector2){ 24, 24 };            // ANCHOR ID:1
+    state.anchor02 = (Vector2){ 24, 24 };            // ANCHOR ID:2
     
     // Initilize controls variables
+    state.WindowBox001Active = true;            // WindowBox: WindowBox001
+    state.ToggleGroup001Active = 0;            // ToggleGroup: ToggleGroup001
+    state.CheckBoxEx002Checked = false;            // CheckBoxEx: CheckBoxEx002
+    state.Toggle003Active = true;            // Toggle: Toggle003
 
     // Init controls rectangles
-    state.layoutRecs[0] = (Rectangle){ 24, 24, 120, 24 };// Button: Button000
-    state.layoutRecs[1] = (Rectangle){ 24, 72, 120, 24 };// Button: Button001
-    state.layoutRecs[2] = (Rectangle){ 24, 120, 120, 24 };// Button: Button002
-    state.layoutRecs[3] = (Rectangle){ 24, 168, 120, 24 };// Button: Button003
-    state.layoutRecs[4] = (Rectangle){ 24, 216, 120, 24 };// Button: Button004
-    state.layoutRecs[5] = (Rectangle){ 24, 264, 120, 24 };// Button: Button005
-    state.layoutRecs[6] = (Rectangle){ 24, 312, 120, 24 };// Button: Button006
-    state.layoutRecs[7] = (Rectangle){ 24, 360, 120, 24 };// Button: Button007
+    state.layoutRecs[0] = (Rectangle){ state.anchor02.x + 72, state.anchor02.y + 40, 160, 160 };// WindowBox: WindowBox001
+    state.layoutRecs[1] = (Rectangle){ state.anchor02.x + 80, state.anchor02.y + 72, 40, 24 };// ToggleGroup: ToggleGroup001
+    state.layoutRecs[2] = (Rectangle){ state.anchor02.x + 80, state.anchor02.y + 104, 24, 24 };// CheckBoxEx: CheckBoxEx002
+    state.layoutRecs[3] = (Rectangle){ state.anchor02.x + 80, state.anchor02.y + 136, 88, 24 };// Toggle: Toggle003
+    state.layoutRecs[4] = (Rectangle){ state.anchor02.x + 80, state.anchor02.y + 168, 120, 24 };// Button: Button004
 
     // Custom variables initialization
 
     return state;
 }
-// Button: Button000 logic
-static void Button000()
-{
-    std::cout << "Button 000 was pressed!" << std::endl;
-    // TODO: Implement control logic
-}
-// Button: Button001 logic
-static void Button001()
-{
-    // TODO: Implement control logic
-}
-// Button: Button002 logic
-static void Button002()
-{
-    // TODO: Implement control logic
-}
-// Button: Button003 logic
-static void Button003()
-{
-    // TODO: Implement control logic
-}
-// Button: Button004 logic
+
 static void Button004()
 {
-    // TODO: Implement control logic
-}
-// Button: Button005 logic
-static void Button005()
-{
-    // TODO: Implement control logic
-}
-// Button: Button006 logic
-static void Button006()
-{
-    // TODO: Implement control logic
-}
-// Button: Button007 logic
-static void Button007()
-{
-    // TODO: Implement control logic
+    currentStyle = (currentStyle + 1) % 12; // 12 is the number of styles
+    if(styles[currentStyle] == "default") GuiLoadStyleDefault();
+    else GuiLoadStyle(styles[currentStyle]);
+    std::cout << styles[currentStyle] << std::endl;
 }
 
 
 void GuiGui(GuiGuiState *state)
 {
     // Const text
-    const char *Button000Text = "SAMPLE TEXT";    // BUTTON: Button000
-    const char *Button001Text = "SAMPLE TEXT";    // BUTTON: Button001
-    const char *Button002Text = "SAMPLE TEXT";    // BUTTON: Button002
-    const char *Button003Text = "SAMPLE TEXT";    // BUTTON: Button003
-    const char *Button004Text = "SAMPLE TEXT";    // BUTTON: Button004
-    const char *Button005Text = "SAMPLE TEXT";    // BUTTON: Button005
-    const char *Button006Text = "SAMPLE TEXT";    // BUTTON: Button006
-    const char *Button007Text = "SAMPLE TEXT";    // BUTTON: Button007
+    const char *WindowBox001Text = "SAMPLE TEXT";    // WINDOWBOX: WindowBox001
+    const char *ToggleGroup001Text = "ONE;TWO;THREE";    // TOGGLEGROUP: ToggleGroup001
+    const char *CheckBoxEx002Text = "SAMPLE TEXT";    // CHECKBOXEX: CheckBoxEx002
+    const char *Toggle003Text = "SAMPLE TEXT";    // TOGGLE: Toggle003
+    const char *Button004Text = "Switch Style";    // BUTTON: Button004
     
     // Draw controls
-    if (GuiButton(state->layoutRecs[0], Button000Text)) Button000(); 
-    if (GuiButton(state->layoutRecs[1], Button001Text)) Button001(); 
-    if (GuiButton(state->layoutRecs[2], Button002Text)) Button002(); 
-    if (GuiButton(state->layoutRecs[3], Button003Text)) Button003(); 
-    if (GuiButton(state->layoutRecs[4], Button004Text)) Button004(); 
-    if (GuiButton(state->layoutRecs[5], Button005Text)) Button005(); 
-    if (GuiButton(state->layoutRecs[6], Button006Text)) Button006(); 
-    if (GuiButton(state->layoutRecs[7], Button007Text)) Button007(); 
+    if (state->WindowBox001Active)
+    {
+        state->WindowBox001Active = !GuiWindowBox(state->layoutRecs[0], WindowBox001Text);
+        GuiToggleGroup(state->layoutRecs[1], ToggleGroup001Text, &state->ToggleGroup001Active);
+        GuiCheckBox(state->layoutRecs[2], CheckBoxEx002Text, &state->CheckBoxEx002Checked);
+        GuiToggle(state->layoutRecs[3], Toggle003Text, &state->Toggle003Active);
+        if (GuiButton(state->layoutRecs[4], Button004Text)) Button004(); 
+    }
 }
 
 #endif // GUI_GUI_IMPLEMENTATION
