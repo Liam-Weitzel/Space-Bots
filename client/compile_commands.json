@@ -1,17 +1,17 @@
 [
   {
     "arguments": [
-      "/nix/store/xcn9p4xxfbvlkpah7pwchpav4ab9d135-gcc-wrapper-14-20241116/bin/gcc",
+      "/nix/store/xcn9p4xxfbvlkpah7pwchpav4ab9d135-gcc-wrapper-14-20241116/bin/g++",
       "-c",
       "-I",
-      "./external/raylib/src/",
+      "./includes/raylib/src",
       "-I",
-      "./external/",
+      "./includes",
       "-I",
-      "./src/",
-      "src/main.c"
+      "./src",
+      "./src/main.cpp"
     ],
     "directory": "/home/liam-w/Gamefied-Code-Dev/client",
-    "file": "/home/liam-w/Gamefied-Code-Dev/client/src/main.c"
+    "file": "/home/liam-w/Gamefied-Code-Dev/client/src/main.cpp"
   }
 ]

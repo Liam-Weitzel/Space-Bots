@@ -1,7 +1,0 @@
-for raylib:
-git clone --depth 1 https://github.com/raysan5/raylib.git raylib
-cd raylib/src/
-make PLATFORM=PLATFORM_DESKTOP USE_WAYLAND_DISPLAY=TRUE
-
-to get neovim to work:
-nix run nixpkgs#bear -- -- make
