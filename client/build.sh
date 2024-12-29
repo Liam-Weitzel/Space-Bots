@@ -64,7 +64,7 @@ if [ ! -f "compile_commands.json" ]; then
 fi
 
 # Compile the main program
-print_status "Building main program..."
+print_status "Building game..."
 g++ $SRC_DIR/main.cpp \
     -I $RAYLIB_SRC \
     -I $INCLUDES_DIR \
