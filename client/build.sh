@@ -3,9 +3,15 @@
 # Exit on error
 set -e
 
-RAYLIB_DIR="./includes/raylib"
-RAYLIB_SRC="$RAYLIB_DIR/src"
+# Function for red echo messages
+print_status() {
+    echo -e "\e[31m$1\e[0m"
+}
+
 INCLUDES_DIR="./includes"
+RAYLIB_DIR="$INCLUDES_DIR/raylib"
+RAYLIB_SRC="$RAYLIB_DIR/src"
+ENTT_DIR="$INCLUDES_DIR/entt"
 SRC_DIR="./src"
 
 # Create directories if they don't exist
@@ -13,21 +19,27 @@ mkdir -p $INCLUDES_DIR
 
 # Clone raylib if not present
 if [ ! -d "$RAYLIB_DIR" ]; then
-    echo "Cloning raylib..."
+    print_status "Cloning raylib..."
     git clone https://github.com/raysan5/raylib.git $RAYLIB_DIR
     cd $RAYLIB_DIR
     cd ../..
 fi
 
+# Clone ENTT if not present
+if [ ! -d "$ENTT_DIR" ]; then
+    print_status "Cloning ENTT..."
+    git clone https://github.com/skypjack/entt.git $ENTT_DIR
+fi
+
 # Download latest raygui if not present
 if [ ! -f "$INCLUDES_DIR/raygui.h" ]; then
-    echo "Downloading raygui..."
+    print_status "Downloading raygui..."
     curl -L https://raw.githubusercontent.com/raysan5/raygui/refs/heads/master/src/raygui.h -o $INCLUDES_DIR/raygui.h
 fi
 
 # Build raylib if not built
 if [ ! -f "$RAYLIB_SRC/libraylib.a" ]; then
-    echo "Building raylib..."
+    print_status "Building raylib..."
     cd $RAYLIB_SRC
     make PLATFORM=PLATFORM_DESKTOP
     cd ../../..
@@ -35,10 +47,11 @@ fi
 
 # Generate compilation database with bear only if it doesn't exist
 if [ ! -f "compile_commands.json" ]; then
-    echo "Generating compilation database..."
+    print_status "Generating compilation database..."
     bear -- g++ $SRC_DIR/main.cpp \
         -I $RAYLIB_SRC \
         -I $INCLUDES_DIR \
+        -I $ENTT_DIR/src/entt \
         -I $SRC_DIR \
         -L $RAYLIB_SRC \
         -lraylib \
@@ -51,10 +64,11 @@ if [ ! -f "compile_commands.json" ]; then
 fi
 
 # Compile the main program
-echo "Building main program..."
+print_status "Building main program..."
 g++ $SRC_DIR/main.cpp \
     -I $RAYLIB_SRC \
     -I $INCLUDES_DIR \
+    -I $ENTT_DIR/src/entt \
     -I $SRC_DIR \
     -L $RAYLIB_SRC \
     -L $RAYLIB_SRC/rtext \
@@ -66,6 +80,6 @@ g++ $SRC_DIR/main.cpp \
     -lrt \
     -lX11
 
-echo "Build complete!"
+print_status "Build complete!"
 
 ./a.out

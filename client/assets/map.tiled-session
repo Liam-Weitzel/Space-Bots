@@ -1,41 +1,74 @@
 {
-    "activeFile": "map.tmx",
+    "activeFile": "atlas2x3.tsx",
     "expandedProjectPaths": [
         "."
     ],
+    "file.lastUsedOpenFilter": "All Files (*)",
     "fileStates": {
+        "": {
+            "scaleInDock": 1
+        },
         ":/automap-tiles.tsx": {
             "scaleInDock": 1
         },
         "atlas.tsx": {
-            "scaleInDock": 2.7335,
-            "scaleInEditor": 1
+            "scaleInDock": 1.7979,
+            "scaleInEditor": 1.507
+        },
+        "atlas2x3.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 0.9546
+        },
+        "atlas4x4.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1.95
         },
         "map.tmx": {
-            "scale": 2.1886,
-            "selectedLayer": 5,
+            "expandedObjectLayers": [
+                108,
+                106
+            ],
+            "scale": 1.1986,
+            "selectedLayer": 7,
             "viewCenter": {
-                "x": 172.25623686374848,
-                "y": 156.94964817691675
+                "x": 509.3442349407642,
+                "y": 344.9858167862506
             }
         },
+        "map.tmx#atlas.tsx": {
+            "scaleInDock": 1
+        },
         "rules.tmx": {
-            "scale": 3.6779,
+            "scale": 54.1502,
             "selectedLayer": 3,
             "viewCenter": {
-                "x": 899.6981973408738,
-                "y": 93.93947633160228
+                "x": 1269.7183020561329,
+                "y": 1001.8153210883802
             }
         }
     },
+    "last.exportedFilePath": "/home/liam-w/Gamefied-Code-Dev/client/assets",
+    "last.imagePath": "/home/liam-w/Gamefied-Code-Dev/client/assets",
+    "lastUsedTilesetExportFilter": "JSON tileset files (*.tsj *.json)",
+    "map.lastUsedExportFilter": "JSON map files (*.tmj *.json)",
     "openFiles": [
         "rules.tmx",
-        "map.tmx"
+        "map.tmx",
+        "atlas2x3.tsx",
+        "atlas4x4.tsx",
+        "atlas.tsx"
     ],
     "project": "map.tiled-project",
     "recentFiles": [
         "rules.tmx",
         "map.tmx",
+        "atlas4x4.tsx",
+        "atlas2x3.tsx",
         "atlas.tsx"
-    ]
+    ],
+    "tileset.lastUsedFormat": "tsx",
+    "tileset.tileSize": {
+        "height": 64,
+        "width": 64
+    }
 }

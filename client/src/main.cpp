@@ -1,3 +1,4 @@
+#include "entt.hpp"
 #include "raylib.h"
 #include "rlgl.h"
 #include "raymath.h"
@@ -8,10 +9,46 @@
 #define GUI_GUI_IMPLEMENTATION
 #include "gui.h"
 
+// Components
+struct Position {
+    Vector2 pos;
+};
+
+struct Renderable {
+    Color color;
+    float radius;
+};
+
 int main(void)
 {
     const int screenWidth = 800;
     const int screenHeight = 450;
+
+    // Create ENTT registry
+    entt::registry registry;
+
+    // Create some example entities
+    auto circle1 = registry.create();
+    registry.emplace<Position>(circle1, Vector2{screenWidth/2.0f, screenHeight/2.0f});
+    registry.emplace<Renderable>(circle1, YELLOW, 50.0f);
+
+    // Create some random circles
+    for(int i = 0; i < 10; i++) {
+        auto entity = registry.create();
+        registry.emplace<Position>(entity, Vector2{
+            static_cast<float>(GetRandomValue(0, screenWidth)),
+            static_cast<float>(GetRandomValue(0, screenHeight))
+        });
+        registry.emplace<Renderable>(entity, 
+            Color{
+                static_cast<unsigned char>(GetRandomValue(0, 255)),
+                static_cast<unsigned char>(GetRandomValue(0, 255)),
+                static_cast<unsigned char>(GetRandomValue(0, 255)),
+                255
+            },
+            static_cast<float>(GetRandomValue(10, 30))
+        );
+    }
 
     Camera2D camera = { 0 };
     camera.zoom = 1.0f;
@@ -24,59 +61,57 @@ int main(void)
 
     SetTargetFPS(60);
 
-    while (!WindowShouldClose())
-    {
+    while (!WindowShouldClose()) {
         // Update
-        // Translate based on mouse right click
-        if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
-        {
+        if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+            // Translate camera when left click is held
             Vector2 delta = GetMouseDelta();
             delta = Vector2Scale(delta, -1.0f/camera.zoom);
             camera.target = Vector2Add(camera.target, delta);
         }
 
-        // Zoom based on mouse wheel
+
         float wheel = GetMouseWheelMove();
-        if (wheel != 0)
-        {
-            // Get the world point that is under the mouse
-            Vector2 mouseWorldPos = GetScreenToWorld2D(GetMousePosition(), camera);
-
+        // Zoom camera when mouse wheel moved
+        if (wheel != 0) {
             // Set the offset to where the mouse is
-            camera.offset = GetMousePosition();
-
             // Set the target to match, so that the camera maps the world space point 
             // under the cursor to the screen space point under the cursor at any zoom
+            Vector2 mouseWorldPos = GetScreenToWorld2D(GetMousePosition(), camera);
+            camera.offset = GetMousePosition();
             camera.target = mouseWorldPos;
 
-            // Zoom increment
+
             float scaleFactor = 1.0f + (0.25f*fabsf(wheel));
             if (wheel < 0) scaleFactor = 1.0f/scaleFactor;
             camera.zoom = Clamp(camera.zoom*scaleFactor, 0.125f, 64.0f);
         }
 
-        //Draw
+        // Draw
         BeginDrawing();
             ClearBackground(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
             BeginMode2D(camera);
-                // Draw the 3d grid, rotated 90 degrees and centered around 0,0 
-                // just so we have something in the XY plane
+                // Draw grid
                 rlPushMatrix();
                     rlTranslatef(0, 25*50, 0);
                     rlRotatef(90, 1, 0, 0);
                     DrawGrid(100, 50);
                 rlPopMatrix();
 
-                // Draw a reference circle
-                DrawCircle(GetScreenWidth()/2, GetScreenHeight()/2, 50, YELLOW);
+                // Draw all entities with Position and Renderable components
+                auto view = registry.view<const Position, const Renderable>();
+                view.each([](const Position& pos, const Renderable& rend) {
+                    DrawCircleV(pos.pos, rend.radius, rend.color);
+                });
+
             EndMode2D();
             
             // Draw mouse reference
             Vector2 mousePos = GetScreenToWorld2D(GetMousePosition(), camera);
-            DrawCircleV(GetMousePosition(), 4, DARKGRAY);
+            DrawCircleV(GetMousePosition(), 4, WHITE);
             DrawTextEx(GetFontDefault(), 
                 TextFormat("[%.0f, %.0f]", mousePos.x, mousePos.y),
-                Vector2Add(GetMousePosition(), (Vector2){ -44, -24 }), 20, 2, BLACK);
+                Vector2Add(GetMousePosition(), (Vector2){ -44, -24 }), 20, 2, WHITE);
 
             GuiGui(&state);
         EndDrawing();

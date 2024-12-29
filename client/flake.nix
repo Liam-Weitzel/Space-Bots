@@ -1,5 +1,5 @@
 {
-  description = "Raylib development environment";
+  description = "Client dev environment";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
@@ -14,6 +14,11 @@
       };
     in pkgs.mkShell {
       packages = [
+        pkgs.gcc
+        pkgs.gdb
+        pkgs.valgrind
+        pkgs.bear
+        pkgs.clang-tools
         pkgs.libGL
 
         # X11 dependencies
