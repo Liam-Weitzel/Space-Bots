@@ -49,7 +49,8 @@ int main(void) {
 
     InitWindow(screenWidth, screenHeight, "video game");
     
-    GuiLoadIcons("src/icons.rgi", "icons");
+    GuiLoadStyleDefault();
+    GuiLoadIcons("assets/icons.rgi", "icons");
     GuiGuiState state = InitGuiGui();
 
     SetTargetFPS(60);

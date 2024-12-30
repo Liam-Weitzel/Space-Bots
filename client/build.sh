@@ -8,14 +8,14 @@ print_status() {
     echo -e "\e[31m$1\e[0m"
 }
 
-INCLUDES_DIR="./includes"
-RAYLIB_DIR="$INCLUDES_DIR/raylib"
+LIBS_DIR="./libs"
+RAYLIB_DIR="$LIBS_DIR/raylib"
 RAYLIB_SRC="$RAYLIB_DIR/src"
-ENTT_DIR="$INCLUDES_DIR/entt"
+ENTT_DIR="$LIBS_DIR/entt"
 SRC_DIR="./src"
 
 # Create directories if they don't exist
-mkdir -p $INCLUDES_DIR
+mkdir -p $LIBS_DIR
 
 # Clone raylib if not present
 if [ ! -d "$RAYLIB_DIR" ]; then
@@ -32,9 +32,9 @@ if [ ! -d "$ENTT_DIR" ]; then
 fi
 
 # Download latest raygui if not present
-if [ ! -f "$INCLUDES_DIR/raygui.h" ]; then
+if [ ! -f "$LIBS_DIR/raygui.h" ]; then
     print_status "Downloading raygui..."
-    curl -L https://raw.githubusercontent.com/raysan5/raygui/refs/heads/master/src/raygui.h -o $INCLUDES_DIR/raygui.h
+    curl -L https://raw.githubusercontent.com/raysan5/raygui/refs/heads/master/src/raygui.h -o $LIBS_DIR/raygui.h
 fi
 
 # Build raylib if not built
@@ -50,7 +50,7 @@ if [ ! -f "compile_commands.json" ]; then
     print_status "Generating compilation database..."
     bear -- g++ $SRC_DIR/main.cpp \
         -I $RAYLIB_SRC \
-        -I $INCLUDES_DIR \
+        -I $LIBS_DIR \
         -I $ENTT_DIR/src/entt \
         -I $SRC_DIR \
         -L $RAYLIB_SRC \
@@ -67,7 +67,7 @@ fi
 print_status "Building game..."
 g++ $SRC_DIR/main.cpp \
     -I $RAYLIB_SRC \
-    -I $INCLUDES_DIR \
+    -I $LIBS_DIR \
     -I $ENTT_DIR/src/entt \
     -I $SRC_DIR \
     -L $RAYLIB_SRC \
