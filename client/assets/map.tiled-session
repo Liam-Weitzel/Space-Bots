@@ -1,5 +1,5 @@
 {
-    "activeFile": "atlas2x3.tsx",
+    "activeFile": "map.tmx",
     "expandedProjectPaths": [
         "."
     ],
@@ -13,26 +13,25 @@
         },
         "atlas.tsx": {
             "scaleInDock": 1.7979,
-            "scaleInEditor": 1.507
+            "scaleInEditor": 3.7497
         },
         "atlas2x3.tsx": {
             "scaleInDock": 1,
-            "scaleInEditor": 0.9546
+            "scaleInEditor": 0.95
         },
         "atlas4x4.tsx": {
             "scaleInDock": 1,
-            "scaleInEditor": 1.95
+            "scaleInEditor": 0.95
         },
         "map.tmx": {
             "expandedObjectLayers": [
-                108,
-                106
+                108
             ],
-            "scale": 1.1986,
+            "scale": 3.9384,
             "selectedLayer": 7,
             "viewCenter": {
-                "x": 509.3442349407642,
-                "y": 344.9858167862506
+                "x": 1589.3510054844605,
+                "y": 404.85984156002434
             }
         },
         "map.tmx#atlas.tsx": {
@@ -42,8 +41,8 @@
             "scale": 54.1502,
             "selectedLayer": 3,
             "viewCenter": {
-                "x": 1269.7183020561329,
-                "y": 1001.8153210883802
+                "x": 1023.9943712119255,
+                "y": 1023.9759040594495
             }
         }
     },
@@ -61,10 +60,10 @@
     "project": "map.tiled-project",
     "recentFiles": [
         "rules.tmx",
-        "map.tmx",
+        "atlas.tsx",
         "atlas4x4.tsx",
         "atlas2x3.tsx",
-        "atlas.tsx"
+        "map.tmx"
     ],
     "tileset.lastUsedFormat": "tsx",
     "tileset.tileSize": {

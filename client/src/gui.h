@@ -72,17 +72,17 @@ void GuiGui(GuiGuiState *state);
 static void Button004();                // Button: Button004 logic
 static const char* styles[] = {
     "default",
-    "src/styles/ashes.rgs",
-    "src/styles/bluish.rgs",
-    "src/styles/candy.rgs",
-    "src/styles/cherry.rgs",
-    "src/styles/cyber.rgs",
-    "src/styles/dark.rgs",
-    "src/styles/enefete.rgs",
-    "src/styles/jungle.rgs",
-    "src/styles/lavanda.rgs",
-    "src/styles/sunny.rgs",
-    "src/styles/terminal.rgs"
+    "assets/styles/ashes.rgs",
+    "assets/styles/bluish.rgs",
+    "assets/styles/candy.rgs",
+    "assets/styles/cherry.rgs",
+    "assets/styles/cyber.rgs",
+    "assets/styles/dark.rgs",
+    "assets/styles/enefete.rgs",
+    "assets/styles/jungle.rgs",
+    "assets/styles/lavanda.rgs",
+    "assets/styles/sunny.rgs",
+    "assets/styles/terminal.rgs"
 };
 static int currentStyle = 0;
 
