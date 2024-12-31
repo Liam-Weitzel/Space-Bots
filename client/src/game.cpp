@@ -1,6 +1,9 @@
 #include "game.hpp"
-#include "entt.hpp"
 #include "game_state.hpp"
+
+#include "entt.hpp"
+#include "steam_api.h"
+
 #include "raylib.h"
 #include "rlgl.h"
 #include "raymath.h"
@@ -13,6 +16,7 @@
 #include "gui.h"
 
 #include <sys/stat.h>
+#include <iostream>
 
 void render(GameState* state) {
     BeginDrawing();
@@ -45,7 +49,22 @@ void render(GameState* state) {
 }
 
 void init(GameState* state) {
-    //if we launching for the first time: NOT HOT RELOADED
+    // Initialize Steam API
+    if (SteamAPI_Init()) {
+        std::cout << "Steam API initialized successfully!" << std::endl;
+
+        // Check if the user is logged into Steam
+        if (SteamUser()->BLoggedOn()) {
+            const char* playerName = SteamFriends()->GetPersonaName();
+            std::cout << "Steam user logged in: " << playerName << std::endl;
+        } else {
+            std::cerr << "Steam user not logged in." << std::endl;
+        }
+    } else {
+        std::cerr << "Steam API initialization failed!" << std::endl;
+    }
+
+    //if we are launching for the first time: NOT HOT RELOADED
     if(state->registry.storage<entt::entity>().empty()) {
         state->camera = Camera2D{0};
         state->camera.zoom = 1.0f;
@@ -119,5 +138,6 @@ extern "C" void game_main(GameState* state) {
         update(state);
         render(state);
     }
+    SteamAPI_Shutdown();
     CloseWindow();
 }

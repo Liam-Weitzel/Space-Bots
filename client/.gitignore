@@ -3,6 +3,7 @@ compile_commands.json
 build/
 
 # Dependencies
-includes/
+libs/*
+!libs/steam/
 .cache/
 .direnv/
