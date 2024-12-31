@@ -18,6 +18,7 @@ build_shared_lib() {
     g++ -shared -fPIC $SRC_DIR/game.cpp \
         $INCLUDES \
         $RAYLIB_LIBS \
+        $STEAM_LIBS \
         $SYSTEM_LIBS \
         $COMPILER_FLAGS \
         -o $BUILD_DIR/$TEMP_NAME
@@ -31,14 +32,17 @@ LIBS_DIR="./libs"
 RAYLIB_DIR="$LIBS_DIR/raylib"
 RAYLIB_SRC="$RAYLIB_DIR/src"
 ENTT_DIR="$LIBS_DIR/entt"
+STEAM_DIR="$LIBS_DIR/steam"
+STEAM_LIB_DIR="$STEAM_DIR/linux64"
 SRC_DIR="./src"
 BUILD_DIR="./build"
 
 # Common flags
-INCLUDES="-I $RAYLIB_SRC -I $LIBS_DIR -I $ENTT_DIR/src/entt -I $SRC_DIR"
+INCLUDES="-I $RAYLIB_SRC -I $LIBS_DIR -I $ENTT_DIR/src/entt -I $SRC_DIR -I $STEAM_DIR"
 RAYLIB_LIBS="-L $RAYLIB_SRC -L $RAYLIB_SRC/rtext -lraylib"
+STEAM_LIBS=" -l steam_api -L $STEAM_LIB_DIR"
 SYSTEM_LIBS="-lGL -lm -lpthread -ldl -lrt -lX11"
-COMPILER_FLAGS="-fno-gnu-unique -g"
+COMPILER_FLAGS="-Wl,-rpath,\$ORIGIN/ -fno-gnu-unique -g"
 
 # Check if we're doing a hot reload build
 if [ "$1" = "hot" ]; then
@@ -80,6 +84,12 @@ fi
 print_status "Copying assets..."
 cp -r assets/* $BUILD_DIR/assets/
 
+# Copy steamworks to build dir
+cp $STEAM_LIB_DIR/libsteam_api.so $BUILD_DIR
+
+# Copy steam_appid to build dir
+cp ./steam_appid.txt $BUILD_DIR
+
 # Build the game
 build_shared_lib
 
@@ -87,6 +97,7 @@ print_status "Building main executable..."
 g++ $SRC_DIR/main.cpp \
     $INCLUDES \
     $RAYLIB_LIBS \
+    $STEAM_LIBS \
     $SYSTEM_LIBS \
     $COMPILER_FLAGS \
     -o $BUILD_DIR/game
@@ -97,6 +108,7 @@ if [ ! -f "compile_commands.json" ]; then
     bear -- g++ -shared -fPIC $SRC_DIR/game.cpp \
         $INCLUDES \
         $RAYLIB_LIBS \
+        $STEAM_LIBS \
         $SYSTEM_LIBS \
         $COMPILER_FLAGS \
         -o $BUILD_DIR/libgame.so
@@ -104,6 +116,7 @@ if [ ! -f "compile_commands.json" ]; then
     bear -- g++ $SRC_DIR/main.cpp \
         $INCLUDES \
         $RAYLIB_LIBS \
+        $STEAM_LIBS \
         $SYSTEM_LIBS \
         $COMPILER_FLAGS \
         -o $BUILD_DIR/game
