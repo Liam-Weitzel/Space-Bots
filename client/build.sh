@@ -42,10 +42,7 @@ COMPILER_FLAGS="-fno-gnu-unique -g"
 
 # Check if we're doing a hot reload build
 if [ "$1" = "hot" ]; then
-    print_status "Hot reload build - rebuilding shared library only..."
-    
     build_shared_lib
-    
     print_status "Hot reload build complete!"
     exit 0
 fi

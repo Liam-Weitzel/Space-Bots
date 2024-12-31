@@ -12,72 +12,53 @@
 #define GUI_GUI_IMPLEMENTATION
 #include "gui.h"
 
-#include <iostream>
+#include <sys/stat.h>
 
-void game_init_window() {
-    InitWindow(800, 450, "video game");
-    SetTargetFPS(60);
+void render(GameState* state) {
+    BeginDrawing();
+        BeginMode2D(state->camera);
+            ClearBackground(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
+
+            // Draw grid
+            rlPushMatrix();
+                rlTranslatef(0, 25*50, 0);
+                rlRotatef(90, 1, 0, 0);
+                DrawGrid(100, 50);
+            rlPopMatrix();
+
+            // Draw all entities with Position and Renderable components
+            auto view = state->registry.view<const Position, const Renderable>();
+            view.each([](const Position& pos, const Renderable& rend) {
+                DrawCircleV(pos.pos, rend.radius, rend.color);
+            });
+        EndMode2D();
+
+        // Draw mouse reference
+        Vector2 mousePos = GetScreenToWorld2D(GetMousePosition(), state->camera);
+        DrawCircleV(GetMousePosition(), 4, WHITE);
+        DrawTextEx(GetFontDefault(), 
+            TextFormat("[%.0f, %.0f]", mousePos.x, mousePos.y),
+            Vector2Add(GetMousePosition(), (Vector2){ -44, -24 }), 20, 2, WHITE);
+
+        GuiGui(&state->gui);
+    EndDrawing();
 }
 
-void game_render(GameState* state) {
-    try {
-        BeginDrawing();
-            // ClearBackground(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
-            ClearBackground(YELLOW);
-            BeginMode2D(state->persistent.camera);
-                // Draw grid
-                rlPushMatrix();
-                    rlTranslatef(0, 25*50, 0);
-                    rlRotatef(90, 1, 0, 0);
-                    DrawGrid(100, 50);
-                rlPopMatrix();
+void init(GameState* state) {
+    //if we launching for the first time: NOT HOT RELOADED
+    if(state->registry.storage<entt::entity>().empty()) {
+        state->camera = Camera2D{0};
+        state->camera.zoom = 1.0f;
+        state->camera.offset = (Vector2){400, 225};
 
-                // Draw all entities with Position and Renderable components
-                auto view = state->persistent.registry.view<const Position, const Renderable>();
-                view.each([](const Position& pos, const Renderable& rend) {
-                    DrawCircleV(pos.pos, rend.radius, rend.color);
-                });
-            EndMode2D();
-
-            // Draw mouse reference
-            Vector2 mousePos = GetScreenToWorld2D(GetMousePosition(), state->persistent.camera);
-            DrawCircleV(GetMousePosition(), 4, WHITE);
-            DrawTextEx(GetFontDefault(), 
-                TextFormat("[%.0f, %.0f]", mousePos.x, mousePos.y),
-                Vector2Add(GetMousePosition(), (Vector2){ -44, -24 }), 20, 2, WHITE);
-            GuiGui(&state->persistent.gui_state);
-        EndDrawing();
-    }
-    catch (const std::exception& e) {
-        std::cerr << "Exception in game_render: " << e.what() << std::endl;
-    }
-    catch (...) {
-        std::cerr << "Unknown exception in game_render" << std::endl;
-    }
-}
-
-void game_close_window() {
-    CloseWindow();
-}
-
-void game_init(GameState* state) {
-    std::cout << "Initializing game state..." << std::endl;
-    
-    // Only run on first start (not on hot reload)
-    if(state->persistent.registry.storage<entt::entity>().empty()) {
-        // Initialize camera
-        state->persistent.camera = Camera2D{0};
-        state->persistent.camera.zoom = 1.0f;
-        state->persistent.camera.offset = (Vector2){400, 225};
-        
         // Create some entities
         for(int i = 0; i < 10; i++) {
-            auto entity = state->persistent.registry.create();
-            state->persistent.registry.emplace<Position>(entity, Vector2{
+            auto entity = state->registry.create();
+            state->registry.emplace<Position>(entity, Vector2{
                 static_cast<float>(GetRandomValue(0, 800)),
                 static_cast<float>(GetRandomValue(0, 450))
             });
-            state->persistent.registry.emplace<Renderable>(entity, 
+            state->registry.emplace<Renderable>(entity, 
                 Color{
                     static_cast<unsigned char>(GetRandomValue(0, 255)),
                     static_cast<unsigned char>(GetRandomValue(0, 255)),
@@ -91,23 +72,12 @@ void game_init(GameState* state) {
         GuiLoadStyleDefault();
         GuiLoadIcons("assets/icons.rgi", "icons");
         GuiGuiState gui_state = InitGuiGui();
-        state->persistent.gui_state = gui_state;
+        state->gui.gui_state = gui_state;
     }
-
-    std::cout << "Game initialization complete" << std::endl;
 }
 
-bool game_should_close(void) {
-    return WindowShouldClose();
-}
-
-void game_update(GameState* state) {
-    if (!state) {
-        std::cerr << "Error: Null state in game_update" << std::endl;
-        return;
-    }
-
-    auto& camera = state->persistent.camera;
+void update(GameState* state) {
+    auto& camera = state->camera;
 
     if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
         Vector2 delta = GetMouseDelta();
@@ -129,4 +99,25 @@ void game_update(GameState* state) {
         float newZoom = camera.zoom*scaleFactor;
         camera.zoom = Clamp(newZoom, 0.5f, 5.0f);
     }
+}
+
+time_t get_last_write_time() {
+    struct stat file_stat;
+    if (stat("./libgame.so", &file_stat) == 0) {
+        return file_stat.st_mtime;
+    }
+    return 0;
+}
+
+extern "C" void game_main(GameState* state) {
+    InitWindow(800, 450, "video game");
+    SetTargetFPS(60);
+    init(state);
+    state->last_write_time = get_last_write_time(); //comment out for prod build
+    while(!WindowShouldClose()) {
+        if(state->last_write_time != get_last_write_time()) break; //comment for prod build
+        update(state);
+        render(state);
+    }
+    CloseWindow();
 }

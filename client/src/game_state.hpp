@@ -4,14 +4,16 @@
 #include "raygui.h"
 #include "gui.h"
 
-struct PersistentState {
-    Camera2D camera;
-    entt::registry registry;
+struct GUI {
     GuiGuiState gui_state;
+    int style;
 };
 
 struct GameState {
-    PersistentState persistent;
+    Camera2D camera;
+    entt::registry registry;
+    GUI gui;
+    time_t last_write_time;
 };
 
 // Components
