@@ -1,6 +1,6 @@
 # Build outputs
-a.out
 compile_commands.json
+build/
 
 # Dependencies
 includes/
