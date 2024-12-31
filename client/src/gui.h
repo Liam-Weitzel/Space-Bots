@@ -18,7 +18,6 @@
 *   usage in any other form by expresely written permission.
 *
 **********************************************************************************************/
-
 #include "raylib.h"
 #include <iostream>
 
@@ -30,6 +29,8 @@
 
 #ifndef GUI_GUI_H
 #define GUI_GUI_H
+
+struct GUI; //forward declared
 
 typedef struct {
     // Define anchors
@@ -67,9 +68,9 @@ extern "C" {            // Prevents name mangling of functions
 //----------------------------------------------------------------------------------
 // Module Functions Declaration
 //----------------------------------------------------------------------------------
-GuiGuiState InitGuiGui(void);
-void GuiGui(GuiGuiState *state);
-static void Button004();                // Button: Button004 logic
+GuiGuiState InitGuiGui();
+void GuiGui(GUI* gui);
+static void Button004(int* style);                // Button: Button004 logic
 static const char* styles[] = {
     "default",
     "assets/styles/ashes.rgs",
@@ -84,7 +85,7 @@ static const char* styles[] = {
     "assets/styles/sunny.rgs",
     "assets/styles/terminal.rgs"
 };
-static int currentStyle = 0;
+static int loaded_style = 0;
 
 #ifdef __cplusplus
 }
@@ -114,7 +115,7 @@ static int currentStyle = 0;
 //----------------------------------------------------------------------------------
 // Module Functions Definition
 //----------------------------------------------------------------------------------
-GuiGuiState InitGuiGui(void)
+GuiGuiState InitGuiGui()
 {
     GuiGuiState state = { 0 };
 
@@ -140,17 +141,20 @@ GuiGuiState InitGuiGui(void)
     return state;
 }
 
-static void Button004()
-{
-    currentStyle = (currentStyle + 1) % 12; // 12 is the number of styles
-    if(styles[currentStyle] == "default") GuiLoadStyleDefault();
-    else GuiLoadStyle(styles[currentStyle]);
-    std::cout << styles[currentStyle] << std::endl;
+static void Button004(int& style) {
+    style = (style + 1) % 12;
+    std::cout << styles[style] << std::endl;
 }
 
-
-void GuiGui(GuiGuiState *state)
+void GuiGui(GUI* gui)
 {
+    if(loaded_style != gui->style) {
+        if (strcmp(styles[gui->style], "default") == 0) GuiLoadStyleDefault();
+        else GuiLoadStyle(styles[gui->style]);
+        loaded_style = gui->style;
+    }
+
+    GuiGuiState* state = &gui->gui_state;
     // Const text
     const char *WindowBox001Text = "SAMPLE TEXT";    // WINDOWBOX: WindowBox001
     const char *ToggleGroup001Text = "ONE;TWO;THREE";    // TOGGLEGROUP: ToggleGroup001
@@ -165,7 +169,7 @@ void GuiGui(GuiGuiState *state)
         GuiToggleGroup(state->layoutRecs[1], ToggleGroup001Text, &state->ToggleGroup001Active);
         GuiCheckBox(state->layoutRecs[2], CheckBoxEx002Text, &state->CheckBoxEx002Checked);
         GuiToggle(state->layoutRecs[3], Toggle003Text, &state->Toggle003Active);
-        if (GuiButton(state->layoutRecs[4], Button004Text)) Button004(); 
+        if (GuiButton(state->layoutRecs[4], Button004Text)) Button004(gui->style); 
     }
 }
 
