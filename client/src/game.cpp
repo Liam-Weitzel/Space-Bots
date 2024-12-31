@@ -102,63 +102,31 @@ bool game_should_close(void) {
 }
 
 void game_update(GameState* state) {
-    // std::cout << "Starting game_update..." << std::endl;
-    
     if (!state) {
         std::cerr << "Error: Null state in game_update" << std::endl;
         return;
     }
 
     auto& camera = state->persistent.camera;
-    // std::cout << "Current camera state - zoom: " << camera.zoom 
-    //           << ", target: (" << camera.target.x << ", " << camera.target.y << ")" 
-    //           << ", offset: (" << camera.offset.x << ", " << camera.offset.y << ")" 
-    //           << std::endl;
 
     if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
-        // std::cout << "Left mouse button is down" << std::endl;
         Vector2 delta = GetMouseDelta();
-        // std::cout << "Mouse delta: (" << delta.x << ", " << delta.y << ")" << std::endl;
-        
         delta = Vector2Scale(delta, -1.0f/camera.zoom);
-        // std::cout << "Scaled delta: (" << delta.x << ", " << delta.y << ")" << std::endl;
-        
         camera.target = Vector2Add(camera.target, delta);
-        // std::cout << "New camera target: (" << camera.target.x << ", " << camera.target.y << ")" << std::endl;
     }
 
     float wheel = GetMouseWheelMove();
-    // std::cout << "Mouse wheel movement: " << wheel << std::endl;
-    
     if (wheel != 0) {
-        // std::cout << "Processing mouse wheel movement..." << std::endl;
-        
         Vector2 mousePos = GetMousePosition();
-        // std::cout << "Mouse position: (" << mousePos.x << ", " << mousePos.y << ")" << std::endl;
-        
         Vector2 mouseWorldPos = GetScreenToWorld2D(GetMousePosition(), camera);
-        // std::cout << "Mouse world position: (" << mouseWorldPos.x << ", " << mouseWorldPos.y << ")" << std::endl;
-        
         camera.offset = GetMousePosition();
-        // std::cout << "New camera offset: (" << camera.offset.x << ", " << camera.offset.y << ")" << std::endl;
-        
         camera.target = mouseWorldPos;
-        // std::cout << "New camera target: (" << camera.target.x << ", " << camera.target.y << ")" << std::endl;
-
         float scaleFactor = 1.0f + (0.25f*fabsf(wheel));
-        // std::cout << "Initial scale factor: " << scaleFactor << std::endl;
-        
+
         if (wheel < 0) {
             scaleFactor = 1.0f/scaleFactor;
-            // std::cout << "Inverted scale factor: " << scaleFactor << std::endl;
         }
-        
         float newZoom = camera.zoom*scaleFactor;
-        // std::cout << "Pre-clamp zoom: " << newZoom << std::endl;
-        
         camera.zoom = Clamp(newZoom, 0.5f, 5.0f);
-        // std::cout << "Final camera zoom: " << camera.zoom << std::endl;
     }
-
-    // std::cout << "game_update complete" << std::endl;
 }
