@@ -2,11 +2,15 @@
 #include "game_state.hpp"
 
 #include "entt.hpp"
-#include "steam_api.h"
 
+#include "isteamuser.h"
+#include "isteamuserstats.h"
 #include "raylib.h"
 #include "rlgl.h"
 #include "raymath.h"
+
+#include "steam_api.h"
+#include "steamtypes.h"
 
 #define RAYGUI_IMPLEMENTATION
 #define RAYGUI_SUPPORT_ICONS
@@ -56,13 +60,43 @@ void init(GameState* state) {
         // Check if the user is logged into Steam
         if (SteamUser()->BLoggedOn()) {
             const char* playerName = SteamFriends()->GetPersonaName();
-            std::cout << "Steam user logged in: " << playerName << std::endl;
+            const uint64 steamID = SteamUser()->GetSteamID().ConvertToUint64();
+            
+            // Prepare buffer for auth ticket
+            const int MAX_TICKET_SIZE = 1024;
+            unsigned char ticketBuffer[MAX_TICKET_SIZE];
+            uint32 ticketSize;
+            
+            // Set up remote server identity
+            // SteamNetworkingIdentity serverIdentity;
+            // serverIdentity.Clear();
+            // serverIdentity.SetSteamID64(YOUR_SERVER_STEAM_ID);
+
+            // Get auth session ticket with server identity
+            HAuthTicket sessionTicket = SteamUser()->GetAuthSessionTicket(
+                ticketBuffer, 
+                MAX_TICKET_SIZE, 
+                &ticketSize,
+                // &serverIdentity  // Include server identity
+                nullptr
+            );
+
+            if (sessionTicket != k_HAuthTicketInvalid) {
+                std::cout << "Steam user logged in: " << playerName << ", " << steamID << std::endl;
+                // std::cout << "Auth ticket obtained for server " << serverIdentity.GetSteamID64() << std::endl;
+                std::cout << "Ticket size: " << ticketSize << " bytes" << std::endl;
+            } else {
+                std::cerr << "Failed to get auth ticket" << std::endl;
+            }
         } else {
             std::cerr << "Steam user not logged in." << std::endl;
         }
     } else {
         std::cerr << "Steam API initialization failed!" << std::endl;
     }
+
+    const uint32 num_achievements = SteamUserStats()->GetNumAchievements();
+    std::cout << "num achievements " << num_achievements << std::endl;
 
     //if we are launching for the first time: NOT HOT RELOADED
     if(state->registry.storage<entt::entity>().empty()) {
