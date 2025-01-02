@@ -3,7 +3,7 @@
  <image source="atlas.png" width="2048" height="2048"/>
  <tile id="14998">
   <objectgroup draworder="index" id="2">
-   <object id="1" x="0" y="-0.479563" width="16.465" height="16.6248"/>
+   <object id="2" x="0" y="0" width="16" height="16"/>
   </objectgroup>
  </tile>
  <tile id="15001">
@@ -13,7 +13,7 @@
  </tile>
  <tile id="15005">
   <objectgroup draworder="index" id="2">
-   <object id="1" x="0.319708" y="-0.159854" width="15.6657" height="15.9854"/>
+   <object id="2" x="0" y="0" width="16" height="16"/>
   </objectgroup>
  </tile>
  <tile id="15129">
