@@ -6,7 +6,7 @@
    <object id="1" x="4.63577" y="24.6175" width="24.6175" height="20.1416">
     <ellipse/>
    </object>
-   <object id="2" name="origin" x="15.5059" y="47.9563">
+   <object id="2" name="origin" x="15.9462" y="48.0332">
     <point/>
    </object>
   </objectgroup>
@@ -16,7 +16,7 @@
    <object id="1" x="3.35694" y="25.7365" width="25.7365" height="18.5431">
     <ellipse/>
    </object>
-   <object id="2" name="origin" x="15.8256" y="47.9563">
+   <object id="2" name="origin" x="16.2185" y="48.0721">
     <point/>
    </object>
   </objectgroup>

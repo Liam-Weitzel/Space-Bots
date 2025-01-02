@@ -13,7 +13,7 @@
         },
         "atlas.tsx": {
             "scaleInDock": 1.7979,
-            "scaleInEditor": 3.7497
+            "scaleInEditor": 0.95
         },
         "atlas2x3.tsx": {
             "scaleInDock": 1,
@@ -27,22 +27,22 @@
             "expandedObjectLayers": [
                 108
             ],
-            "scale": 3.0734,
-            "selectedLayer": 7,
+            "scale": 0.4049,
+            "selectedLayer": 6,
             "viewCenter": {
-                "x": 1606.5269733845253,
-                "y": 374.9918656862107
+                "x": 1697.9501111385525,
+                "y": -171.64732032600637
             }
         },
         "map.tmx#atlas.tsx": {
             "scaleInDock": 1
         },
         "rules.tmx": {
-            "scale": 54.1502,
-            "selectedLayer": 3,
+            "scale": 3.7917,
+            "selectedLayer": 4,
             "viewCenter": {
-                "x": 1023.9943712119255,
-                "y": 1023.9759040594495
+                "x": 1018.4086293746868,
+                "y": 83.20805970936519
             }
         }
     },
