@@ -57,16 +57,22 @@ mkdir -p $LIBS_DIR
 if [ ! -d "$RAYLIB_DIR" ]; then
     print_status "Cloning raylib..."
     git clone https://github.com/raysan5/raylib.git $RAYLIB_DIR
+    cd $RAYLIB_DIR
+    git reset --hard 0f6e85a975f637e14b1fed3ff6022a0e0008e620
+    cd ..
 fi
 
 if [ ! -d "$ENTT_DIR" ]; then
     print_status "Cloning ENTT..."
     git clone https://github.com/skypjack/entt.git $ENTT_DIR
+    cd $ENTT_DIR
+    git reset --hard 9a19f9aa2f5c7d822ceeea06bce1b0a882c2cb97
+    cd ..
 fi
 
 if [ ! -f "$LIBS_DIR/raygui.h" ]; then
     print_status "Downloading raygui..."
-    curl -L https://raw.githubusercontent.com/raysan5/raygui/master/src/raygui.h -o $LIBS_DIR/raygui.h
+    curl -L https://raw.githubusercontent.com/raysan5/raygui/1f813711063f0ff01bd3a89d50ebc17c5412e83c/src/raygui.h -o $LIBS_DIR/raygui.h
 fi
 
 # Build raylib if not built
