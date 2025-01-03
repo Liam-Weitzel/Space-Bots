@@ -52,6 +52,9 @@ mkdir -p $LIBS_DIR
 if [ ! -d "$ENTT_DIR" ]; then
     print_status "Cloning ENTT..."
     git clone https://github.com/skypjack/entt.git $ENTT_DIR
+    cd $ENTT_DIR
+    git reset --hard 9a19f9aa2f5c7d822ceeea06bce1b0a882c2cb97
+    cd ..
 fi
 
 # Copy steamworks library
