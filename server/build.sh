@@ -11,13 +11,12 @@ print_status() {
 build_shared_lib() {
     print_status "Building shared library..."
     TIMESTAMP=$(date +%s)
-    TEMP_NAME="libgame_${TIMESTAMP}.so"
-    FINAL_NAME="libgame.so"
+    TEMP_NAME="libserver_${TIMESTAMP}.so"
+    FINAL_NAME="libserver.so"
     
     # Build to a temporary file first
-    g++ -shared -fPIC $SRC_DIR/game.cpp \
+    g++ -shared -fPIC $SRC_DIR/orchistrator.cpp \
         $INCLUDES \
-        $RAYLIB_LIBS \
         $STEAM_LIBS \
         $SYSTEM_LIBS \
         $COMPILER_FLAGS \
@@ -29,16 +28,13 @@ build_shared_lib() {
 }
 
 LIBS_DIR="./libs"
-RAYLIB_DIR="$LIBS_DIR/raylib"
-RAYLIB_SRC="$RAYLIB_DIR/src"
 ENTT_DIR="$LIBS_DIR/entt"
 STEAM_DIR="$LIBS_DIR/steam"
 STEAM_LIB_DIR="$STEAM_DIR/linux64"
 SRC_DIR="./src"
 
 # Common flags
-INCLUDES="-I $RAYLIB_SRC -I $LIBS_DIR -I $ENTT_DIR/src/entt -I $SRC_DIR -I $STEAM_DIR"
-RAYLIB_LIBS="-L $RAYLIB_SRC -L $RAYLIB_SRC/rtext -lraylib"
+INCLUDES="-I $LIBS_DIR -I $ENTT_DIR/src/entt -I $SRC_DIR -I $STEAM_DIR"
 STEAM_LIBS=" -l steam_api -L $STEAM_LIB_DIR"
 SYSTEM_LIBS="-lGL -lm -lpthread -ldl -lrt -lX11"
 COMPILER_FLAGS="-Wl,-rpath,\$ORIGIN/ -fno-gnu-unique -Wno-format-security -g"
@@ -53,66 +49,44 @@ fi
 # Regular full build path continues here
 mkdir -p $LIBS_DIR
 
-# Clone/download dependencies if not present
-if [ ! -d "$RAYLIB_DIR" ]; then
-    print_status "Cloning raylib..."
-    git clone https://github.com/raysan5/raylib.git $RAYLIB_DIR
-fi
-
 if [ ! -d "$ENTT_DIR" ]; then
     print_status "Cloning ENTT..."
     git clone https://github.com/skypjack/entt.git $ENTT_DIR
 fi
 
-if [ ! -f "$LIBS_DIR/raygui.h" ]; then
-    print_status "Downloading raygui..."
-    curl -L https://raw.githubusercontent.com/raysan5/raygui/master/src/raygui.h -o $LIBS_DIR/raygui.h
-fi
-
-# Build raylib if not built
-if [ ! -f "$RAYLIB_SRC/libraylib.a" ]; then
-    print_status "Building raylib..."
-    cd $RAYLIB_SRC
-    make PLATFORM=PLATFORM_DESKTOP
-    cd ../../..
-fi
-
 # Copy steamworks library
 cp $STEAM_LIB_DIR/libsteam_api.so ./
 
-# Build the game
+# Build the server
 build_shared_lib
 
 print_status "Building main executable..."
 g++ $SRC_DIR/main.cpp \
     $INCLUDES \
-    $RAYLIB_LIBS \
     $STEAM_LIBS \
     $SYSTEM_LIBS \
     $COMPILER_FLAGS \
-    -o ./game
+    -o ./server
 
 # Generate compilation database only if it doesn't exist
 if [ ! -f "compile_commands.json" ]; then
     print_status "Generating compilation database..."
-    bear -- g++ -shared -fPIC $SRC_DIR/game.cpp \
+    bear -- g++ -shared -fPIC $SRC_DIR/orchistrator.cpp \
         $INCLUDES \
-        $RAYLIB_LIBS \
         $STEAM_LIBS \
         $SYSTEM_LIBS \
         $COMPILER_FLAGS \
-        -o ./libgame.so
+        -o ./libserver.so
 
     bear -- g++ $SRC_DIR/main.cpp \
         $INCLUDES \
-        $RAYLIB_LIBS \
         $STEAM_LIBS \
         $SYSTEM_LIBS \
         $COMPILER_FLAGS \
-        -o ./game
+        -o ./server
 fi
 
 print_status "Build complete!"
 
-# Run the game
-./game
+# Run the server
+./server

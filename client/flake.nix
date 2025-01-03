@@ -20,8 +20,6 @@
         pkgs.bear
         pkgs.clang-tools
         pkgs.libGL
-        
-        pkgs.unzip
 
         # X11 dependencies
         pkgs.xorg.libX11

@@ -1,9 +1,6 @@
 #include <dlfcn.h>
-#include <sys/stat.h>
-#include <iostream>
-#include <chrono>
-#include <thread>
-#include "game_state.hpp"
+#include "game_state.h"
+#include "utils.h"
 
 typedef void (*game_main_fn)(GameState*);
 
@@ -13,36 +10,36 @@ struct Game {
 };
 
 Game load_game() {
-    std::cout << "Loading game code..." << std::endl;
+    LOG_TRACE("Loading game code...");
     Game game = {};
     const char* LIB_PATH = "./libgame.so";
 
     game.library = dlopen(LIB_PATH, RTLD_NOW | RTLD_DEEPBIND | RTLD_LOCAL) ;
     if (!game.library) {
-        std::cerr << "[ERROR] Failed to open library: " << dlerror() << std::endl;
+        LOG_ERROR("Failed to open library: ", dlerror());
         return game;
     }
-    std::cout << "Successfully opened library" << std::endl;
+    LOG_TRACE("Successfully opened library");
 
     game.main = (game_main_fn)dlsym(game.library, "game_main");
-    std::cout << "Loaded game main function: " << (game.main ? "success" : "failed") << std::endl;
+    LOG_TRACE("Loaded game main function: ", (game.main ? "success" : "failed"));
     return game;
 }
 
 void unload_game(Game* game) {
-    std::cout << "Unloading library handle: " << game->library << std::endl;
+    LOG_TRACE("Unloading library handle: ", game->library)
     dlclose(game->library);
     game->library = nullptr;
     game->main = nullptr;
 }
 
 int main() {
-    std::cout << "Starting game..." << std::endl;
+    LOG_TRACE("Starting game...");
     
     Game game = load_game();
     
     if (!game.library || !game.main) {
-        std::cerr << "Failed to load initial game code" << std::endl;
+        LOG_ERROR("Failed to load initial game code");
         return 1;
     }
 
@@ -51,9 +48,8 @@ int main() {
     while(1) {
         game.main(&state);
         unload_game(&game);
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
         game = load_game();
-        std::cout << "Reload complete" << std::endl;
+        LOG_TRACE("Reload complete");
     }
 
     unload_game(&game);

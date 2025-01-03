@@ -27,11 +27,11 @@
             "expandedObjectLayers": [
                 108
             ],
-            "scale": 0.4049,
-            "selectedLayer": 6,
+            "scale": 0.6039,
+            "selectedLayer": 0,
             "viewCenter": {
-                "x": 1697.9501111385525,
-                "y": -171.64732032600637
+                "x": 687.1998675277364,
+                "y": 399.90064580228517
             }
         },
         "map.tmx#atlas.tsx": {
@@ -41,33 +41,24 @@
             "scale": 3.7917,
             "selectedLayer": 4,
             "viewCenter": {
-                "x": 1018.4086293746868,
-                "y": 83.20805970936519
+                "x": 1023.8151752512065,
+                "y": 1023.9470422238046
             }
         }
     },
-    "last.exportedFilePath": "/home/liam-w/Gamefied-Code-Dev/client/assets",
-    "last.imagePath": "/home/liam-w/Gamefied-Code-Dev/client/assets",
-    "lastUsedTilesetExportFilter": "JSON tileset files (*.tsj *.json)",
-    "map.lastUsedExportFilter": "JSON map files (*.tmj *.json)",
     "openFiles": [
-        "rules.tmx",
         "map.tmx",
-        "atlas2x3.tsx",
+        "rules.tmx",
         "atlas4x4.tsx",
+        "atlas2x3.tsx",
         "atlas.tsx"
     ],
     "project": "map.tiled-project",
     "recentFiles": [
-        "rules.tmx",
         "atlas.tsx",
-        "atlas4x4.tsx",
         "atlas2x3.tsx",
+        "atlas4x4.tsx",
+        "rules.tmx",
         "map.tmx"
-    ],
-    "tileset.lastUsedFormat": "tsx",
-    "tileset.tileSize": {
-        "height": 64,
-        "width": 64
-    }
+    ]
 }

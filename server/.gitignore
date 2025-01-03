@@ -1,8 +1,8 @@
 # Build outputs
 compile_commands.json
-libgame.so
+libserver.so
 libsteam_api.so
-game
+server
 
 # Dependencies
 libs/*

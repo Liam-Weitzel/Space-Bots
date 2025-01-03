@@ -19,7 +19,6 @@
 *
 **********************************************************************************************/
 #include "raylib.h"
-#include <iostream>
 
 // WARNING: raygui implementation is expected to be defined before including this header
 #undef RAYGUI_IMPLEMENTATION
@@ -143,7 +142,6 @@ GuiGuiState InitGuiGui()
 
 static void Button004(int& style) {
     style = (style + 1) % 12;
-    std::cout << styles[style] << std::endl;
 }
 
 void GuiGui(GUI* gui)

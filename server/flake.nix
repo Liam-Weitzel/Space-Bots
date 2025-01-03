@@ -1,22 +1,34 @@
 {
-  inputs.nixpkgs.url = "nixpkgs/nixos-unstable";
-  outputs = { self, nixpkgs }:
-    let
-      supportedSystems = [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin" ];
-      forEachSupportedSystem = f: nixpkgs.lib.genAttrs supportedSystems (system: f {
-        pkgs = import nixpkgs { inherit system; config.allowUnfree = true; };
-      });
-    in
-    {
-      devShells = forEachSupportedSystem ({ pkgs }: {
-        default = pkgs.mkShell {
-          packages = with pkgs; [
-            gcc
-            chipmunk
-            entt
-            steam
-          ];
-        };
-      });
+  description = "Server dev environment";
+
+  inputs = {
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+  };
+
+  outputs = { self , nixpkgs ,... }: let
+    system = "x86_64-linux";
+  in {
+    devShells."${system}".default = let
+      pkgs = import nixpkgs {
+        inherit system;
+      };
+    in pkgs.mkShell {
+      packages = [
+        pkgs.gcc
+        pkgs.gdb
+        pkgs.valgrind
+        pkgs.bear
+        pkgs.clang-tools
+        pkgs.libGL
+
+        # X11 dependencies
+        pkgs.xorg.libX11
+        pkgs.xorg.libX11.dev
+        pkgs.xorg.libXcursor
+        pkgs.xorg.libXi
+        pkgs.xorg.libXinerama
+        pkgs.xorg.libXrandr
+      ];
     };
+  };
 }
