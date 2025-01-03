@@ -15,7 +15,7 @@ build_shared_lib() {
     FINAL_NAME="libserver.so"
     
     # Build to a temporary file first
-    g++ -shared -fPIC $SRC_DIR/orchistrator.cpp \
+    g++ -shared -fPIC $SRC_DIR/server.cpp \
         $INCLUDES \
         $STEAM_LIBS \
         $SYSTEM_LIBS \
@@ -74,7 +74,7 @@ g++ $SRC_DIR/main.cpp \
 # Generate compilation database only if it doesn't exist
 if [ ! -f "compile_commands.json" ]; then
     print_status "Generating compilation database..."
-    bear -- g++ -shared -fPIC $SRC_DIR/orchistrator.cpp \
+    bear -- g++ -shared -fPIC $SRC_DIR/server.cpp \
         $INCLUDES \
         $STEAM_LIBS \
         $SYSTEM_LIBS \

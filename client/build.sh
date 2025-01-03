@@ -11,11 +11,11 @@ print_status() {
 build_shared_lib() {
     print_status "Building shared library..."
     TIMESTAMP=$(date +%s)
-    TEMP_NAME="libgame_${TIMESTAMP}.so"
-    FINAL_NAME="libgame.so"
+    TEMP_NAME="libclient_${TIMESTAMP}.so"
+    FINAL_NAME="libclient.so"
     
     # Build to a temporary file first
-    g++ -shared -fPIC $SRC_DIR/game.cpp \
+    g++ -shared -fPIC $SRC_DIR/client.cpp \
         $INCLUDES \
         $RAYLIB_LIBS \
         $STEAM_LIBS \
@@ -86,7 +86,7 @@ fi
 # Copy steamworks library
 cp $STEAM_LIB_DIR/libsteam_api.so ./
 
-# Build the game
+# Build the client
 build_shared_lib
 
 print_status "Building main executable..."
@@ -96,18 +96,18 @@ g++ $SRC_DIR/main.cpp \
     $STEAM_LIBS \
     $SYSTEM_LIBS \
     $COMPILER_FLAGS \
-    -o ./game
+    -o ./client
 
 # Generate compilation database only if it doesn't exist
 if [ ! -f "compile_commands.json" ]; then
     print_status "Generating compilation database..."
-    bear -- g++ -shared -fPIC $SRC_DIR/game.cpp \
+    bear -- g++ -shared -fPIC $SRC_DIR/client.cpp \
         $INCLUDES \
         $RAYLIB_LIBS \
         $STEAM_LIBS \
         $SYSTEM_LIBS \
         $COMPILER_FLAGS \
-        -o ./libgame.so
+        -o ./libclient.so
 
     bear -- g++ $SRC_DIR/main.cpp \
         $INCLUDES \
@@ -115,10 +115,10 @@ if [ ! -f "compile_commands.json" ]; then
         $STEAM_LIBS \
         $SYSTEM_LIBS \
         $COMPILER_FLAGS \
-        -o ./game
+        -o ./client
 fi
 
 print_status "Build complete!"
 
-# Run the game
-./game
+# Run the client
+./client

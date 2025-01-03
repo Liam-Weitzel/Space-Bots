@@ -2,55 +2,55 @@
 #include "game_state.h"
 #include "utils.h"
 
-typedef void (*game_main_fn)(GameState*);
+typedef void (*client_main_fn)(GameState*);
 
-struct Game {
+struct Client {
     void* library = nullptr;
-    game_main_fn main = nullptr;
+    client_main_fn main = nullptr;
 };
 
-Game load_game() {
-    LOG_TRACE("Loading game code...");
-    Game game = {};
-    const char* LIB_PATH = "./libgame.so";
+Client load_client() {
+    LOG_TRACE("Loading client code...");
+    Client client = {};
+    const char* LIB_PATH = "./libclient.so";
 
-    game.library = dlopen(LIB_PATH, RTLD_NOW | RTLD_DEEPBIND | RTLD_LOCAL) ;
-    if (!game.library) {
+    client.library = dlopen(LIB_PATH, RTLD_NOW | RTLD_DEEPBIND | RTLD_LOCAL) ;
+    if (!client.library) {
         LOG_ERROR("Failed to open library: ", dlerror());
-        return game;
+        return client;
     }
     LOG_TRACE("Successfully opened library");
 
-    game.main = (game_main_fn)dlsym(game.library, "game_main");
-    LOG_TRACE("Loaded game main function: ", (game.main ? "success" : "failed"));
-    return game;
+    client.main = (client_main_fn)dlsym(client.library, "client_main");
+    LOG_TRACE("Loaded client main function: ", (client.main ? "success" : "failed"));
+    return client;
 }
 
-void unload_game(Game* game) {
-    LOG_TRACE("Unloading library handle: ", game->library)
-    dlclose(game->library);
-    game->library = nullptr;
-    game->main = nullptr;
+void unload_client(Client* client) {
+    LOG_TRACE("Unloading library handle: ", client->library)
+    dlclose(client->library);
+    client->library = nullptr;
+    client->main = nullptr;
 }
 
 int main() {
-    LOG_TRACE("Starting game...");
+    LOG_TRACE("Starting client...");
     
-    Game game = load_game();
+    Client client = load_client();
     
-    if (!game.library || !game.main) {
-        LOG_ERROR("Failed to load initial game code");
+    if (!client.library || !client.main) {
+        LOG_ERROR("Failed to load initial client code");
         return 1;
     }
 
     GameState state = {};
 
     while(1) {
-        game.main(&state);
-        unload_game(&game);
-        game = load_game();
+        client.main(&state);
+        unload_client(&client);
+        client = load_client();
         LOG_TRACE("Reload complete");
     }
 
-    unload_game(&game);
+    unload_client(&client);
 }
