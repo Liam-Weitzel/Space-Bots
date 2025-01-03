@@ -2,55 +2,55 @@
 #include "game_state.h"
 #include "utils.h"
 
-typedef void (*orchistrator_main_fn)(GameState*);
+typedef void (*server_main_fn)(GameState*);
 
-struct Orchistrator {
+struct Server {
     void* library = nullptr;
-    orchistrator_main_fn main = nullptr;
+    server_main_fn main = nullptr;
 };
 
-Orchistrator load_orchistrator() {
-    LOG_TRACE("Loading orchistrator code...");
-    Orchistrator orchistrator = {};
+Server load_server() {
+    LOG_TRACE("Loading server code...");
+    Server server = {};
     const char* LIB_PATH = "./libserver.so";
 
-    orchistrator.library = dlopen(LIB_PATH, RTLD_NOW | RTLD_DEEPBIND | RTLD_LOCAL) ;
-    if (!orchistrator.library) {
+    server.library = dlopen(LIB_PATH, RTLD_NOW | RTLD_DEEPBIND | RTLD_LOCAL) ;
+    if (!server.library) {
         LOG_ERROR("Failed to open library: ", dlerror());
-        return orchistrator;
+        return server;
     }
     LOG_TRACE("Successfully opened library");
 
-    orchistrator.main = (orchistrator_main_fn)dlsym(orchistrator.library, "orchistrator_main");
-    LOG_TRACE("Loaded orchistrator main function: ", (orchistrator.main ? "success" : "failed"));
-    return orchistrator;
+    server.main = (server_main_fn)dlsym(server.library, "server_main");
+    LOG_TRACE("Loaded server main function: ", (server.main ? "success" : "failed"));
+    return server;
 }
 
-void unload_orchistrator(Orchistrator* orchistrator) {
-    LOG_TRACE("Unloading library handle: ", orchistrator->library)
-    dlclose(orchistrator->library);
-    orchistrator->library = nullptr;
-    orchistrator->main = nullptr;
+void unload_server(Server* server) {
+    LOG_TRACE("Unloading library handle: ", server->library)
+    dlclose(server->library);
+    server->library = nullptr;
+    server->main = nullptr;
 }
 
 int main() {
-    LOG_TRACE("Starting orchistrator...");
+    LOG_TRACE("Starting server...");
     
-    Orchistrator orchistrator = load_orchistrator();
+    Server server = load_server();
     
-    if (!orchistrator.library || !orchistrator.main) {
-        LOG_ERROR("Failed to load initial orchistrator code");
+    if (!server.library || !server.main) {
+        LOG_ERROR("Failed to load initial server code");
         return 1;
     }
 
     GameState state = {};
 
     while(1) {
-        orchistrator.main(&state);
-        unload_orchistrator(&orchistrator);
-        orchistrator = load_orchistrator();
+        server.main(&state);
+        unload_server(&server);
+        server = load_server();
         LOG_TRACE("Reload complete");
     }
 
-    unload_orchistrator(&orchistrator);
+    unload_server(&server);
 }

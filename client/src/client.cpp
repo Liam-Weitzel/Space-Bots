@@ -1,4 +1,4 @@
-#include "game.h"
+#include "client.h"
 #include "game_state.h"
 
 #include "entt.hpp"
@@ -7,12 +7,12 @@
 
 #include "isteamuser.h"
 #include "isteamuserstats.h"
+#include "steam_api.h"
+#include "steamtypes.h"
+
 #include "raylib.h"
 #include "rlgl.h"
 #include "raymath.h"
-
-#include "steam_api.h"
-#include "steamtypes.h"
 
 #define RAYGUI_IMPLEMENTATION
 #define RAYGUI_SUPPORT_ICONS
@@ -153,13 +153,13 @@ void update(GameState* state) {
     }
 }
 
-extern "C" void game_main(GameState* state) {
+extern "C" void client_main(GameState* state) {
     InitWindow(800, 450, "video game");
     SetTargetFPS(60);
     init(state);
-    time_t last_write_time = get_timestamp("./libgame.so"); //comment out for prod build
+    time_t last_write_time = get_timestamp("./libclient.so"); //comment out for prod build
     while(!WindowShouldClose()) {
-        if(last_write_time != get_timestamp("./libgame.so")) break; //comment for prod build
+        if(last_write_time != get_timestamp("./libclient.so")) break; //comment for prod build
         update(state);
         render(state);
     }
