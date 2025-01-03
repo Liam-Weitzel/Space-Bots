@@ -13,7 +13,6 @@ struct GameState {
     Camera2D camera;
     entt::registry registry;
     GUI gui;
-    time_t last_write_time;
 };
 
 // Components

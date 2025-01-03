@@ -1,5 +1,5 @@
 #pragma once
-#include "game_state.hpp"
+#include "game_state.h"
 
 void init(GameState* state);
 void update(GameState* state);

@@ -1,7 +1,9 @@
-#include "game.hpp"
-#include "game_state.hpp"
+#include "game.h"
+#include "game_state.h"
 
 #include "entt.hpp"
+
+#include "utils.h"
 
 #include "isteamuser.h"
 #include "isteamuserstats.h"
@@ -18,9 +20,6 @@
 
 #define GUI_GUI_IMPLEMENTATION
 #include "gui.h"
-
-#include <sys/stat.h>
-#include <iostream>
 
 void render(GameState* state) {
     BeginDrawing();
@@ -43,10 +42,10 @@ void render(GameState* state) {
 
         // Draw mouse reference
         Vector2 mousePos = GetScreenToWorld2D(GetMousePosition(), state->camera);
-        DrawCircleV(GetMousePosition(), 4, WHITE);
-        DrawTextEx(GetFontDefault(), 
+        DrawCircleV(GetMousePosition(), 4, GetColor(GuiGetStyle(DEFAULT, LINE_COLOR)));
+        DrawTextEx(GuiGetFont(), 
             TextFormat("[%.0f, %.0f]", mousePos.x, mousePos.y),
-            Vector2Add(GetMousePosition(), (Vector2){ -44, -24 }), 20, 2, WHITE);
+            Vector2Add(GetMousePosition(), (Vector2){ -44, -24 }), 20, 2, GetColor(GuiGetStyle(DEFAULT, LINE_COLOR)));
 
         GuiGui(&state->gui);
     EndDrawing();
@@ -55,7 +54,7 @@ void render(GameState* state) {
 void init(GameState* state) {
     // Initialize Steam API
     if (SteamAPI_Init()) {
-        std::cout << "Steam API initialized successfully!" << std::endl;
+        LOG_TRACE("Steam API initialized successfully!");
 
         // Check if the user is logged into Steam
         if (SteamUser()->BLoggedOn()) {
@@ -82,21 +81,21 @@ void init(GameState* state) {
             );
 
             if (sessionTicket != k_HAuthTicketInvalid) {
-                std::cout << "Steam user logged in: " << playerName << ", " << steamID << std::endl;
+                LOG_TRACE("Steam user logged in: %u", steamID);
                 // std::cout << "Auth ticket obtained for server " << serverIdentity.GetSteamID64() << std::endl;
-                std::cout << "Ticket size: " << ticketSize << " bytes" << std::endl;
+                LOG_TRACE("Ticket size: %u", ticketSize);
             } else {
-                std::cerr << "Failed to get auth ticket" << std::endl;
+                LOG_ERROR("Failed to get auth ticket")
             }
         } else {
-            std::cerr << "Steam user not logged in." << std::endl;
+            LOG_ASSERT(false, "Steam user not logged in")
         }
     } else {
-        std::cerr << "Steam API initialization failed!" << std::endl;
+        LOG_ASSERT(false, "Steam API initialization failed!");
     }
 
     const uint32 num_achievements = SteamUserStats()->GetNumAchievements();
-    std::cout << "num achievements " << num_achievements << std::endl;
+    LOG_TRACE("num achievements: %u", num_achievements);
 
     //if we are launching for the first time: NOT HOT RELOADED
     if(state->registry.storage<entt::entity>().empty()) {
@@ -154,21 +153,13 @@ void update(GameState* state) {
     }
 }
 
-time_t get_last_write_time() {
-    struct stat file_stat;
-    if (stat("./libgame.so", &file_stat) == 0) {
-        return file_stat.st_mtime;
-    }
-    return 0;
-}
-
 extern "C" void game_main(GameState* state) {
     InitWindow(800, 450, "video game");
     SetTargetFPS(60);
     init(state);
-    state->last_write_time = get_last_write_time(); //comment out for prod build
+    time_t last_write_time = get_timestamp("./libgame.so"); //comment out for prod build
     while(!WindowShouldClose()) {
-        if(state->last_write_time != get_last_write_time()) break; //comment for prod build
+        if(last_write_time != get_timestamp("./libgame.so")) break; //comment for prod build
         update(state);
         render(state);
     }
