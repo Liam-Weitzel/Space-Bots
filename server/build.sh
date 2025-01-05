@@ -36,8 +36,8 @@ SRC_DIR="./src"
 # Common flags
 INCLUDES="-I $LIBS_DIR -I $ENTT_DIR/src/entt -I $SRC_DIR -I $STEAM_DIR"
 STEAM_LIBS=" -l steam_api -L $STEAM_LIB_DIR"
-SYSTEM_LIBS="-lGL -lm -lpthread -ldl -lrt -lX11"
-COMPILER_FLAGS="-Wl,-rpath,\$ORIGIN/ -fno-gnu-unique -Wno-format-security -g"
+SYSTEM_LIBS=" -lm -lpthread -ldl -lrt"
+COMPILER_FLAGS=" -Wl,-rpath,\$ORIGIN/ -fno-gnu-unique -Wno-format-security -g"
 
 # Check if we're doing a hot reload build
 if [ "$1" = "hot" ]; then
