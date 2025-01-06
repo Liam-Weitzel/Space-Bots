@@ -1,0 +1,9 @@
+[submodule "client/libs/raygui"]
+	path = client/libs/raygui
+	url = https://github.com/raysan5/raygui.git
+[submodule "client/libs/raylib"]
+	path = client/libs/raylib
+	url = https://github.com/raysan5/raylib.git
+[submodule "libs/entt"]
+	path = libs/entt
+	url = https://github.com/skypjack/entt.git

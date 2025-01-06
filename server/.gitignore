@@ -5,7 +5,5 @@ libsteam_api.so
 server
 
 # Dependencies
-libs/*
-!libs/steam/
 .cache/
 .direnv/
