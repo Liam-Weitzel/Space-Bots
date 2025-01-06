@@ -1,6 +1,11 @@
 {
   description = "Client dev environment";
 
+  nixConfig = {
+    allow-impure = true;
+    allow-unfree = true;
+  };
+
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
   };
@@ -11,9 +16,19 @@
     devShells."${system}".default = let
       pkgs = import nixpkgs {
         inherit system;
+        config = {
+          allowUnfree = true;
+          # Explicitly allow Steam
+          allowUnfreePredicate = pkg: builtins.elem (pkgs.lib.getName pkg) [
+            "steam"
+            "steam-original"
+            "steam-runtime"
+          ];
+        };
       };
     in pkgs.mkShell {
       packages = [
+        pkgs.steam
         pkgs.gcc
         pkgs.gdb
         pkgs.valgrind
