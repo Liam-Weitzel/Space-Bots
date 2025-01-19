@@ -7,9 +7,6 @@
 [submodule "libs/entt"]
 	path = libs/entt
 	url = https://github.com/skypjack/entt.git
-[submodule "libs/dropper-maya_blender"]
-	path = libs/dropper-maya_blender
-	url = https://github.com/jhocking/dropper-maya_blender.git
 [submodule "client/libs/rres"]
 	path = client/libs/rres
 	url = https://github.com/raysan5/rres.git
@@ -22,3 +19,6 @@
 [submodule "client/libs/rguistyler"]
 	path = client/libs/rguistyler
 	url = https://github.com/raysan5/rguistyler.git
+[submodule "server/libs/dropper-maya_blender"]
+	path = server/libs/dropper-maya_blender
+	url = https://github.com/jhocking/dropper-maya_blender.git
