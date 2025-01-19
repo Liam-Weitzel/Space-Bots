@@ -203,13 +203,19 @@ void render(GameState* state) {
 
 void init(GameState* state) {
     rresCentralDir dir = rresLoadCentralDirectory("resources.rres");
-    rresUnloadCentralDirectory(dir);
 
-    int idMesh = rresGetResourceId(dir, "rover.blend");
+    int idMesh = rresGetResourceId(dir, "resources/packed/rover.glb");
     rresResourceMulti multiMesh = rresLoadResourceMulti("resources.rres", idMesh);
     Mesh mesh = LoadMeshFromResource(multiMesh);
     rresUnloadResourceMulti(multiMesh);
     UnloadMesh(mesh);
+
+    int idStyle = rresGetResourceId(dir, "resources/packed/ash.rgs");
+    rresResourceChunk chunkStyle = rresLoadResourceChunk("resources.rres", idStyle);
+    GuiLoadStyleFromMemory((const unsigned char*)chunkStyle.data.raw, chunkStyle.info.baseSize);
+    rresUnloadResourceChunk(chunkStyle);
+
+    rresUnloadCentralDirectory(dir);
 
     LOG_TRACE("Initializing Steam...");
     if (SteamAPI_Init()) {
@@ -271,8 +277,8 @@ void init(GameState* state) {
             );
         }
 
-        GuiLoadStyleDefault();
-        GuiLoadIcons("resources/ui/icons.rgi", "icons");
+        //GuiLoadStyleDefault();
+        GuiLoadIcons("resources/unpacked/icons.rgi", "icons");
         GuiGuiState gui_state = InitGuiGui();
         state->gui.gui_state = gui_state;
     }
