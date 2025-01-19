@@ -12,6 +12,15 @@
 #include "rlgl.h"
 #include "raymath.h"
 
+#define RRES_IMPLEMENTATION
+#include "rres.h"
+
+#define RRES_RAYLIB_IMPLEMENTATION
+#define RRES_SUPPORT_COMPRESSION_LZ4
+#define RRES_SUPPORT_COMPRESSION_AES
+#define RRES_SUPPORT_COMPRESSION_XCHACHA20
+#include "rres-raylib.h"
+
 #define RAYGUI_IMPLEMENTATION
 #define RAYGUI_SUPPORT_ICONS
 #include "raygui.h"
@@ -193,6 +202,15 @@ void render(GameState* state) {
 }
 
 void init(GameState* state) {
+    rresCentralDir dir = rresLoadCentralDirectory("resources.rres");
+    rresUnloadCentralDirectory(dir);
+
+    int idMesh = rresGetResourceId(dir, "rover.blend");
+    rresResourceMulti multiMesh = rresLoadResourceMulti("resources.rres", idMesh);
+    Mesh mesh = LoadMeshFromResource(multiMesh);
+    rresUnloadResourceMulti(multiMesh);
+    UnloadMesh(mesh);
+
     LOG_TRACE("Initializing Steam...");
     if (SteamAPI_Init()) {
         LOG_TRACE("Steam API initialized successfully!");
@@ -254,7 +272,7 @@ void init(GameState* state) {
         }
 
         GuiLoadStyleDefault();
-        GuiLoadIcons("assets/icons.rgi", "icons");
+        GuiLoadIcons("resources/ui/icons.rgi", "icons");
         GuiGuiState gui_state = InitGuiGui();
         state->gui.gui_state = gui_state;
     }
