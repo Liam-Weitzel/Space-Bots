@@ -122,7 +122,7 @@ extern "C" void server_main(GameState* state) {
     LOG_TRACE("Initializing Steam Game Server...");
     
     if (!SteamGameServer_Init(
-            0,                    // IP Address (0 = localhost)
+            0,                     // IP Address (0 = localhost)
             STEAM_SERVER_PORT,    // Game port
             STEAM_QUERY_PORT,     // Query port
             eServerModeAuthenticationAndSecure,  // Server mode

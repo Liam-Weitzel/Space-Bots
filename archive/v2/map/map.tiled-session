@@ -1,0 +1,64 @@
+{
+    "activeFile": "map.tmx",
+    "expandedProjectPaths": [
+        "."
+    ],
+    "file.lastUsedOpenFilter": "All Files (*)",
+    "fileStates": {
+        "": {
+            "scaleInDock": 1
+        },
+        ":/automap-tiles.tsx": {
+            "scaleInDock": 1
+        },
+        "atlas.tsx": {
+            "scaleInDock": 1.7979,
+            "scaleInEditor": 0.95
+        },
+        "atlas2x3.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 0.95
+        },
+        "atlas4x4.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 2
+        },
+        "map.tmx": {
+            "expandedObjectLayers": [
+                108
+            ],
+            "scale": 1.5,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 1274,
+                "y": 426.3333333333333
+            }
+        },
+        "map.tmx#atlas.tsx": {
+            "scaleInDock": 1
+        },
+        "rules.tmx": {
+            "scale": 3.7917,
+            "selectedLayer": 4,
+            "viewCenter": {
+                "x": 433.3148719571696,
+                "y": 149.6690138987789
+            }
+        }
+    },
+    "openFiles": [
+        "map.tmx",
+        "rules.tmx",
+        "atlas4x4.tsx",
+        "atlas2x3.tsx",
+        "atlas.tsx"
+    ],
+    "project": "map.tiled-project",
+    "recentFiles": [
+        "atlas.tsx",
+        "atlas2x3.tsx",
+        "atlas4x4.tsx",
+        "rules.tmx",
+        "map.tmx"
+    ]
+}
