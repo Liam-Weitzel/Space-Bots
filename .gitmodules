@@ -10,3 +10,15 @@
 [submodule "libs/dropper-maya_blender"]
 	path = libs/dropper-maya_blender
 	url = https://github.com/jhocking/dropper-maya_blender.git
+[submodule "client/libs/rres"]
+	path = client/libs/rres
+	url = https://github.com/raysan5/rres.git
+[submodule "client/libs/rguiicons"]
+	path = client/libs/rguiicons
+	url = https://github.com/raysan5/rguiicons.git
+[submodule "client/libs/rguilayout"]
+	path = client/libs/rguilayout
+	url = https://github.com/raysan5/rguilayout.git
+[submodule "client/libs/rguistyler"]
+	path = client/libs/rguistyler
+	url = https://github.com/raysan5/rguistyler.git

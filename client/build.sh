@@ -37,10 +37,11 @@ ENTT_DIR="$COMMON_LIBS_DIR/entt"
 STEAM_DIR="$COMMON_LIBS_DIR/steam/public/steam"
 STEAM_LIB_DIR="$COMMON_LIBS_DIR/steam/redistributable_bin/linux64"
 STEAM_LIB_FILE="$STEAM_LIB_DIR/libsteam_api.so"
+RRES_SRC="$LIBS_DIR/rres/src"
 SRC_DIR="./src"
 
 # Common flags
-INCLUDES="-I $RAYLIB_SRC -I $RAYGUI_SRC -I $ENTT_DIR/src/entt -I $SRC_DIR -I $STEAM_DIR"
+INCLUDES="-I $RAYLIB_SRC -I $RAYGUI_SRC -I $RRES_SRC -I $ENTT_DIR/src/entt -I $SRC_DIR -I $STEAM_DIR"
 RAYLIB_LIBS="-L $RAYLIB_SRC -L $RAYLIB_SRC/rtext -lraylib"
 STEAM_LIBS=" -l steam_api -L $STEAM_LIB_DIR"
 SYSTEM_LIBS="-lGL -lm -lpthread -ldl -lrt -lX11"
