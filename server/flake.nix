@@ -28,6 +28,7 @@
       };
     in pkgs.mkShell {
       packages = [
+        pkgs.blender
         pkgs.steam
         pkgs.gcc
         pkgs.gdb
