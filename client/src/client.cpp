@@ -204,16 +204,22 @@ void render(GameState* state) {
 void init(GameState* state) {
     rresCentralDir dir = rresLoadCentralDirectory("resources.rres");
 
-    int idMesh = rresGetResourceId(dir, "resources/packed/rover.glb");
+    int idMesh = rresGetResourceId(dir, "resources/rover.glb");
     rresResourceMulti multiMesh = rresLoadResourceMulti("resources.rres", idMesh);
     Mesh mesh = LoadMeshFromResource(multiMesh);
     rresUnloadResourceMulti(multiMesh);
     UnloadMesh(mesh);
 
-    int idStyle = rresGetResourceId(dir, "resources/packed/ash.rgs");
+    int idStyle = rresGetResourceId(dir, "resources/ash.rgs");
     rresResourceChunk chunkStyle = rresLoadResourceChunk("resources.rres", idStyle);
     GuiLoadStyleFromMemory((const unsigned char*)chunkStyle.data.raw, chunkStyle.info.baseSize);
     rresUnloadResourceChunk(chunkStyle);
+
+
+    int idIcons = rresGetResourceId(dir, "resources/icons.rgi");
+    rresResourceChunk chunkIcons = rresLoadResourceChunk("resources.rres", idIcons);
+    GuiLoadIconsFromMemory((const unsigned char*)chunkIcons.data.raw, chunkIcons.info.baseSize, "icons");
+    rresUnloadResourceChunk(chunkIcons);
 
     rresUnloadCentralDirectory(dir);
 
@@ -278,7 +284,7 @@ void init(GameState* state) {
         }
 
         //GuiLoadStyleDefault();
-        GuiLoadIcons("resources/unpacked/icons.rgi", "icons");
+        //GuiLoadIcons("resources/icons.rgi", "icons");
         GuiGuiState gui_state = InitGuiGui();
         state->gui.gui_state = gui_state;
     }
