@@ -12,21 +12,21 @@
 #include "rlgl.h"
 #include "raymath.h"
 
-#define RRES_IMPLEMENTATION
-#include "rres.h"
-
-#define RRES_RAYLIB_IMPLEMENTATION
-#define RRES_SUPPORT_COMPRESSION_LZ4
-#define RRES_SUPPORT_COMPRESSION_AES
-#define RRES_SUPPORT_COMPRESSION_XCHACHA20
-#include "rres-raylib.h"
-
 #define RAYGUI_IMPLEMENTATION
 #define RAYGUI_SUPPORT_ICONS
 #include "raygui.h"
 
 #define GUI_GUI_IMPLEMENTATION
 #include "gui.h"
+
+#define RRES_IMPLEMENTATION
+#include "rres.h"
+
+#define RRES_RAYLIB_IMPLEMENTATION
+#define RRES_SUPPORT_COMPRESSION_LZ4
+#define RRES_SUPPORT_ENCRYPTION_AES
+#define RRES_SUPPORT_ENCRYPTION_XCHACHA20
+#include "rres-raylib.h"
 
 #define VIRTUAL_PORT 27017
 #define APP_ID 2415880
@@ -203,22 +203,34 @@ void render(GameState* state) {
 
 void init(GameState* state) {
     rresCentralDir dir = rresLoadCentralDirectory("resources.rres");
+    //./libs/rrespacker/rrespacker -o resources.rres --rrp resources.rrp
 
-    int idMesh = rresGetResourceId(dir, "resources/rover.glb");
+    int idMesh = rresGetResourceId(dir, "rover.glb");
     rresResourceMulti multiMesh = rresLoadResourceMulti("resources.rres", idMesh);
-    Mesh mesh = LoadMeshFromResource(multiMesh);
-    rresUnloadResourceMulti(multiMesh);
+    int result = -1;
+    for(int i = 0; i < multiMesh.count; ++i) {
+        result = UnpackResourceChunk(&multiMesh.chunks[i]);
+        if(result != RRES_SUCCESS) break;
+    }
+    Mesh mesh = { 0 };
+    if(result == RRES_SUCCESS) {
+        mesh = LoadMeshFromResource(multiMesh);
+        rresUnloadResourceMulti(multiMesh);
+    }
     UnloadMesh(mesh);
 
-    int idStyle = rresGetResourceId(dir, "resources/ash.rgs");
+    int idStyle = rresGetResourceId(dir, "bluish.rgs");
     rresResourceChunk chunkStyle = rresLoadResourceChunk("resources.rres", idStyle);
-    GuiLoadStyleFromMemory((const unsigned char*)chunkStyle.data.raw, chunkStyle.info.baseSize);
+    if(UnpackResourceChunk(&chunkStyle) == RRES_SUCCESS) {
+        GuiLoadStyleFromMemory((const unsigned char*) chunkStyle.data.raw, chunkStyle.info.baseSize);
+    }
     rresUnloadResourceChunk(chunkStyle);
 
-
-    int idIcons = rresGetResourceId(dir, "resources/icons.rgi");
+    int idIcons = rresGetResourceId(dir, "icons.rgi");
     rresResourceChunk chunkIcons = rresLoadResourceChunk("resources.rres", idIcons);
-    GuiLoadIconsFromMemory((const unsigned char*)chunkIcons.data.raw, chunkIcons.info.baseSize, "icons");
+    if(UnpackResourceChunk(&chunkIcons) == RRES_SUCCESS) {
+        GuiLoadIconsFromMemory((const unsigned char*) chunkIcons.data.raw, chunkIcons.info.baseSize, "icons");
+    }
     rresUnloadResourceChunk(chunkIcons);
 
     rresUnloadCentralDirectory(dir);
@@ -284,7 +296,7 @@ void init(GameState* state) {
         }
 
         //GuiLoadStyleDefault();
-        //GuiLoadIcons("resources/icons.rgi", "icons");
+        //GuiLoadIcons("icons.rgi", "icons");
         GuiGuiState gui_state = InitGuiGui();
         state->gui.gui_state = gui_state;
     }

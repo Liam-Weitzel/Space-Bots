@@ -72,17 +72,17 @@ void GuiGui(GUI* gui);
 static void Button004(int* style);                // Button: Button004 logic
 static const char* styles[] = {
     "default",
-    "resources/ash.rgs",
-    "resources/bluish.rgs",
-    "resources/candy.rgs",
-    "resources/cherry.rgs",
-    "resources/cyber.rgs",
-    "resources/dark.rgs",
-    "resources/enefete.rgs",
-    "resources/jungle.rgs",
-    "resources/lavanda.rgs",
-    "resources/sunny.rgs",
-    "resources/terminal.rgs"
+    "resources/styles/ash.rgs",
+    "resources/styles/bluish.rgs",
+    "resources/styles/candy.rgs",
+    "resources/styles/cherry.rgs",
+    "resources/styles/cyber.rgs",
+    "resources/styles/dark.rgs",
+    "resources/styles/enefete.rgs",
+    "resources/styles/jungle.rgs",
+    "resources/styles/lavanda.rgs",
+    "resources/styles/sunny.rgs",
+    "resources/styles/terminal.rgs"
 };
 static int loaded_style = 0;
 
