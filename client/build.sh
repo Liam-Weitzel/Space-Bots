@@ -31,6 +31,8 @@ build_shared_lib() {
 LIBS_DIR="./libs"
 COMMON_LIBS_DIR="../libs"
 RAYLIB_DIR="$LIBS_DIR/raylib"
+RAYLIB_RLIGHTS="$RAYLIB_DIR/examples/shaders"
+RAYLIB_REASINGS="$RAYLIB_DIR/examples/others"
 RAYLIB_SRC="$RAYLIB_DIR/src"
 RAYGUI_SRC="$LIBS_DIR/raygui/src"
 ENTT_DIR="$COMMON_LIBS_DIR/entt"
@@ -39,13 +41,17 @@ STEAM_LIB_DIR="$COMMON_LIBS_DIR/steam/redistributable_bin/linux64"
 STEAM_LIB_FILE="$STEAM_LIB_DIR/libsteam_api.so"
 RRES_SRC="$LIBS_DIR/rres/src"
 SRC_DIR="./src"
+RRESPACKER_EXE="$LIBS_DIR/rrespacker/rrespacker"
 
 # Common flags
-INCLUDES="-I $RAYLIB_SRC -I $RAYGUI_SRC -I $RRES_SRC -I $ENTT_DIR/src/entt -I $SRC_DIR -I $STEAM_DIR"
+INCLUDES="-I $RAYLIB_SRC -I $RAYLIB_RLIGHTS -I $RAYLIB_REASINGS -I $RAYGUI_SRC -I $RRES_SRC -I $ENTT_DIR/src/entt -I $SRC_DIR -I $STEAM_DIR"
 RAYLIB_LIBS="-L $RAYLIB_SRC -L $RAYLIB_SRC/rtext -lraylib"
 STEAM_LIBS=" -l steam_api -L $STEAM_LIB_DIR"
 SYSTEM_LIBS="-lGL -lm -lpthread -ldl -lrt -lX11"
 COMPILER_FLAGS="-Wl,-rpath,\$ORIGIN/ -fno-gnu-unique -Wno-format-security -g"
+
+# Build resources
+$RRESPACKER_EXE -o resources.rres --rrp resources.rrp
 
 # Check if we're doing a hot reload build
 if [ "$1" = "hot" ]; then
