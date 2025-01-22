@@ -1,11 +1,3 @@
-#
-# rrp v1.0 - rres project text file generated using rrespacker
-#
-# File info expected structure:
-# f <fileFullPath@mappingFileName>,<external-link>,<force-raw>,<custom-id>,<compressor>,<cipher>
-#
-# Number of files:     13
-#
 f /home/liam-w/Space-Bots/client/resources/icons.rgi@icons.rgi,0,0,0x00000000,20,0
 f /home/liam-w/Space-Bots/client/resources/styles/ash.rgs@ash.rgs,0,0,0x00000000,20,0
 f /home/liam-w/Space-Bots/client/resources/styles/bluish.rgs@bluish.rgs,0,0,0x00000000,20,0
@@ -19,3 +11,5 @@ f /home/liam-w/Space-Bots/client/resources/styles/lavanda.rgs@lavanda.rgs,0,0,0x
 f /home/liam-w/Space-Bots/client/resources/styles/sunny.rgs@sunny.rgs,0,0,0x00000000,20,0
 f /home/liam-w/Space-Bots/client/resources/styles/terminal.rgs@terminal.rgs,0,0,0x00000000,20,0
 f /home/liam-w/Space-Bots/client/resources/models/rover.glb@rover.glb,0,0,0x00000000,20,0
+f /home/liam-w/Space-Bots/client/resources/shaders/lighting.fs@lighting.fs,0,0,0x00000000,20,0
+f /home/liam-w/Space-Bots/client/resources/shaders/lighting.vs@lighting.vs,0,0,0x00000000,20,0

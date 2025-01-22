@@ -28,6 +28,11 @@
 #define RRES_SUPPORT_ENCRYPTION_XCHACHA20
 #include "rres-raylib.h"
 
+#define RLIGHTS_IMPLEMENTATION
+#include "rlights.h"
+
+#define GLSL_VERSION 330
+
 #define VIRTUAL_PORT 27017
 #define APP_ID 2415880
 
@@ -176,26 +181,33 @@ void SearchForServers() {
 
 void render(GameState* state) {
     BeginDrawing();
-        BeginMode2D(state->camera);
-            ClearBackground(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
+        ClearBackground(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
+        BeginMode3D(state->camera);
 
-            rlPushMatrix();
-                rlTranslatef(0, 25*50, 0);
-                rlRotatef(90, 1, 0, 0);
-                DrawGrid(100, 50);
-            rlPopMatrix();
+            auto shaderView = state->registry.view<Shader>();
+            LOG_ASSERT(shaderView.size() == 1, "Expected exactly one shader");
+            auto shaderEntity = shaderView.front();
+            auto& shader = state->registry.get<Shader>(shaderEntity);
 
-            auto view = state->registry.view<const Position, const Renderable>();
-            view.each([](const Position& pos, const Renderable& rend) {
-                DrawCircleV(pos.pos, rend.radius, rend.color);
-            });
-        EndMode2D();
+            BeginShaderMode(shader);
+                DrawPlane(Vector3Zero(), (Vector2) { 10.0, 10.0 }, WHITE);
+                DrawCube(Vector3Zero(), 2.0, 4.0, 2.0, WHITE);
+            EndShaderMode();
 
-        Vector2 mousePos = GetScreenToWorld2D(GetMousePosition(), state->camera);
-        DrawCircleV(GetMousePosition(), 4, GetColor(GuiGetStyle(DEFAULT, LINE_COLOR)));
-        DrawTextEx(GuiGetFont(), 
-            TextFormat("[%.0f, %.0f]", mousePos.x, mousePos.y),
-            Vector2Add(GetMousePosition(), (Vector2){ -44, -24 }), 20, 2, GetColor(GuiGetStyle(DEFAULT, LINE_COLOR)));
+            // Iterate through all entities with Light component
+            auto lightView = state->registry.view<Light>();
+            for (auto [entity, light] : lightView.each()) {
+                if (light.enabled) DrawSphereEx(light.position, 0.2f, 8, 8, light.color);
+                else DrawSphereWires(light.position, 0.2f, 8, 8, ColorAlpha(light.color, 0.3f));
+            }
+
+            DrawGrid(10, 1.0f);
+
+        EndMode3D();
+
+        DrawFPS(10, 10);
+
+        DrawText("Use key [Y] to toggle lights", 10, 40, 20, GetColor(GuiGetStyle(DEFAULT, LINE_COLOR)));
 
         GuiGui(&state->gui);
     EndDrawing();
@@ -203,7 +215,6 @@ void render(GameState* state) {
 
 void init(GameState* state) {
     rresCentralDir dir = rresLoadCentralDirectory("resources.rres");
-    //./libs/rrespacker/rrespacker -o resources.rres --rrp resources.rrp
 
     int idMesh = rresGetResourceId(dir, "rover.glb");
     rresResourceMulti multiMesh = rresLoadResourceMulti("resources.rres", idMesh);
@@ -218,13 +229,6 @@ void init(GameState* state) {
         rresUnloadResourceMulti(multiMesh);
     }
     UnloadMesh(mesh);
-
-    int idStyle = rresGetResourceId(dir, "bluish.rgs");
-    rresResourceChunk chunkStyle = rresLoadResourceChunk("resources.rres", idStyle);
-    if(UnpackResourceChunk(&chunkStyle) == RRES_SUCCESS) {
-        GuiLoadStyleFromMemory((const unsigned char*) chunkStyle.data.raw, chunkStyle.info.baseSize);
-    }
-    rresUnloadResourceChunk(chunkStyle);
 
     int idIcons = rresGetResourceId(dir, "icons.rgi");
     rresResourceChunk chunkIcons = rresLoadResourceChunk("resources.rres", idIcons);
@@ -273,30 +277,72 @@ void init(GameState* state) {
     const uint32 num_achievements = SteamUserStats()->GetNumAchievements();
     LOG_TRACE("num achievements: %u", num_achievements);
 
-    if(state->registry.storage<entt::entity>().empty()) {
-        state->camera = Camera2D{0};
-        state->camera.zoom = 1.0f;
-        state->camera.offset = (Vector2){400, 225};
+    //Hack used to check if this current load is a hot code reload
+    bool isEcsDeinitialized = state->registry.storage<entt::entity>().empty();
 
-        for(int i = 0; i < 10; i++) {
-            auto entity = state->registry.create();
-            state->registry.emplace<Position>(entity, Vector2{
-                static_cast<float>(GetRandomValue(0, 800)),
-                static_cast<float>(GetRandomValue(0, 450))
-            });
-            state->registry.emplace<Renderable>(entity, 
-                Color{
-                    static_cast<unsigned char>(GetRandomValue(0, 255)),
-                    static_cast<unsigned char>(GetRandomValue(0, 255)),
-                    static_cast<unsigned char>(GetRandomValue(0, 255)),
-                    255
-                },
-                static_cast<float>(GetRandomValue(10, 30))
+    if(isEcsDeinitialized) {
+        // Define the camera to look into our 3d world
+        state->camera = { 0 };
+        state->camera.position = (Vector3){ 2.0f, 4.0f, 6.0f };    // Camera position
+        state->camera.target = (Vector3){ 0.0f, 0.5f, 0.0f };      // Camera looking at point
+        state->camera.up = (Vector3){ 0.0f, 1.0f, 0.0f };          // Camera up vector (rotation towards target)
+        state->camera.fovy = 45.0f;                                // Camera field-of-view Y
+        state->camera.projection = CAMERA_PERSPECTIVE;             // Camera projection type
+
+        rresCentralDir dir = rresLoadCentralDirectory("resources.rres");
+
+        // Get resource IDs for shaders
+        int vsId = rresGetResourceId(dir, "lighting.vs");
+        int fsId = rresGetResourceId(dir, "lighting.fs");
+
+        // Load shader chunks
+        rresResourceChunk vsChunk = rresLoadResourceChunk("resources.rres", vsId);
+        rresResourceChunk fsChunk = rresLoadResourceChunk("resources.rres", fsId);
+
+        Shader shader = { 0 };
+        if (UnpackResourceChunk(&vsChunk) == RRES_SUCCESS && 
+            UnpackResourceChunk(&fsChunk) == RRES_SUCCESS) {
+            // Load shader from memory
+            shader = LoadShaderFromMemory(
+                (const char*)vsChunk.data.raw,  // vertex shader code
+                (const char*)fsChunk.data.raw   // fragment shader code
             );
         }
 
-        //GuiLoadStyleDefault();
-        //GuiLoadIcons("icons.rgi", "icons");
+        // Clean up
+        rresUnloadResourceChunk(vsChunk);
+        rresUnloadResourceChunk(fsChunk);
+        rresUnloadCentralDirectory(dir);
+
+        // Get some required shader locations
+        shader.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(shader, "viewPos");
+        // NOTE: "matModel" location name is automatically assigned on shader loading, 
+        // no need to get the location again if using that uniform name
+        //shader.locs[SHADER_LOC_MATRIX_MODEL] = GetShaderLocation(shader, "matModel");
+
+        // Ambient light level (some basic lighting)
+        int ambientLoc = GetShaderLocation(shader, "ambient");
+        SetShaderValue(shader, ambientLoc, (float[4]){ 0.1f, 0.1f, 0.1f, 1.0f }, SHADER_UNIFORM_VEC4);
+
+        auto shaderEntity = state->registry.create();
+        state->registry.emplace<Shader>(shaderEntity, shader);
+
+        Light yellowLight = CreateLight(LIGHT_POINT, (Vector3){ -2, 1, -2 }, Vector3Zero(), YELLOW, shader);
+        auto yellowLightEntity = state->registry.create();
+        state->registry.emplace<Light>(yellowLightEntity, yellowLight);
+
+        Light redLight = CreateLight(LIGHT_POINT, (Vector3){ 2, 1, 2 }, Vector3Zero(), RED, shader);
+        auto redLightEntity = state->registry.create();
+        state->registry.emplace<Light>(redLightEntity, redLight);
+
+        Light greenLight = CreateLight(LIGHT_POINT, (Vector3){ -2, 1, 2 }, Vector3Zero(), GREEN, shader);
+        auto greenLightEntity = state->registry.create();
+        state->registry.emplace<Light>(greenLightEntity, greenLight);
+
+        Light blueLight = CreateLight(LIGHT_POINT, (Vector3){ 2, 1, -2 }, Vector3Zero(), BLUE, shader);
+        auto blueLightEntity = state->registry.create();
+        state->registry.emplace<Light>(blueLightEntity, blueLight);
+
         GuiGuiState gui_state = InitGuiGui();
         state->gui.gui_state = gui_state;
     }
@@ -342,29 +388,29 @@ void update(GameState* state) {
 
     auto& camera = state->camera;
 
-    if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
-        Vector2 delta = GetMouseDelta();
-        delta = Vector2Scale(delta, -1.0f/camera.zoom);
-        camera.target = Vector2Add(camera.target, delta);
-    }
+    UpdateCamera(&camera, CAMERA_ORBITAL);
 
-    float wheel = GetMouseWheelMove();
-    if (wheel != 0) {
-        Vector2 mousePos = GetMousePosition();
-        Vector2 mouseWorldPos = GetScreenToWorld2D(GetMousePosition(), camera);
-        camera.offset = GetMousePosition();
-        camera.target = mouseWorldPos;
-        float scaleFactor = 1.0f + (0.25f*fabsf(wheel));
+    // Iterate through all entities with Shader component
+    auto shaderView = state->registry.view<Shader>();
+    LOG_ASSERT(shaderView.size() == 1, "Expected exactly one shader");
+    auto shaderEntity = shaderView.front();
+    auto& shader = state->registry.get<Shader>(shaderEntity);
 
-        if (wheel < 0) {
-            scaleFactor = 1.0f/scaleFactor;
-        }
-        float newZoom = camera.zoom*scaleFactor;
-        camera.zoom = Clamp(newZoom, 0.5f, 5.0f);
+    // Update the shader with the camera view vector (points towards { 0.0f, 0.0f, 0.0f })
+    float cameraPos[3] = { camera.position.x, camera.position.y, camera.position.z };
+    SetShaderValue(shader, shader.locs[SHADER_LOC_VECTOR_VIEW], cameraPos, SHADER_UNIFORM_VEC3);
+
+    // Iterate through all entities with Light component
+    auto lightView = state->registry.view<Light>();
+    for (auto [entity, light] : lightView.each()) {
+        if (IsKeyPressed(KEY_Y)) { light.enabled = !light.enabled; }
+        // Update light values (actually, only enable/disable them)
+        UpdateLightValues(shader, light);
     }
 }
 
 extern "C" void client_main(GameState* state) {
+    SetConfigFlags(FLAG_MSAA_4X_HINT);
     InitWindow(800, 450, "video game");
     SetTargetFPS(60);
     init(state);
@@ -380,6 +426,12 @@ extern "C" void client_main(GameState* state) {
         g_pNetworkingSockets->CloseConnection(g_hConnection, 0, "Shutting down", false);
         g_hConnection = k_HSteamNetConnection_Invalid;
     }
+
+    auto shaderView = state->registry.view<Shader>();
+    LOG_ASSERT(shaderView.size() == 1, "Expected exactly one shader");
+    auto shaderEntity = shaderView.front();
+    auto& shader = state->registry.get<Shader>(shaderEntity);
+    UnloadShader(shader);
     
     delete g_pServerListResponse;
     SteamAPI_Shutdown();

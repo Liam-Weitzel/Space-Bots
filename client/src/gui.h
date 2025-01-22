@@ -24,6 +24,9 @@
 #undef RAYGUI_IMPLEMENTATION
 #include "raygui.h"
 
+#include "rres.h"
+#include "rres-raylib.h"
+
 #include <string.h>     // Required for: strcpy()
 
 #ifndef GUI_GUI_H
@@ -72,17 +75,17 @@ void GuiGui(GUI* gui);
 static void Button004(int* style);                // Button: Button004 logic
 static const char* styles[] = {
     "default",
-    "resources/styles/ash.rgs",
-    "resources/styles/bluish.rgs",
-    "resources/styles/candy.rgs",
-    "resources/styles/cherry.rgs",
-    "resources/styles/cyber.rgs",
-    "resources/styles/dark.rgs",
-    "resources/styles/enefete.rgs",
-    "resources/styles/jungle.rgs",
-    "resources/styles/lavanda.rgs",
-    "resources/styles/sunny.rgs",
-    "resources/styles/terminal.rgs"
+    "ash.rgs",
+    "bluish.rgs",
+    "candy.rgs",
+    "cherry.rgs",
+    "cyber.rgs",
+    "dark.rgs",
+    "enefete.rgs",
+    "jungle.rgs",
+    "lavanda.rgs",
+    "sunny.rgs",
+    "terminal.rgs"
 };
 static int loaded_style = 0;
 
@@ -148,7 +151,16 @@ void GuiGui(GUI* gui)
 {
     if(loaded_style != gui->style) {
         if (strcmp(styles[gui->style], "default") == 0) GuiLoadStyleDefault();
-        else GuiLoadStyle(styles[gui->style]);
+        else {
+            rresCentralDir dir = rresLoadCentralDirectory("resources.rres");
+            int idStyle = rresGetResourceId(dir, styles[gui->style]);
+            rresResourceChunk chunkStyle = rresLoadResourceChunk("resources.rres", idStyle);
+            if(UnpackResourceChunk(&chunkStyle) == RRES_SUCCESS) {
+                GuiLoadStyleFromMemory((const unsigned char*) chunkStyle.data.raw, chunkStyle.info.baseSize);
+            }
+            rresUnloadResourceChunk(chunkStyle);
+            rresUnloadCentralDirectory(dir);
+        }
         loaded_style = gui->style;
     }
 

@@ -1,6 +1,8 @@
 #include <dlfcn.h>
 #include "game_state.h"
 #include "utils.h"
+#include <thread>
+#include <chrono>
 
 typedef void (*client_main_fn)(GameState*);
 
@@ -48,6 +50,7 @@ int main() {
     while(1) {
         client.main(&state);
         unload_client(&client);
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
         client = load_client();
         LOG_TRACE("Reload complete");
     }
