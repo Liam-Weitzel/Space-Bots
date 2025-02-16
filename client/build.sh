@@ -41,17 +41,16 @@ STEAM_LIB_DIR="$COMMON_LIBS_DIR/steam/redistributable_bin/linux64"
 STEAM_LIB_FILE="$STEAM_LIB_DIR/libsteam_api.so"
 RRES_SRC="$LIBS_DIR/rres/src"
 SRC_DIR="./src"
-RRESPACKER_EXE="$LIBS_DIR/rrespacker/rrespacker"
 
 # Common flags
 INCLUDES="-I $RAYLIB_SRC -I $RAYLIB_RLIGHTS -I $RAYLIB_REASINGS -I $RAYGUI_SRC -I $RRES_SRC -I $ENTT_DIR/src/entt -I $SRC_DIR -I $STEAM_DIR"
 RAYLIB_LIBS="-L $RAYLIB_SRC -L $RAYLIB_SRC/rtext -lraylib"
 STEAM_LIBS=" -l steam_api -L $STEAM_LIB_DIR"
 SYSTEM_LIBS="-lGL -lm -lpthread -ldl -lrt -lX11"
-COMPILER_FLAGS="-Wl,-rpath,\$ORIGIN/ -fno-gnu-unique -Wno-format-security -g"
+COMPILER_FLAGS="-Wl,-rpath,\$ORIGIN/ -fno-gnu-unique -Wno-format-security -O0 -g"
 
-# Build resources
-$RRESPACKER_EXE -o resources.rres --rrp resources.rrp
+g++ prep_models.cpp -o prep_models -I ./src/ -I ./libs/raylib/src/ -I ./libs/rres/src/ -L ./libs/raylib/src/ -lraylib -lGL -lm -lpthread -ldl -lrt -lX11 -Wl,-rpath,\$ORIGIN/ -fno-gnu-unique -Wno-format-security -g -O0
+./prep_models
 
 # Check if we're doing a hot reload build
 if [ "$1" = "hot" ]; then
@@ -93,14 +92,6 @@ if [ ! -f "compile_commands.json" ]; then
         $SYSTEM_LIBS \
         $COMPILER_FLAGS \
         -o ./libclient.so
-
-    bear -- g++ $SRC_DIR/main.cpp \
-        $INCLUDES \
-        $RAYLIB_LIBS \
-        $STEAM_LIBS \
-        $SYSTEM_LIBS \
-        $COMPILER_FLAGS \
-        -o ./client
 fi
 
 print_status "Build complete!"

@@ -71,7 +71,7 @@ extern "C" {            // Prevents name mangling of functions
 // Module Functions Declaration
 //----------------------------------------------------------------------------------
 GuiGuiState InitGuiGui();
-void GuiGui(GUI* gui);
+void GuiGui(GUI* gui, rresCentralDir* dir);
 static void Button004(int* style);                // Button: Button004 logic
 static const char* styles[] = {
     "default",
@@ -147,19 +147,17 @@ static void Button004(int& style) {
     style = (style + 1) % 12;
 }
 
-void GuiGui(GUI* gui)
+void GuiGui(GUI* gui, rresCentralDir* dir)
 {
     if(loaded_style != gui->style) {
         if (strcmp(styles[gui->style], "default") == 0) GuiLoadStyleDefault();
         else {
-            rresCentralDir dir = rresLoadCentralDirectory("resources.rres");
-            int idStyle = rresGetResourceId(dir, styles[gui->style]);
+            int idStyle = rresGetResourceId(*dir, styles[gui->style]);
             rresResourceChunk chunkStyle = rresLoadResourceChunk("resources.rres", idStyle);
             if(UnpackResourceChunk(&chunkStyle) == RRES_SUCCESS) {
                 GuiLoadStyleFromMemory((const unsigned char*) chunkStyle.data.raw, chunkStyle.info.baseSize);
             }
             rresUnloadResourceChunk(chunkStyle);
-            rresUnloadCentralDirectory(dir);
         }
         loaded_style = gui->style;
     }

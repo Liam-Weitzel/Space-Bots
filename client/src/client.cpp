@@ -1,16 +1,9 @@
-#include "game_state.h"
 #include "entt.hpp"
-#include "utils.h"
-#include "isteamuser.h"
-#include "isteamuserstats.h"
-#include "steam_api.h"
-#include "steamtypes.h"
-#include "isteammatchmaking.h"
-#include "isteamnetworkingutils.h"
-#include "isteamnetworkingsockets.h"
+#include "game_state.h"
 #include "raylib.h"
-#include "rlgl.h"
 #include "raymath.h"
+#include "rlgl.h"
+#include "utils.h"
 
 #define RAYGUI_IMPLEMENTATION
 #define RAYGUI_SUPPORT_ICONS
@@ -23,417 +16,523 @@
 #include "rres.h"
 
 #define RRES_RAYLIB_IMPLEMENTATION
-#define RRES_SUPPORT_COMPRESSION_LZ4
-#define RRES_SUPPORT_ENCRYPTION_AES
-#define RRES_SUPPORT_ENCRYPTION_XCHACHA20
 #include "rres-raylib.h"
 
 #define RLIGHTS_IMPLEMENTATION
 #include "rlights.h"
 
 #define GLSL_VERSION 330
+#define SHADOWMAP_RESOLUTION 1024
+#define MAX_MATERIAL_MAPS 12
+#define RL_MAX_SHADER_LOCATIONS 32
 
-#define VIRTUAL_PORT 27017
-#define APP_ID 2415880
-
-static ISteamNetworkingSockets* g_pNetworkingSockets = nullptr;
-static HSteamNetConnection g_hConnection = k_HSteamNetConnection_Invalid;
-
-class ServerListResponse : public ISteamMatchmakingServerListResponse {
-public:
-    virtual void ServerResponded(HServerListRequest hRequest, int iServer) {
-        gameserveritem_t* pServer = SteamMatchmakingServers()->GetServerDetails(hRequest, iServer);
-        if (pServer) {
-            LOG_TRACE("Found server: %s (ID: %llu)", 
-                pServer->GetName(), 
-                pServer->m_steamID.ConvertToUint64());
-            LOG_TRACE("Players: %d/%d, Ping: %d", 
-                pServer->m_nPlayers, 
-                pServer->m_nMaxPlayers, 
-                pServer->m_nPing);
-            LOG_TRACE("Tags: %s", pServer->m_szGameTags);
-            LOG_TRACE("Map: %s", pServer->m_szMap);
-            
-            SteamNetworkingIdentity serverIdentity;
-            serverIdentity.Clear();
-            serverIdentity.SetSteamID(pServer->m_steamID);
-
-            g_pNetworkingSockets = SteamNetworkingSockets();
-            if (!g_pNetworkingSockets) {
-                LOG_ERROR("Failed to get networking interface");
-                return;
-            }
-
-            // Configure networking options for SDR-only to match server
-            SteamNetworkingConfigValue_t opts[2];
-            int opt = 0;
-            opts[opt++].SetInt32(k_ESteamNetworkingConfig_P2P_Transport_ICE_Enable, 0);  // Disable ICE completely
-            opts[opt++].SetInt32(k_ESteamNetworkingConfig_P2P_Transport_ICE_Penalty, 10000);  // Set very high penalty for ICE
-
-            LOG_TRACE("Attempting P2P SDR connection to server %llu", serverIdentity.GetSteamID64());
-
-            g_hConnection = g_pNetworkingSockets->ConnectP2P(
-                serverIdentity,
-                VIRTUAL_PORT,
-                opt,
-                opts
-            );
-
-            if (g_hConnection == k_HSteamNetConnection_Invalid) {
-                LOG_ERROR("Failed to create connection");
-                return;
-            }
-
-            LOG_TRACE("Connection attempt initiated, connection ID: %u", g_hConnection);
-        }
-    }
-
-    virtual void ServerFailedToRespond(HServerListRequest hRequest, int iServer) {
-        gameserveritem_t* pServer = SteamMatchmakingServers()->GetServerDetails(hRequest, iServer);
-        if (pServer) {
-            LOG_ERROR("Server failed to respond - ID: %llu, Name: %s", 
-                pServer->m_steamID.ConvertToUint64(),
-                pServer->GetName());
-        } else {
-            LOG_ERROR("Unknown server %d failed to respond", iServer);
-        }
-    }
-    
-    virtual void RefreshComplete(HServerListRequest hRequest, EMatchMakingServerResponse response) {
-        LOG_TRACE("Server refresh complete, response: %d", response);
-        switch (response) {
-            case eServerResponded:
-                LOG_TRACE("Servers found successfully");
-                break;
-            case eServerFailedToRespond:
-                LOG_ERROR("All servers failed to respond");
-                break;
-            case eNoServersListedOnMasterServer:
-                LOG_ERROR("No servers found on master server - verify server registration");
-                break;
-            default:
-                LOG_ERROR("Unknown server list refresh response: %d", response);
-                break;
-        }
-    }
-};
-
-static ServerListResponse* g_pServerListResponse = nullptr;
-
-void SearchForServers() {
-    LOG_TRACE("Initiating server search...");
-
-    ISteamNetworkingUtils* utils;
-    utils = SteamNetworkingUtils();
-    utils->InitRelayNetworkAccess();
-
-    ISteamMatchmakingServers* matchmaking = SteamMatchmakingServers();
-    if (!matchmaking) {
-        LOG_ERROR("Failed to get matchmaking interface");
-        return;
-    }
-
-    // Create filters for our specific game
-    MatchMakingKeyValuePair_t filter1;
-    MatchMakingKeyValuePair_t filter2;
-    MatchMakingKeyValuePair_t filter3;
-    MatchMakingKeyValuePair_t filter4;
-    MatchMakingKeyValuePair_t filter5;
-
-    // Filter #1: AppID
-    strcpy(filter1.m_szKey, "appid");
-    strcpy(filter1.m_szValue, std::to_string(APP_ID).c_str());
-    
-    // Filter #2: Dedicated servers only
-    strcpy(filter2.m_szKey, "dedicated");
-    strcpy(filter2.m_szValue, "1");
-
-    // Filter #3: VAC secured servers only
-    strcpy(filter3.m_szKey, "secure");
-    strcpy(filter3.m_szValue, "0");
-
-    // Filter #4: show SDR servers
-    strcpy(filter4.m_szKey, "proxy");
-    strcpy(filter4.m_szValue, "1");
-
-    // Filter #5: Localhost only NOTE: 
-    strcpy(filter5.m_szKey, "localhost");
-    strcpy(filter5.m_szValue, "1");
-
-    g_pServerListResponse = new ServerListResponse();
-    MatchMakingKeyValuePair_t* pFilters[] = { &filter1, &filter2, &filter3, &filter4, &filter5 };
-
-    LOG_TRACE("Requesting server list for App ID: %d", APP_ID);
-
-    HServerListRequest hRequest = matchmaking->RequestInternetServerList(
-        APP_ID,
-        pFilters,
-        5,
-        g_pServerListResponse
-    );
-
-    if (hRequest == NULL) {
-        LOG_ERROR("Failed to initiate server list request");
-    } else {
-        LOG_TRACE("Server list request initiated successfully");
-    }
+void DrawScene(Model model, Model cube) {
+  DrawModelEx(cube, Vector3Zero(), (Vector3){0.0f, 1.0f, 0.0f}, 0.0f,
+              (Vector3){10.0f, 1.0f, 10.0f}, BLUE);
+  DrawModelEx(cube, (Vector3){0.0f, 1.0f, 0.0f}, (Vector3){0.0f, 1.0f, 0.0f},
+              0.0f, Vector3One(), WHITE);
+  DrawModelEx(model, (Vector3){0.0f, 0.5f, 0.0f}, (Vector3){0.0f, 1.0f, 0.0f},
+              0.0f, (Vector3){1.0f, 1.0f, 1.0f}, WHITE);
 }
 
-void render(GameState* state) {
-    BeginDrawing();
-        ClearBackground(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
-        BeginMode3D(state->camera);
+void render(GameState *state) {
+  BeginDrawing();
 
-            auto shaderView = state->registry.view<Shader>();
-            LOG_ASSERT(shaderView.size() == 1, "Expected exactly one shader");
-            auto shaderEntity = shaderView.front();
-            auto& shader = state->registry.get<Shader>(shaderEntity);
+  Matrix lightView;
+  Matrix lightProj;
+  BeginTextureMode(state->transientStorage.shadowMap);
+  ClearBackground(WHITE);
+  BeginMode3D(state->lightCamera);
+  lightView = rlGetMatrixModelview();
+  lightProj = rlGetMatrixProjection();
+  DrawScene(state->transientStorage.roverModel,
+            state->transientStorage.cubeModel);
+  EndMode3D();
+  EndTextureMode();
 
-            BeginShaderMode(shader);
-                DrawPlane(Vector3Zero(), (Vector2) { 10.0, 10.0 }, WHITE);
-                DrawCube(Vector3Zero(), 2.0, 4.0, 2.0, WHITE);
-            EndShaderMode();
+  Matrix lightViewProj = MatrixMultiply(lightView, lightProj);
+  ClearBackground(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
+  SetShaderValueMatrix(state->transientStorage.shadowShader,
+                       state->transientStorage.lightVPLoc, lightViewProj);
 
-            // Iterate through all entities with Light component
-            auto lightView = state->registry.view<Light>();
-            for (auto [entity, light] : lightView.each()) {
-                if (light.enabled) DrawSphereEx(light.position, 0.2f, 8, 8, light.color);
-                else DrawSphereWires(light.position, 0.2f, 8, 8, ColorAlpha(light.color, 0.3f));
-            }
+  rlEnableShader(state->transientStorage.shadowShader.id);
+  int slot = 10; // Can be anything 0 to 15, but 0 will probably be taken up
+  rlActiveTextureSlot(10);
+  rlEnableTexture(state->transientStorage.shadowMap.depth.id);
+  rlSetUniform(state->transientStorage.shadowMapLoc, &slot, SHADER_UNIFORM_INT,
+               1);
 
-            DrawGrid(10, 1.0f);
+  BeginMode3D(state->camera);
+  DrawScene(state->transientStorage.roverModel,
+            state->transientStorage.cubeModel);
+  EndMode3D();
 
-        EndMode3D();
+  DrawFPS(10, 10);
 
-        DrawFPS(10, 10);
+  DrawText("Use key [Y] to toggle lights", 10, 40, 20,
+           GetColor(GuiGetStyle(DEFAULT, LINE_COLOR)));
 
-        DrawText("Use key [Y] to toggle lights", 10, 40, 20, GetColor(GuiGetStyle(DEFAULT, LINE_COLOR)));
-
-        GuiGui(&state->gui);
-    EndDrawing();
+  GuiGui(&state->gui, &state->dir);
+  EndDrawing();
 }
 
-void init(GameState* state) {
-    rresCentralDir dir = rresLoadCentralDirectory("resources.rres");
+Model LoadModelFromChunk(const rresResourceChunk &chunk) {
+  Model model = {0};
 
-    int idMesh = rresGetResourceId(dir, "rover.glb");
-    rresResourceMulti multiMesh = rresLoadResourceMulti("resources.rres", idMesh);
-    int result = -1;
-    for(int i = 0; i < multiMesh.count; ++i) {
-        result = UnpackResourceChunk(&multiMesh.chunks[i]);
-        if(result != RRES_SUCCESS) break;
-    }
-    Mesh mesh = { 0 };
-    if(result == RRES_SUCCESS) {
-        mesh = LoadMeshFromResource(multiMesh);
-        rresUnloadResourceMulti(multiMesh);
-    }
-    UnloadMesh(mesh);
+  if (!chunk.data.raw) {
+    LOG_ERROR("Chunk data is null");
+    return model;
+  }
 
-    int idIcons = rresGetResourceId(dir, "icons.rgi");
-    rresResourceChunk chunkIcons = rresLoadResourceChunk("resources.rres", idIcons);
-    if(UnpackResourceChunk(&chunkIcons) == RRES_SUCCESS) {
-        GuiLoadIconsFromMemory((const unsigned char*) chunkIcons.data.raw, chunkIcons.info.baseSize, "icons");
-    }
-    rresUnloadResourceChunk(chunkIcons);
+  // Initialize all pointers to nullptr explicitly
+  model.meshes = nullptr;
+  model.materials = nullptr;
+  model.meshMaterial = nullptr;
+  model.bones = nullptr;
+  model.bindPose = nullptr;
 
-    rresUnloadCentralDirectory(dir);
+  const unsigned char *data = (const unsigned char *)chunk.data.raw;
+  size_t offset = 0;
 
-    LOG_TRACE("Initializing Steam...");
-    if (SteamAPI_Init()) {
-        LOG_TRACE("Steam API initialized successfully!");
+  // Read transform matrix
+  memcpy(&model.transform, data + offset, sizeof(Matrix));
+  offset += sizeof(Matrix);
 
-        if (SteamUser()->BLoggedOn()) {
-            const char* playerName = SteamFriends()->GetPersonaName();
-            const uint64 steamID = SteamUser()->GetSteamID().ConvertToUint64();
-            LOG_TRACE("Steam user logged in - Name: %s, ID: %llu", playerName, steamID);
-            
-            const int MAX_TICKET_SIZE = 1024;
-            unsigned char ticketBuffer[MAX_TICKET_SIZE];
-            uint32 ticketSize;
-            
-            HAuthTicket sessionTicket = SteamUser()->GetAuthSessionTicket(
-                ticketBuffer, 
-                MAX_TICKET_SIZE, 
-                &ticketSize,
-                nullptr
-            );
+  // Read counts
+  memcpy(&model.meshCount, data + offset, sizeof(int));
+  offset += sizeof(int);
+  memcpy(&model.materialCount, data + offset, sizeof(int));
+  offset += sizeof(int);
 
-            if (sessionTicket != k_HAuthTicketInvalid) {
-                LOG_TRACE("Auth ticket obtained successfully (size: %u)", ticketSize);
-                SearchForServers();
-            } else {
-                LOG_ERROR("Failed to get auth ticket");
-            }
-        } else {
-            LOG_ERROR("Steam user not logged in!");
-            return;
+  LOG_TRACE("Loading model with %d meshes and %d materials", model.meshCount,
+            model.materialCount);
+
+  // Read global flags
+  unsigned char globalFlags;
+  memcpy(&globalFlags, data + offset, sizeof(unsigned char));
+  offset += sizeof(unsigned char);
+
+  // Read meshes
+  if (globalFlags & 1) {
+    int size = model.meshCount * sizeof(Mesh);
+    model.meshes = (Mesh *)malloc(size);
+
+    for (int i = 0; i < model.meshCount; i++) {
+      Mesh *mesh = &model.meshes[i];
+
+      // Initialize all mesh pointers to nullptr
+      mesh->vertices = nullptr;
+      mesh->texcoords = nullptr;
+      mesh->texcoords2 = nullptr;
+      mesh->normals = nullptr;
+      mesh->tangents = nullptr;
+      mesh->colors = nullptr;
+      mesh->indices = nullptr;
+      mesh->animVertices = nullptr;
+      mesh->animNormals = nullptr;
+      mesh->boneIds = nullptr;
+      mesh->boneWeights = nullptr;
+      mesh->boneMatrices = nullptr;
+      mesh->vboId = nullptr;
+
+      // Initialize all values to be 0
+      mesh->vertexCount = 0;
+      mesh->triangleCount = 0;
+      mesh->vaoId = 0;
+      mesh->boneCount = 0;
+
+      // Read counts
+      memcpy(&mesh->vertexCount, data + offset, sizeof(int));
+      offset += sizeof(int);
+      memcpy(&mesh->triangleCount, data + offset, sizeof(int));
+      offset += sizeof(int);
+      memcpy(&mesh->boneCount, data + offset, sizeof(int));
+      offset += sizeof(int);
+
+      unsigned char meshFlags;
+      memcpy(&meshFlags, data + offset, sizeof(unsigned char));
+      offset += sizeof(unsigned char);
+
+      unsigned char animFlags;
+      memcpy(&animFlags, data + offset, sizeof(unsigned char));
+      offset += sizeof(unsigned char);
+
+      // Read vertex data
+      if (mesh->vertexCount > 0) {
+        // Vertices
+        if (meshFlags & 1) {
+          size_t size = mesh->vertexCount * 3 * sizeof(float);
+          mesh->vertices = (float *)malloc(size);
+          memcpy(mesh->vertices, data + offset, size);
+          offset += size;
         }
-    } else {
-        LOG_ERROR("Steam API initialization failed!");
-        return;
-    }
-
-    const uint32 num_achievements = SteamUserStats()->GetNumAchievements();
-    LOG_TRACE("num achievements: %u", num_achievements);
-
-    //Hack used to check if this current load is a hot code reload
-    bool isEcsDeinitialized = state->registry.storage<entt::entity>().empty();
-
-    if(isEcsDeinitialized) {
-        // Define the camera to look into our 3d world
-        state->camera = { 0 };
-        state->camera.position = (Vector3){ 2.0f, 4.0f, 6.0f };    // Camera position
-        state->camera.target = (Vector3){ 0.0f, 0.5f, 0.0f };      // Camera looking at point
-        state->camera.up = (Vector3){ 0.0f, 1.0f, 0.0f };          // Camera up vector (rotation towards target)
-        state->camera.fovy = 45.0f;                                // Camera field-of-view Y
-        state->camera.projection = CAMERA_PERSPECTIVE;             // Camera projection type
-
-        rresCentralDir dir = rresLoadCentralDirectory("resources.rres");
-
-        // Get resource IDs for shaders
-        int vsId = rresGetResourceId(dir, "lighting.vs");
-        int fsId = rresGetResourceId(dir, "lighting.fs");
-
-        // Load shader chunks
-        rresResourceChunk vsChunk = rresLoadResourceChunk("resources.rres", vsId);
-        rresResourceChunk fsChunk = rresLoadResourceChunk("resources.rres", fsId);
-
-        Shader shader = { 0 };
-        if (UnpackResourceChunk(&vsChunk) == RRES_SUCCESS && 
-            UnpackResourceChunk(&fsChunk) == RRES_SUCCESS) {
-            // Load shader from memory
-            shader = LoadShaderFromMemory(
-                (const char*)vsChunk.data.raw,  // vertex shader code
-                (const char*)fsChunk.data.raw   // fragment shader code
-            );
+        // Texcoords
+        if (meshFlags & 2) {
+          size_t size = mesh->vertexCount * 2 * sizeof(float);
+          mesh->texcoords = (float *)malloc(size);
+          memcpy(mesh->texcoords, data + offset, size);
+          offset += size;
+        }
+        // Texcoords2
+        if (meshFlags & 4) {
+          size_t size = mesh->vertexCount * 2 * sizeof(float);
+          mesh->texcoords2 = (float *)malloc(size);
+          memcpy(mesh->texcoords2, data + offset, size);
+          offset += size;
+        }
+        // Normals
+        if (meshFlags & 8) {
+          size_t size = mesh->vertexCount * 3 * sizeof(float);
+          mesh->normals = (float *)malloc(size);
+          memcpy(mesh->normals, data + offset, size);
+          offset += size;
+        }
+        // Tangents
+        if (meshFlags & 16) {
+          size_t size = mesh->vertexCount * 4 * sizeof(float);
+          mesh->tangents = (float *)malloc(size);
+          memcpy(mesh->tangents, data + offset, size);
+          offset += size;
+        }
+        // Colors
+        if (meshFlags & 32) {
+          size_t size = mesh->vertexCount * 4 * sizeof(unsigned char *);
+          mesh->colors = (unsigned char *)malloc(size);
+          memcpy(mesh->colors, data + offset, size);
+          offset += size;
         }
 
-        // Clean up
-        rresUnloadResourceChunk(vsChunk);
-        rresUnloadResourceChunk(fsChunk);
-        rresUnloadCentralDirectory(dir);
+        // Animation data
+        // Animated vertices
+        if (animFlags & 1) {
+          size_t size = mesh->vertexCount * 3 * sizeof(float);
+          mesh->animVertices = (float *)malloc(size);
+          memcpy(mesh->animVertices, data + offset, size);
+          offset += size;
+        }
+        // Animated normals
+        if (animFlags & 2) {
+          size_t size = mesh->vertexCount * 3 * sizeof(float);
+          mesh->animNormals = (float *)malloc(size);
+          memcpy(mesh->animNormals, data + offset, size);
+          offset += size;
+        }
+        // Bone IDs
+        if (animFlags & 4) {
+          size_t size = mesh->vertexCount * 4;
+          mesh->boneIds = (unsigned char *)malloc(size);
+          memcpy(mesh->boneIds, data + offset, size);
+          offset += size;
+        }
+        // Bone weights
+        if (animFlags & 8) {
+          size_t size = mesh->vertexCount * 4 * sizeof(float);
+          mesh->boneWeights = (float *)malloc(size);
+          memcpy(mesh->boneWeights, data + offset, size);
+          offset += size;
+        }
+        // Bone matrices
+        if (animFlags & 16 && mesh->boneCount > 0) {
+          size_t size = mesh->boneCount * sizeof(Matrix);
+          mesh->boneMatrices = (Matrix *)malloc(size);
+          memcpy(mesh->boneMatrices, data + offset, size);
+          offset += size;
+        }
+      }
 
-        // Get some required shader locations
-        shader.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(shader, "viewPos");
-        // NOTE: "matModel" location name is automatically assigned on shader loading, 
-        // no need to get the location again if using that uniform name
-        //shader.locs[SHADER_LOC_MATRIX_MODEL] = GetShaderLocation(shader, "matModel");
+      // Read indices
+      if (mesh->triangleCount > 0 && (meshFlags & 64)) {
+        size_t size = mesh->triangleCount * 3 * sizeof(unsigned short);
+        mesh->indices = (unsigned short *)malloc(size);
+        memcpy(mesh->indices, data + offset, size);
+        offset += size;
+      }
 
-        // Ambient light level (some basic lighting)
-        int ambientLoc = GetShaderLocation(shader, "ambient");
-        SetShaderValue(shader, ambientLoc, (float[4]){ 0.1f, 0.1f, 0.1f, 1.0f }, SHADER_UNIFORM_VEC4);
-
-        auto shaderEntity = state->registry.create();
-        state->registry.emplace<Shader>(shaderEntity, shader);
-
-        Light yellowLight = CreateLight(LIGHT_POINT, (Vector3){ -2, 1, -2 }, Vector3Zero(), YELLOW, shader);
-        auto yellowLightEntity = state->registry.create();
-        state->registry.emplace<Light>(yellowLightEntity, yellowLight);
-
-        Light redLight = CreateLight(LIGHT_POINT, (Vector3){ 2, 1, 2 }, Vector3Zero(), RED, shader);
-        auto redLightEntity = state->registry.create();
-        state->registry.emplace<Light>(redLightEntity, redLight);
-
-        Light greenLight = CreateLight(LIGHT_POINT, (Vector3){ -2, 1, 2 }, Vector3Zero(), GREEN, shader);
-        auto greenLightEntity = state->registry.create();
-        state->registry.emplace<Light>(greenLightEntity, greenLight);
-
-        Light blueLight = CreateLight(LIGHT_POINT, (Vector3){ 2, 1, -2 }, Vector3Zero(), BLUE, shader);
-        auto blueLightEntity = state->registry.create();
-        state->registry.emplace<Light>(blueLightEntity, blueLight);
-
-        GuiGuiState gui_state = InitGuiGui();
-        state->gui.gui_state = gui_state;
+      // Read OpenGL identifiers
+      UploadMesh(mesh, false);
     }
+  }
+
+  // Read materials
+  if (globalFlags & 2) {
+    int size = model.materialCount * sizeof(Material);
+    model.materials = (Material *)malloc(size);
+
+    for (int i = 0; i < model.materialCount; i++) {
+      Material *material = &model.materials[i];
+
+      // Initialize material pointers
+      material->shader.locs = nullptr;
+      material->maps = nullptr;
+
+      unsigned char matFlags;
+      memcpy(&matFlags, data + offset, sizeof(unsigned char));
+      offset += sizeof(unsigned char);
+
+      // Read shader ID
+      memcpy(&material->shader.id, data + offset, sizeof(unsigned int));
+      offset += sizeof(unsigned int);
+
+      // Read shader locations
+      if (matFlags & 1) {
+        size_t size = RL_MAX_SHADER_LOCATIONS * sizeof(int);
+        material->shader.locs = (int *)malloc(size);
+        memcpy(material->shader.locs, data + offset, size);
+        offset += size;
+      }
+      // Read material maps
+      if (matFlags & 2) {
+        size_t size = MAX_MATERIAL_MAPS * sizeof(MaterialMap);
+        material->maps = (MaterialMap *)malloc(size);
+
+        // Read each material map
+        for (int j = 0; j < MAX_MATERIAL_MAPS; j++) {
+          // Read texture
+          memcpy(&material->maps[j].texture, data + offset, sizeof(Texture));
+          offset += sizeof(Texture);
+
+          // Read color
+          memcpy(&material->maps[j].color, data + offset, sizeof(Color));
+          offset += sizeof(Color);
+
+          // Read value
+          memcpy(&material->maps[j].value, data + offset, sizeof(float));
+          offset += sizeof(float);
+        }
+      }
+
+      // Read material params (all 4 floats)
+      memcpy(&material->params, data + offset, sizeof(float) * 4);
+      offset += sizeof(float) * 4;
+    }
+  }
+
+  // Read mesh material indices
+  if (globalFlags & 4) {
+    int size = model.meshCount * sizeof(int);
+    model.meshMaterial = (int *)malloc(size);
+    memcpy(model.meshMaterial, data + offset, size);
+    offset += size;
+  }
+
+  memcpy(&model.boneCount, data + offset, sizeof(int));
+  offset += sizeof(int);
+
+  if (model.boneCount > 0) {
+    // Read bones
+    if (globalFlags & 8) {
+      int size = model.boneCount * sizeof(BoneInfo);
+      model.bones = (BoneInfo *)malloc(size);
+      memcpy(model.bones, data + offset, size);
+      offset += size;
+    }
+
+    // Read bind pose
+    if (globalFlags & 16) {
+      int size = model.boneCount * sizeof(Transform);
+      model.bindPose = (Transform *)malloc(size);
+
+      for (int i = 0; i < model.boneCount; i++) {
+        memcpy(&model.bindPose[i].translation, data + offset, sizeof(Vector3));
+        offset += sizeof(Vector3);
+        memcpy(&model.bindPose[i].rotation, data + offset, sizeof(Vector4));
+        offset += sizeof(Vector4);
+        memcpy(&model.bindPose[i].scale, data + offset, sizeof(Vector3));
+        offset += sizeof(Vector3);
+      }
+    }
+  }
+
+  return model;
 }
 
-void update(GameState* state) {
-    // Run Steam callbacks
-    SteamAPI_RunCallbacks();
+void init(GameState *state) {
+  SetConfigFlags(FLAG_MSAA_4X_HINT);
+  InitWindow(800, 450, "video game");
+  SetTargetFPS(120);
 
-    // Check connection state if we're connecting
-    if (g_hConnection != k_HSteamNetConnection_Invalid) {
-        SteamNetConnectionInfo_t info;
-        g_pNetworkingSockets->GetConnectionInfo(g_hConnection, &info);
+  // Hack used to check if this current load is a hot code reload
+  bool isEcsDeinitialized = state->registry.storage<entt::entity>().empty();
 
-        static ESteamNetworkingConnectionState lastState = k_ESteamNetworkingConnectionState_None;
-        if (info.m_eState != lastState) {
-            lastState = info.m_eState;
-            LOG_TRACE("Connection state changed to: %d", info.m_eState);
-            
-            switch (info.m_eState) {
-                case k_ESteamNetworkingConnectionState_Connected:
-                    LOG_TRACE("Connected to server!");
-                    break;
-                case k_ESteamNetworkingConnectionState_ClosedByPeer:
-                    LOG_TRACE("Connection closed by server");
-                    break;
-                case k_ESteamNetworkingConnectionState_ProblemDetectedLocally:
-                    LOG_TRACE("Connection problem detected: %s", info.m_szEndDebug);
-                    break;
-                case k_ESteamNetworkingConnectionState_Connecting:
-                    LOG_TRACE("Establishing connection...");
-                    break;
-            }
-        }
+  state->dir = rresLoadCentralDirectory("resources.rres");
 
-        if (info.m_eState == k_ESteamNetworkingConnectionState_ClosedByPeer ||
-            info.m_eState == k_ESteamNetworkingConnectionState_ProblemDetectedLocally) {
-            LOG_TRACE("Cleaning up failed connection");
-            g_pNetworkingSockets->CloseConnection(g_hConnection, 0, nullptr, false);
-            g_hConnection = k_HSteamNetConnection_Invalid;
-        }
-    }
+  int idModel = rresGetResourceId(state->dir, "rover.bin");
+  rresResourceChunk chunkModel = rresLoadResourceChunk("resources.rres", idModel);
+  state->transientStorage.roverModel = LoadModelFromChunk(chunkModel);
 
-    auto& camera = state->camera;
+  int shadowVsId = rresGetResourceId(state->dir, "shadowmap.vs");
+  int shadowFsId = rresGetResourceId(state->dir, "shadowmap.fs");
+  rresResourceChunk shadowVsChunk =
+      rresLoadResourceChunk("resources.rres", shadowVsId);
+  rresResourceChunk shadowFsChunk =
+      rresLoadResourceChunk("resources.rres", shadowFsId);
+  state->transientStorage.shadowShader = LoadShaderFromMemory(
+      (const char *)shadowVsChunk.data.raw, // vertex shader code
+      (const char *)shadowFsChunk.data.raw  // fragment shader code
+  );
 
-    UpdateCamera(&camera, CAMERA_ORBITAL);
+  rresUnloadResourceChunk(chunkModel); //shader compilation breaks if this is unloaded too early...
+  rresUnloadResourceChunk(shadowVsChunk);
+  rresUnloadResourceChunk(shadowFsChunk);
 
-    // Iterate through all entities with Shader component
-    auto shaderView = state->registry.view<Shader>();
-    LOG_ASSERT(shaderView.size() == 1, "Expected exactly one shader");
-    auto shaderEntity = shaderView.front();
-    auto& shader = state->registry.get<Shader>(shaderEntity);
+  int idIcons = rresGetResourceId(state->dir, "icons.rgi");
+  rresResourceChunk chunkIcons =
+      rresLoadResourceChunk("resources.rres", idIcons);
+  GuiLoadIconsFromMemory((const unsigned char *)chunkIcons.data.raw,
+                         chunkIcons.info.baseSize, "icons");
+  rresUnloadResourceChunk(chunkIcons);
 
-    // Update the shader with the camera view vector (points towards { 0.0f, 0.0f, 0.0f })
-    float cameraPos[3] = { camera.position.x, camera.position.y, camera.position.z };
-    SetShaderValue(shader, shader.locs[SHADER_LOC_VECTOR_VIEW], cameraPos, SHADER_UNIFORM_VEC3);
+  GuiLoadStyleDefault();
 
-    // Iterate through all entities with Light component
-    auto lightView = state->registry.view<Light>();
-    for (auto [entity, light] : lightView.each()) {
-        if (IsKeyPressed(KEY_Y)) { light.enabled = !light.enabled; }
-        // Update light values (actually, only enable/disable them)
-        UpdateLightValues(shader, light);
-    }
+  if (isEcsDeinitialized) {
+    state->camera.position = (Vector3){10.0f, 10.0f, 10.0f};
+    state->camera.target = Vector3Zero();
+    state->camera.projection = CAMERA_PERSPECTIVE;
+    state->camera.up = (Vector3){0.0f, 1.0f, 0.0f};
+    state->camera.fovy = 45.0f;
+  }
+
+  state->transientStorage.shadowShader.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(state->transientStorage.shadowShader, "viewPos");
+  state->transientStorage.lightDir = Vector3Normalize((Vector3){0.35f, -1.0f, -0.35f});
+  Color lightColor = WHITE;
+  Vector4 lightColorNormalized = ColorNormalize(lightColor);
+  state->transientStorage.lightDirLoc = GetShaderLocation(state->transientStorage.shadowShader, "lightDir");
+  int lightColLoc = GetShaderLocation(state->transientStorage.shadowShader, "lightColor");
+  SetShaderValue(state->transientStorage.shadowShader,
+                 state->transientStorage.lightDirLoc,
+                 &state->transientStorage.lightDir, SHADER_UNIFORM_VEC3);
+  SetShaderValue(state->transientStorage.shadowShader, lightColLoc,
+                 &lightColorNormalized, SHADER_UNIFORM_VEC4);
+  int ambientLoc =
+      GetShaderLocation(state->transientStorage.shadowShader, "ambient");
+  float ambient[4] = {0.1f, 0.1f, 0.1f, 1.0f};
+  SetShaderValue(state->transientStorage.shadowShader, ambientLoc, ambient,
+                 SHADER_UNIFORM_VEC4);
+  state->transientStorage.lightVPLoc =
+      GetShaderLocation(state->transientStorage.shadowShader, "lightVP");
+  state->transientStorage.shadowMapLoc =
+      GetShaderLocation(state->transientStorage.shadowShader, "shadowMap");
+  int shadowMapResolution = SHADOWMAP_RESOLUTION;
+  SetShaderValue(state->transientStorage.shadowShader,
+                 GetShaderLocation(state->transientStorage.shadowShader,
+                                   "shadowMapResolution"),
+                 &shadowMapResolution, SHADER_UNIFORM_INT);
+
+  for (int i = 0; i < state->transientStorage.roverModel.materialCount; i++) {
+    state->transientStorage.roverModel.materials[i].shader =
+        state->transientStorage.shadowShader;
+  }
+  state->transientStorage.cubeModel =
+      LoadModelFromMesh(GenMeshCube(1.0f, 1.0f, 1.0f));
+  state->transientStorage.cubeModel.materials[0].shader =
+      state->transientStorage.shadowShader;
+
+  state->transientStorage.shadowMap.id =
+      rlLoadFramebuffer(); // Load an empty framebuffer
+  state->transientStorage.shadowMap.texture.width = SHADOWMAP_RESOLUTION;
+  state->transientStorage.shadowMap.texture.height = SHADOWMAP_RESOLUTION;
+
+  if (state->transientStorage.shadowMap.id > 0) {
+    rlEnableFramebuffer(state->transientStorage.shadowMap.id);
+
+    // Create depth texture
+    // We don't need a color texture for the shadowmap
+    state->transientStorage.shadowMap.depth.id =
+        rlLoadTextureDepth(SHADOWMAP_RESOLUTION, SHADOWMAP_RESOLUTION, false);
+    state->transientStorage.shadowMap.depth.width = SHADOWMAP_RESOLUTION;
+    state->transientStorage.shadowMap.depth.height = SHADOWMAP_RESOLUTION;
+    state->transientStorage.shadowMap.depth.format =
+        19; // DEPTH_COMPONENT_24BIT?
+    state->transientStorage.shadowMap.depth.mipmaps = 1;
+
+    // Attach depth texture to FBO
+    rlFramebufferAttach(state->transientStorage.shadowMap.id,
+                        state->transientStorage.shadowMap.depth.id,
+                        RL_ATTACHMENT_DEPTH, RL_ATTACHMENT_TEXTURE2D, 0);
+
+    // Check if fbo is complete with attachments (valid)
+    if (rlFramebufferComplete(state->transientStorage.shadowMap.id))
+      TRACELOG(LOG_INFO, "FBO: [ID %i] Framebuffer object created successfully",
+               state->transientStorage.shadowMap.id);
+
+    rlDisableFramebuffer();
+  } else
+    TRACELOG(LOG_WARNING, "FBO: Framebuffer object can not be created");
+
+  if (isEcsDeinitialized) {
+    // For the shadowmapping algorithm, we will be rendering everything from the
+    // light's point of view
+    state->lightCamera.position =
+        Vector3Scale(state->transientStorage.lightDir, -15.0f);
+    state->lightCamera.target = Vector3Zero();
+    // Use an orthographic projection for directional lights
+    state->lightCamera.projection = CAMERA_ORTHOGRAPHIC;
+    state->lightCamera.up = (Vector3){0.0f, 1.0f, 0.0f};
+    state->lightCamera.fovy = 20.0f;
+
+    GuiGuiState gui_state = InitGuiGui();
+    state->gui.gui_state = gui_state;
+  }
 }
 
-extern "C" void client_main(GameState* state) {
-    SetConfigFlags(FLAG_MSAA_4X_HINT);
-    InitWindow(800, 450, "video game");
-    SetTargetFPS(60);
-    init(state);
-    time_t last_write_time = get_timestamp("./libclient.so");
-    while(!WindowShouldClose()) {
-        if(last_write_time != get_timestamp("./libclient.so")) break;
-        update(state);
-        render(state);
-    }
-    
-    // Cleanup networking
-    if (g_hConnection != k_HSteamNetConnection_Invalid) {
-        g_pNetworkingSockets->CloseConnection(g_hConnection, 0, "Shutting down", false);
-        g_hConnection = k_HSteamNetConnection_Invalid;
-    }
+void update(GameState *state) {
+  Vector3 cameraPos = state->camera.position;
+  SetShaderValue(
+      state->transientStorage.shadowShader,
+      state->transientStorage.shadowShader.locs[SHADER_LOC_VECTOR_VIEW],
+      &cameraPos, SHADER_UNIFORM_VEC3);
+  UpdateCamera(&state->camera, CAMERA_ORBITAL);
 
-    auto shaderView = state->registry.view<Shader>();
-    LOG_ASSERT(shaderView.size() == 1, "Expected exactly one shader");
-    auto shaderEntity = shaderView.front();
-    auto& shader = state->registry.get<Shader>(shaderEntity);
-    UnloadShader(shader);
-    
-    delete g_pServerListResponse;
-    SteamAPI_Shutdown();
-    CloseWindow();
+  const float cameraSpeed = 0.05f;
+  if (IsKeyDown(KEY_LEFT)) {
+    if (state->transientStorage.lightDir.x < 0.6f)
+      state->transientStorage.lightDir.x +=
+          cameraSpeed * 60.0f * state->deltaTime;
+  }
+  if (IsKeyDown(KEY_RIGHT)) {
+    if (state->transientStorage.lightDir.x > -0.6f)
+      state->transientStorage.lightDir.x -=
+          cameraSpeed * 60.0f * state->deltaTime;
+  }
+  if (IsKeyDown(KEY_UP)) {
+    if (state->transientStorage.lightDir.z < 0.6f)
+      state->transientStorage.lightDir.z +=
+          cameraSpeed * 60.0f * state->deltaTime;
+  }
+  if (IsKeyDown(KEY_DOWN)) {
+    if (state->transientStorage.lightDir.z > -0.6f)
+      state->transientStorage.lightDir.z -=
+          cameraSpeed * 60.0f * state->deltaTime;
+  }
+  state->transientStorage.lightDir =
+      Vector3Normalize(state->transientStorage.lightDir);
+  state->lightCamera.position =
+      Vector3Scale(state->transientStorage.lightDir, -15.0f);
+  SetShaderValue(state->transientStorage.shadowShader,
+                 state->transientStorage.lightDirLoc,
+                 &state->transientStorage.lightDir, SHADER_UNIFORM_VEC3);
+}
+
+void cleanup(GameState *state) {
+  UnloadShader(state->transientStorage.shadowShader);
+  UnloadMesh(state->transientStorage.roverMesh);
+  UnloadModel(state->transientStorage.roverModel);
+  if (state->transientStorage.shadowMap.id > 0)
+    rlUnloadFramebuffer(state->transientStorage.shadowMap.id);
+  rresUnloadCentralDirectory(state->dir);
+  CloseWindow();
+}
+
+extern "C" void client_main(GameState *state) {
+  init(state);
+  time_t last_write_time = get_timestamp("./libclient.so");
+  while (!WindowShouldClose()) {
+    if (last_write_time != get_timestamp("./libclient.so"))
+      break;
+    state->frameCount++;
+    state->deltaTime = GetFrameTime();
+    update(state);
+    render(state);
+  }
+  cleanup(state);
 }
