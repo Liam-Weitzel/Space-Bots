@@ -10,8 +10,25 @@ struct GUI {
     int style;
 };
 
+struct TransientStorage {
+    Shader shadowShader;
+    RenderTexture2D shadowMap;
+    Vector3 lightDir;
+    int lightDirLoc;
+    int lightVPLoc;
+    int shadowMapLoc;
+    Mesh roverMesh;
+    Model roverModel;
+    Model cubeModel;
+};
+
 struct GameState {
-    Camera camera;
+    Camera3D camera;
+    Camera3D lightCamera;
+    rresCentralDir dir;
     entt::registry registry;
     GUI gui;
+    int frameCount;
+    float deltaTime;
+    TransientStorage transientStorage;
 };

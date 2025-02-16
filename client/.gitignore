@@ -4,6 +4,8 @@ libclient.so
 libsteam_api.so
 client
 resources.rres
+prepmodels
+resources/models/*.bin
 
 # Dependencies
 .cache/
