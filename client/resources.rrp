@@ -12,7 +12,9 @@ f /home/liam-w/Space-Bots/client/resources/styles/lavanda.rgs@lavanda.rgs,0,0,0x
 f /home/liam-w/Space-Bots/client/resources/styles/sunny.rgs@sunny.rgs,0,0,0x00000000,0,0
 f /home/liam-w/Space-Bots/client/resources/styles/terminal.rgs@terminal.rgs,0,0,0x00000000,0,0
 
-f /home/liam-w/Space-Bots/client/resources/models/rover.bin@rover.bin,0,0,0x00000000,0,0
+f /home/liam-w/Space-Bots/client/resources/models/rover_body.bin@rover_body.bin,0,0,0x00000000,0,0
+f /home/liam-w/Space-Bots/client/resources/models/rover_scan.bin@rover_scan.bin,0,0,0x00000000,0,0
+f /home/liam-w/Space-Bots/client/resources/models/rover_wheel.bin@rover_wheel.bin,0,0,0x00000000,0,0
 
 f /home/liam-w/Space-Bots/client/resources/shaders/lighting.fs@lighting.fs,0,0,0x00000000,0,0
 f /home/liam-w/Space-Bots/client/resources/shaders/lighting.vs@lighting.vs,0,0,0x00000000,0,0

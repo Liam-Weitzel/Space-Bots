@@ -26,15 +26,6 @@
 #define MAX_MATERIAL_MAPS 12
 #define RL_MAX_SHADER_LOCATIONS 32
 
-void DrawScene(Model model, Model cube) {
-  DrawModelEx(cube, Vector3Zero(), (Vector3){0.0f, 1.0f, 0.0f}, 0.0f,
-              (Vector3){10.0f, 1.0f, 10.0f}, BLUE);
-  DrawModelEx(cube, (Vector3){0.0f, 1.0f, 0.0f}, (Vector3){0.0f, 1.0f, 0.0f},
-              0.0f, Vector3One(), WHITE);
-  DrawModelEx(model, (Vector3){0.0f, 0.5f, 0.0f}, (Vector3){0.0f, 1.0f, 0.0f},
-              0.0f, (Vector3){1.0f, 1.0f, 1.0f}, WHITE);
-}
-
 void render(GameState *state) {
   BeginDrawing();
 
@@ -45,9 +36,18 @@ void render(GameState *state) {
   BeginMode3D(state->lightCamera);
   lightView = rlGetMatrixModelview();
   lightProj = rlGetMatrixProjection();
-  DrawScene(state->transientStorage.roverModel,
-            state->transientStorage.cubeModel);
-  EndMode3D();
+
+  DrawModelEx(state->transientStorage.resourceManager.roverAssets.body, state->transientStorage.resourceManager.roverAssets.bodyTranlation, (Vector3){0.0f, 1.0f, 0.0f},
+              0.0f, (Vector3){1.0f, 1.0f, 1.0f}, WHITE);
+  DrawModelEx(state->transientStorage.resourceManager.roverAssets.wheel, state->transientStorage.resourceManager.roverAssets.blWheelTranslation, (Vector3){0.0f, 1.0f, 0.0f},
+              0.0f, (Vector3){1.0f, 1.0f, 1.0f}, WHITE);
+  DrawModelEx(state->transientStorage.resourceManager.roverAssets.wheel, state->transientStorage.resourceManager.roverAssets.brWheelTranslation, (Vector3){0.0f, 1.0f, 0.0f},
+              0.0f, (Vector3){1.0f, 1.0f, 1.0f}, WHITE);
+  DrawModelEx(state->transientStorage.resourceManager.roverAssets.wheel, state->transientStorage.resourceManager.roverAssets.flWheelTranslation, (Vector3){0.0f, 1.0f, 0.0f},
+              0.0f, (Vector3){1.0f, 1.0f, 1.0f}, WHITE);
+  DrawModelEx(state->transientStorage.resourceManager.roverAssets.wheel, state->transientStorage.resourceManager.roverAssets.frWheelTranslation, (Vector3){0.0f, 1.0f, 0.0f},
+              0.0f, (Vector3){1.0f, 1.0f, 1.0f}, WHITE);
+EndMode3D();
   EndTextureMode();
 
   Matrix lightViewProj = MatrixMultiply(lightView, lightProj);
@@ -63,8 +63,18 @@ void render(GameState *state) {
                1);
 
   BeginMode3D(state->camera);
-  DrawScene(state->transientStorage.roverModel,
-            state->transientStorage.cubeModel);
+  DrawModelEx(state->transientStorage.resourceManager.roverAssets.scan, state->transientStorage.resourceManager.roverAssets.scanTranslation, (Vector3){0.0f, 1.0f, 0.0f},
+              0.0f, (Vector3){1.0f, 1.0f, 1.0f}, WHITE);
+  DrawModelEx(state->transientStorage.resourceManager.roverAssets.body, state->transientStorage.resourceManager.roverAssets.bodyTranlation, (Vector3){0.0f, 1.0f, 0.0f},
+              0.0f, (Vector3){1.0f, 1.0f, 1.0f}, WHITE);
+  DrawModelEx(state->transientStorage.resourceManager.roverAssets.wheel, state->transientStorage.resourceManager.roverAssets.blWheelTranslation, (Vector3){0.0f, 1.0f, 0.0f},
+              0.0f, (Vector3){1.0f, 1.0f, 1.0f}, WHITE);
+  DrawModelEx(state->transientStorage.resourceManager.roverAssets.wheel, state->transientStorage.resourceManager.roverAssets.brWheelTranslation, (Vector3){0.0f, 1.0f, 0.0f},
+              0.0f, (Vector3){1.0f, 1.0f, 1.0f}, WHITE);
+  DrawModelEx(state->transientStorage.resourceManager.roverAssets.wheel, state->transientStorage.resourceManager.roverAssets.flWheelTranslation, (Vector3){0.0f, 1.0f, 0.0f},
+              0.0f, (Vector3){1.0f, 1.0f, 1.0f}, WHITE);
+  DrawModelEx(state->transientStorage.resourceManager.roverAssets.wheel, state->transientStorage.resourceManager.roverAssets.frWheelTranslation, (Vector3){0.0f, 1.0f, 0.0f},
+              0.0f, (Vector3){1.0f, 1.0f, 1.0f}, WHITE);
   EndMode3D();
 
   DrawFPS(10, 10);
@@ -356,9 +366,17 @@ void init(GameState *state) {
 
   state->dir = rresLoadCentralDirectory("resources.rres");
 
-  int idModel = rresGetResourceId(state->dir, "rover.bin");
-  rresResourceChunk chunkModel = rresLoadResourceChunk("resources.rres", idModel);
-  state->transientStorage.roverModel = LoadModelFromChunk(chunkModel);
+  int idRoverBody = rresGetResourceId(state->dir, "rover_body.bin");
+  rresResourceChunk chunkRoverBody = rresLoadResourceChunk("resources.rres", idRoverBody);
+  state->transientStorage.resourceManager.roverAssets.body = LoadModelFromChunk(chunkRoverBody);
+
+  int idRoverScan = rresGetResourceId(state->dir, "rover_scan.bin");
+  rresResourceChunk chunkRoverScan = rresLoadResourceChunk("resources.rres", idRoverScan);
+  state->transientStorage.resourceManager.roverAssets.scan = LoadModelFromChunk(chunkRoverScan);
+
+  int idRoverWheel = rresGetResourceId(state->dir, "rover_wheel.bin");
+  rresResourceChunk chunkRoverWheel = rresLoadResourceChunk("resources.rres", idRoverWheel);
+  state->transientStorage.resourceManager.roverAssets.wheel = LoadModelFromChunk(chunkRoverWheel);
 
   int shadowVsId = rresGetResourceId(state->dir, "shadowmap.vs");
   int shadowFsId = rresGetResourceId(state->dir, "shadowmap.fs");
@@ -371,7 +389,9 @@ void init(GameState *state) {
       (const char *)shadowFsChunk.data.raw  // fragment shader code
   );
 
-  rresUnloadResourceChunk(chunkModel); //shader compilation breaks if this is unloaded too early...
+  rresUnloadResourceChunk(chunkRoverBody);
+  rresUnloadResourceChunk(chunkRoverScan);
+  rresUnloadResourceChunk(chunkRoverWheel); //shader compilation breaks if this stuff is unloaded too early...
   rresUnloadResourceChunk(shadowVsChunk);
   rresUnloadResourceChunk(shadowFsChunk);
 
@@ -418,14 +438,15 @@ void init(GameState *state) {
                                    "shadowMapResolution"),
                  &shadowMapResolution, SHADER_UNIFORM_INT);
 
-  for (int i = 0; i < state->transientStorage.roverModel.materialCount; i++) {
-    state->transientStorage.roverModel.materials[i].shader =
+  for (int i = 0; i < state->transientStorage.resourceManager.roverAssets.body.materialCount; i++) {
+    state->transientStorage.resourceManager.roverAssets.body.materials[i].shader =
         state->transientStorage.shadowShader;
   }
-  state->transientStorage.cubeModel =
-      LoadModelFromMesh(GenMeshCube(1.0f, 1.0f, 1.0f));
-  state->transientStorage.cubeModel.materials[0].shader =
-      state->transientStorage.shadowShader;
+
+  for (int i = 0; i < state->transientStorage.resourceManager.roverAssets.wheel.materialCount; i++) {
+    state->transientStorage.resourceManager.roverAssets.wheel.materials[i].shader =
+        state->transientStorage.shadowShader;
+  }
 
   state->transientStorage.shadowMap.id =
       rlLoadFramebuffer(); // Load an empty framebuffer
@@ -515,8 +536,9 @@ void update(GameState *state) {
 
 void cleanup(GameState *state) {
   UnloadShader(state->transientStorage.shadowShader);
-  UnloadMesh(state->transientStorage.roverMesh);
-  UnloadModel(state->transientStorage.roverModel);
+  UnloadModel(state->transientStorage.resourceManager.roverAssets.body);
+  UnloadModel(state->transientStorage.resourceManager.roverAssets.scan);
+  UnloadModel(state->transientStorage.resourceManager.roverAssets.wheel);
   if (state->transientStorage.shadowMap.id > 0)
     rlUnloadFramebuffer(state->transientStorage.shadowMap.id);
   rresUnloadCentralDirectory(state->dir);
