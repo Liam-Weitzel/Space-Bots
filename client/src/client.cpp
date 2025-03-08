@@ -1,4 +1,3 @@
-#include "entt.hpp"
 #include "game_state.h"
 #include "raylib.h"
 #include "raymath.h"
@@ -37,16 +36,11 @@ void render(GameState *state) {
   lightView = rlGetMatrixModelview();
   lightProj = rlGetMatrixProjection();
 
-  DrawModelEx(state->transientStorage.resourceManager.roverAssets.body, state->transientStorage.resourceManager.roverAssets.bodyTranlation, (Vector3){0.0f, 1.0f, 0.0f},
-              0.0f, (Vector3){1.0f, 1.0f, 1.0f}, WHITE);
-  DrawModelEx(state->transientStorage.resourceManager.roverAssets.wheel, state->transientStorage.resourceManager.roverAssets.blWheelTranslation, (Vector3){0.0f, 1.0f, 0.0f},
-              0.0f, (Vector3){1.0f, 1.0f, 1.0f}, WHITE);
-  DrawModelEx(state->transientStorage.resourceManager.roverAssets.wheel, state->transientStorage.resourceManager.roverAssets.brWheelTranslation, (Vector3){0.0f, 1.0f, 0.0f},
-              0.0f, (Vector3){1.0f, 1.0f, 1.0f}, WHITE);
-  DrawModelEx(state->transientStorage.resourceManager.roverAssets.wheel, state->transientStorage.resourceManager.roverAssets.flWheelTranslation, (Vector3){0.0f, 1.0f, 0.0f},
-              0.0f, (Vector3){1.0f, 1.0f, 1.0f}, WHITE);
-  DrawModelEx(state->transientStorage.resourceManager.roverAssets.wheel, state->transientStorage.resourceManager.roverAssets.frWheelTranslation, (Vector3){0.0f, 1.0f, 0.0f},
-              0.0f, (Vector3){1.0f, 1.0f, 1.0f}, WHITE);
+  DrawModelEx(state->transientStorage.resourceManager.roverAssets.body, state->transientStorage.resourceManager.roverAssets.bodyOffset, state->transientStorage.resourceManager.roverAssets.bodyRotationAxis, 0.0f, {1.0f, 1.0f, 1.0f}, WHITE);
+  DrawModelEx(state->transientStorage.resourceManager.roverAssets.wheel, state->transientStorage.resourceManager.roverAssets.wheelOffsets[0], state->transientStorage.resourceManager.roverAssets.wheelRotationAxis, 0.0f, {1.0f, 1.0f, 1.0f}, WHITE);
+  DrawModelEx(state->transientStorage.resourceManager.roverAssets.wheel, state->transientStorage.resourceManager.roverAssets.wheelOffsets[1], state->transientStorage.resourceManager.roverAssets.wheelRotationAxis, 0.0f, {1.0f, 1.0f, 1.0f}, WHITE);
+  DrawModelEx(state->transientStorage.resourceManager.roverAssets.wheel, state->transientStorage.resourceManager.roverAssets.wheelOffsets[2], state->transientStorage.resourceManager.roverAssets.wheelRotationAxis, 0.0f, {1.0f, 1.0f, 1.0f}, WHITE);
+  DrawModelEx(state->transientStorage.resourceManager.roverAssets.wheel, state->transientStorage.resourceManager.roverAssets.wheelOffsets[3], state->transientStorage.resourceManager.roverAssets.wheelRotationAxis, 0.0f, {1.0f, 1.0f, 1.0f}, WHITE);
 EndMode3D();
   EndTextureMode();
 
@@ -59,22 +53,15 @@ EndMode3D();
   int slot = 10; // Can be anything 0 to 15, but 0 will probably be taken up
   rlActiveTextureSlot(10);
   rlEnableTexture(state->transientStorage.shadowMap.depth.id);
-  rlSetUniform(state->transientStorage.shadowMapLoc, &slot, SHADER_UNIFORM_INT,
-               1);
+  rlSetUniform(state->transientStorage.shadowMapLoc, &slot, SHADER_UNIFORM_INT, 1);
 
   BeginMode3D(state->camera);
-  DrawModelEx(state->transientStorage.resourceManager.roverAssets.scan, state->transientStorage.resourceManager.roverAssets.scanTranslation, (Vector3){0.0f, 1.0f, 0.0f},
-              0.0f, (Vector3){1.0f, 1.0f, 1.0f}, WHITE);
-  DrawModelEx(state->transientStorage.resourceManager.roverAssets.body, state->transientStorage.resourceManager.roverAssets.bodyTranlation, (Vector3){0.0f, 1.0f, 0.0f},
-              0.0f, (Vector3){1.0f, 1.0f, 1.0f}, WHITE);
-  DrawModelEx(state->transientStorage.resourceManager.roverAssets.wheel, state->transientStorage.resourceManager.roverAssets.blWheelTranslation, (Vector3){0.0f, 1.0f, 0.0f},
-              0.0f, (Vector3){1.0f, 1.0f, 1.0f}, WHITE);
-  DrawModelEx(state->transientStorage.resourceManager.roverAssets.wheel, state->transientStorage.resourceManager.roverAssets.brWheelTranslation, (Vector3){0.0f, 1.0f, 0.0f},
-              0.0f, (Vector3){1.0f, 1.0f, 1.0f}, WHITE);
-  DrawModelEx(state->transientStorage.resourceManager.roverAssets.wheel, state->transientStorage.resourceManager.roverAssets.flWheelTranslation, (Vector3){0.0f, 1.0f, 0.0f},
-              0.0f, (Vector3){1.0f, 1.0f, 1.0f}, WHITE);
-  DrawModelEx(state->transientStorage.resourceManager.roverAssets.wheel, state->transientStorage.resourceManager.roverAssets.frWheelTranslation, (Vector3){0.0f, 1.0f, 0.0f},
-              0.0f, (Vector3){1.0f, 1.0f, 1.0f}, WHITE);
+  DrawModelEx(state->transientStorage.resourceManager.roverAssets.scan, state->transientStorage.resourceManager.roverAssets.scanOffset, state->transientStorage.resourceManager.roverAssets.scanRotationAxis, 0.0f, {1.0f, 1.0f, 1.0f}, WHITE);
+  DrawModelEx(state->transientStorage.resourceManager.roverAssets.body, state->transientStorage.resourceManager.roverAssets.bodyOffset, state->transientStorage.resourceManager.roverAssets.bodyRotationAxis, 0.0f, {1.0f, 1.0f, 1.0f}, WHITE);
+  DrawModelEx(state->transientStorage.resourceManager.roverAssets.wheel, state->transientStorage.resourceManager.roverAssets.wheelOffsets[0], state->transientStorage.resourceManager.roverAssets.wheelRotationAxis, 0.0f, {1.0f, 1.0f, 1.0f}, WHITE);
+  DrawModelEx(state->transientStorage.resourceManager.roverAssets.wheel, state->transientStorage.resourceManager.roverAssets.wheelOffsets[1], state->transientStorage.resourceManager.roverAssets.wheelRotationAxis, 0.0f, {1.0f, 1.0f, 1.0f}, WHITE);
+  DrawModelEx(state->transientStorage.resourceManager.roverAssets.wheel, state->transientStorage.resourceManager.roverAssets.wheelOffsets[2], state->transientStorage.resourceManager.roverAssets.wheelRotationAxis, 0.0f, {1.0f, 1.0f, 1.0f}, WHITE);
+  DrawModelEx(state->transientStorage.resourceManager.roverAssets.wheel, state->transientStorage.resourceManager.roverAssets.wheelOffsets[3], state->transientStorage.resourceManager.roverAssets.wheelRotationAxis, 0.0f, {1.0f, 1.0f, 1.0f}, WHITE);
   EndMode3D();
 
   DrawFPS(10, 10);
@@ -356,13 +343,62 @@ Model LoadModelFromChunk(const rresResourceChunk &chunk) {
   return model;
 }
 
+// Example Entity
+struct Entity {
+  int id;
+  char* name;
+};
+
 void init(GameState *state) {
   SetConfigFlags(FLAG_MSAA_4X_HINT);
   InitWindow(800, 450, "video game");
   SetTargetFPS(120);
 
-  // Hack used to check if this current load is a hot code reload
-  bool isEcsDeinitialized = state->registry.storage<entt::entity>().empty();
+  { //NOTE: ARENA TESTING ZONE
+    // Create an arena that can store up to 1024 bytes of memory
+    Arena arena = *new Arena(1024);
+
+    Map<char*, void*, 3>* arenaIndex = arena.alloc<Map<char*, void*, 3>>();
+
+    Array<Entity, 6>* entitiesArray = arena.alloc<Array<Entity, 6>>();
+    (*arenaIndex)["entities"] = entitiesArray;
+
+    // Create an array of entities
+    Entity entities[] = {
+      Entity{1, "Entity 1"},
+      Entity{2, "Entity 2"},
+      Entity{3, "Entity 3"}
+    };
+
+    // Add entities to the array within the arena
+    entitiesArray->add(entities, 3);
+
+    LOG_TRACE("Accessing index which doesn't exist: %i \n", (*arenaIndex)["test"]);
+
+    // Access entities from the array
+    Entity& e = (*entitiesArray)[1]; // Get the second entity (id = 2)
+    LOG_TRACE("Entity ID: %i, Name: %s \n", e.id, e.name)
+
+    Entity& e2 = (*entitiesArray)[2]; // Get the third entity (id = 3)
+    LOG_TRACE("Entity ID: %i, Name: %s \n", e2.id, e2.name)
+
+    // Access entities from the array from scratch
+    // Access the first allocated Map object from the raw memory
+    Map<char*, void*, 3>* arenaIndexFromScratch = reinterpret_cast<Map<char*, void*, 3>*>(arena.memory);
+
+    // Access the pointer to the "entities" array from the Map
+    void* voidArray = (*arenaIndexFromScratch)["entities"];
+
+    // Cast the pointer to the correct type
+    Array<Entity, 6>* entitiesArrayFromScratch = reinterpret_cast<Array<Entity, 6>*>(voidArray);
+
+    // Access entities
+    Entity& eA = (*entitiesArrayFromScratch)[1]; // Get the second entity (id = 2)
+    LOG_TRACE("Entity ID: %i, Name: %s \n", eA.id, eA.name);
+
+    Entity& eA2 = (*entitiesArrayFromScratch)[2]; // Get the third entity (id = 3)
+    LOG_TRACE("Entity ID: %i, Name: %s \n", eA2.id, eA2.name);
+  }
 
   state->dir = rresLoadCentralDirectory("resources.rres");
 
@@ -404,13 +440,11 @@ void init(GameState *state) {
 
   GuiLoadStyleDefault();
 
-  if (isEcsDeinitialized) {
-    state->camera.position = (Vector3){10.0f, 10.0f, 10.0f};
-    state->camera.target = Vector3Zero();
-    state->camera.projection = CAMERA_PERSPECTIVE;
-    state->camera.up = (Vector3){0.0f, 1.0f, 0.0f};
-    state->camera.fovy = 45.0f;
-  }
+  state->camera.position = (Vector3){10.0f, 10.0f, 10.0f};
+  state->camera.target = Vector3Zero();
+  state->camera.projection = CAMERA_PERSPECTIVE;
+  state->camera.up = (Vector3){0.0f, 1.0f, 0.0f};
+  state->camera.fovy = 45.0f;
 
   state->transientStorage.shadowShader.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(state->transientStorage.shadowShader, "viewPos");
   state->transientStorage.lightDir = Vector3Normalize((Vector3){0.35f, -1.0f, -0.35f});
@@ -480,20 +514,18 @@ void init(GameState *state) {
   } else
     TRACELOG(LOG_WARNING, "FBO: Framebuffer object can not be created");
 
-  if (isEcsDeinitialized) {
-    // For the shadowmapping algorithm, we will be rendering everything from the
-    // light's point of view
-    state->lightCamera.position =
-        Vector3Scale(state->transientStorage.lightDir, -15.0f);
-    state->lightCamera.target = Vector3Zero();
-    // Use an orthographic projection for directional lights
-    state->lightCamera.projection = CAMERA_ORTHOGRAPHIC;
-    state->lightCamera.up = (Vector3){0.0f, 1.0f, 0.0f};
-    state->lightCamera.fovy = 20.0f;
+  // For the shadowmapping algorithm, we will be rendering everything from the
+  // light's point of view
+  state->lightCamera.position =
+      Vector3Scale(state->transientStorage.lightDir, -15.0f);
+  state->lightCamera.target = Vector3Zero();
+  // Use an orthographic projection for directional lights
+  state->lightCamera.projection = CAMERA_ORTHOGRAPHIC;
+  state->lightCamera.up = (Vector3){0.0f, 1.0f, 0.0f};
+  state->lightCamera.fovy = 20.0f;
 
-    GuiGuiState gui_state = InitGuiGui();
-    state->gui.gui_state = gui_state;
-  }
+  GuiGuiState gui_state = InitGuiGui();
+  state->gui.gui_state = gui_state;
 }
 
 void update(GameState *state) {

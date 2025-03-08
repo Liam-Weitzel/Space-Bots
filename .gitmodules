@@ -4,9 +4,6 @@
 [submodule "client/libs/raylib"]
 	path = client/libs/raylib
 	url = https://github.com/raysan5/raylib.git
-[submodule "libs/entt"]
-	path = libs/entt
-	url = https://github.com/skypjack/entt.git
 [submodule "client/libs/rres"]
 	path = client/libs/rres
 	url = https://github.com/IyuMashiro/rres.git
