@@ -87,103 +87,130 @@ void _log(char* prefix, char* msg, TextColor textColor, Args... args)
 
 // NOTE: Array
 template<typename T, int N>
-struct Array
-{
+struct Array {
   static constexpr int maxElements = N;
   int count = 0;
-  T elements[N];
+  T elements[maxElements];
 
-  T& operator[](int idx)
-  {
-    LOG_ASSERT(idx >= 0, "idx negative!");
-    LOG_ASSERT(idx < count, "Idx out of bounds!");
+  T& operator[](int idx) {
+    LOG_ASSERT(idx >= 0 && idx < count, "Index out of bounds!");
     return elements[idx];
   }
 
-  int add(T element)
-  {
-    LOG_ASSERT(count < maxElements, "Array Full!");
+  int add(T element) {
+    LOG_ASSERT(count + 1 <= maxElements, "Array Full!");
     elements[count] = element;
     return count++;
   }
 
-  void remove_idx_and_swap(int idx)
-  {
-    LOG_ASSERT(idx >= 0, "idx negative!");
+  int add(const T* elements_list, int num_elements) {
+    for (int i = 0; i < num_elements; ++i) {
+      add(elements_list[i]);
+    }
+    return count;
+  }
+
+  void remove(int idx) { //O(1) but doesn't keep order (swap to last index & decrement)
     LOG_ASSERT(idx < count, "idx out of bounds!");
     elements[idx] = elements[--count];
   }
 
-  void clear()
-  {
+  void clear() {
     count = 0;
   }
 
-  bool is_full()
-  {
+  bool is_full() {
     return count == N;
   }
 };
 
-// NOTE: Bump Allocator
-struct BumpAllocator
-{
+// NOTE: Arena
+struct Arena {
   size_t capacity;
   size_t used;
   char* memory;
+
+  Arena(size_t size) {
+    memory = (char*)malloc(size);
+    if (!memory) LOG_ASSERT(false, "Failed to allocate memory!");
+    memset(memory, 0, size); // Sets the memory to 0
+    capacity = size;
+    used = 0;
+  }
+
+  char& operator[](size_t idx) {
+    LOG_ASSERT(idx < used, "Index out of bounds!");
+    return memory[idx];
+  }
+
+  char* alloc(size_t size) {
+    size_t aligned_size = (size + 7) & ~7;  // 8-byte alignment
+    if (used + aligned_size > capacity) LOG_ASSERT(false, "Arena is full");
+    char* result = memory + used;
+    used += aligned_size;
+    return result;
+  }
+
+  // Allocates memory for a type and returns a pointer to the allocated space
+  template<typename T>
+  T* alloc() {
+    size_t size = sizeof(T);
+    size_t aligned_size = (size + 7) & ~7;  // 8-byte alignment
+    if (used + aligned_size > capacity) LOG_ASSERT(false, "Arena is full");
+    T* result = (T*)(memory + used);
+    used += aligned_size;
+    return result;
+  }
+
+  void clear() {
+    used = 0;
+  }
 };
 
-BumpAllocator make_bump_allocator(size_t size)
-{
-  BumpAllocator ba = {};
-  
-  ba.memory = (char*)malloc(size);
-  if(ba.memory)
-  {
-    ba.capacity = size;
-    memset(ba.memory, 0, size); // Sets the memory to 0
-  }
-  else
-  {
-    LOG_ASSERT(false, "Failed to allocate Memory!");
-  }
+//NOTE: Map
+template <typename KeyType, typename ValueType, int Size>
+struct Map {
+  struct Entry {
+    KeyType key;
+    ValueType value;
+    bool in_use = false; // Flag to indicate if the entry is used
+  };
 
-  return ba;
-}
+  Array<Entry, Size> entries;
 
-char* bump_alloc(BumpAllocator* bumpAllocator, size_t size)
-{
-  char* result = nullptr;
-
-  size_t allignedSize = (size + 7) & ~ 7; // This makes sure the first 4 bits are 0 
-  if(bumpAllocator->used + allignedSize <= bumpAllocator->capacity)
-  {
-    result = bumpAllocator->memory + bumpAllocator->used;
-    bumpAllocator->used += allignedSize;
-  }
-  else
-  {
-    LOG_ASSERT(false, "BumpAllocator is full");
+  // Linear search to find an entry by key
+  int find(KeyType key) const {
+    for (int i = 0; i < Size; ++i) {
+      if (entries.elements[i].in_use && entries.elements[i].key == key) {
+        return i; // Return the index of the found entry
+      }
+    }
+    return -1; // Return -1 if the key is not found
   }
 
-  return result;
-}
+  // Overload the [] operator for getting/setting values
+  ValueType& operator[](KeyType key) {
+    int idx = find(key);
+    if (idx == -1) {
+      // Key not found, create a new entry
+      idx = entries.add(Entry{key, ValueType{}, true});
+    }
+    return entries[idx].value; // Return the value of the found or newly created entry
+  }
+};
 
 // NOTE: File I/O
-long long get_timestamp(const char* file)
-{
+long long get_timestamp(const char* file) {
   struct stat file_stat = {};
   stat(file, &file_stat);
   return file_stat.st_mtime;
 }
 
-bool file_exists(const char* filePath)
-{
+bool file_exists(const char* filePath) {
   LOG_ASSERT(filePath, "No filePath supplied!");
 
   auto file = fopen(filePath, "rb");
-  if(!file)
-  {
+  if(!file) {
     return false;
   }
   fclose(file);
@@ -191,14 +218,12 @@ bool file_exists(const char* filePath)
   return true;
 }
 
-long get_file_size(const char* filePath)
-{
+long get_file_size(const char* filePath) {
   LOG_ASSERT(filePath, "No filePath supplied!");
 
   long fileSize = 0;
   auto file = fopen(filePath, "rb");
-  if(!file)
-  {
+  if(!file) {
     LOG_ERROR("Failed opening File: %s", filePath);
     return 0;
   }
@@ -216,16 +241,14 @@ long get_file_size(const char* filePath)
 * memory and therefore want more control over where it 
 * is allocated
 */
-char* read_file(const char* filePath, int* fileSize, char* buffer)
-{
+char* read_file(const char* filePath, int* fileSize, char* buffer) {
   LOG_ASSERT(filePath, "No filePath supplied!");
   LOG_ASSERT(fileSize, "No fileSize supplied!");
   LOG_ASSERT(buffer, "No buffer supplied!");
 
   *fileSize = 0;
   auto file = fopen(filePath, "rb");
-  if(!file)
-  {
+  if(!file) {
     LOG_ERROR("Failed opening File: %s", filePath);
     return nullptr;
   }
@@ -242,14 +265,12 @@ char* read_file(const char* filePath, int* fileSize, char* buffer)
   return buffer;
 }
 
-char* read_file(const char* filePath, int* fileSize, BumpAllocator* bumpAllocator)
-{
+char* read_file(const char* filePath, int* fileSize, Arena* arena) {
   char* file = nullptr;
   long fileSize2 = get_file_size(filePath);
 
-  if(fileSize2)
-  {
-    char* buffer = bump_alloc(bumpAllocator, fileSize2 + 1);
+  if(fileSize2) {
+    char* buffer = arena->alloc(fileSize2 + 1);
 
     file = read_file(filePath, fileSize, buffer);
   }
@@ -257,13 +278,11 @@ char* read_file(const char* filePath, int* fileSize, BumpAllocator* bumpAllocato
   return file; 
 }
 
-void write_file(const char* filePath, char* buffer, int size)
-{
+void write_file(const char* filePath, char* buffer, int size) {
   LOG_ASSERT(filePath, "No filePath supplied!");
   LOG_ASSERT(buffer, "No buffer supplied!");
   auto file = fopen(filePath, "wb");
-  if(!file)
-  {
+  if(!file) {
     LOG_ERROR("Failed opening File: %s", filePath);
     return;
   }
@@ -272,21 +291,18 @@ void write_file(const char* filePath, char* buffer, int size)
   fclose(file);
 }
 
-bool copy_file(const char* fileName, const char* outputName, char* buffer)
-{
+bool copy_file(const char* fileName, const char* outputName, char* buffer) {
   int fileSize = 0;
   char* data = read_file(fileName, &fileSize, buffer);
 
   auto outputFile = fopen(outputName, "wb");
-  if(!outputFile)
-  {
+  if(!outputFile) {
     LOG_ERROR("Failed opening File: %s", outputName);
     return false;
   }
 
   int result = fwrite(data, sizeof(char), fileSize, outputFile);
-  if(!result)
-  {
+  if(!result) {
     LOG_ERROR("Failed opening File: %s", outputName);
     return false;
   }
@@ -296,15 +312,12 @@ bool copy_file(const char* fileName, const char* outputName, char* buffer)
   return true;
 }
 
-bool copy_file(const char* fileName, const char* outputName, BumpAllocator* bumpAllocator)
-{
+bool copy_file(const char* fileName, const char* outputName, Arena* arena) {
   char* file = 0;
   long fileSize2 = get_file_size(fileName);
 
-  if(fileSize2)
-  {
-    char* buffer = bump_alloc(bumpAllocator, fileSize2 + 1);
-
+  if(fileSize2) {
+    char* buffer = arena->alloc(fileSize2 + 1);
     return copy_file(fileName, outputName, buffer);
   }
 

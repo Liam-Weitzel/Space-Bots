@@ -1,5 +1,4 @@
 #pragma once
-#include "entt.hpp"
 #include "raylib.h"
 #include "raygui.h"
 #include "gui.h"
@@ -12,14 +11,19 @@ struct GUI {
 
 struct RoverAssets {
     Model body;
-    Vector3 bodyTranlation = {0.0f, 0.5f, 0.0f};
+    Vector3 bodyOffset = {0.0f, 0.5f, 0.0f};
+    Vector3 bodyRotationAxis = {0.0f, 1.0f, 0.0f};
     Model wheel;
-    Vector3 blWheelTranslation = {0.0f, 0.5f, 0.0f};
-    Vector3 brWheelTranslation = {-2.1f, 0.5f, 0.0f};
-    Vector3 flWheelTranslation = {0.0f, 0.5f, -1.25f};
-    Vector3 frWheelTranslation = {-2.1f, 0.5f, -1.25f};
+    Vector3 wheelOffsets[4] = {
+        {0.0f, 0.5f, 0.0f},    // backLeft
+        {-2.1f, 0.5f, 0.0f},   // backRight
+        {0.0f, 0.5f, -1.25f},  // frontLeft
+        {-2.1f, 0.5f, -1.25f}  // frontRight
+    };
+    Vector3 wheelRotationAxis = {0.0f, 1.0f, 0.0f};
     Model scan;
-    Vector3 scanTranslation = {0.0f, 0.5f, 0.0f};
+    Vector3 scanOffset = {0.0f, 0.5f, 0.0f};
+    Vector3 scanRotationAxis = {0.0f, 1.0f, 0.0f};
 };
 
 struct ResourceManager {
@@ -40,7 +44,6 @@ struct GameState {
     Camera3D camera;
     Camera3D lightCamera;
     rresCentralDir dir;
-    entt::registry registry;
     GUI gui;
     int frameCount;
     float deltaTime;
@@ -51,19 +54,14 @@ struct GameState {
 //  ECS COMPONENTS
 //*********************
 
-struct _Transform {
-    Vector3 translation;
-    Quaternion rotation;
-};
-
 struct _Position {
     Vector3 position;
     Quaternion rotation;
 };
 
 struct _Rover {
-    float leftBackWheelRotation;
-    float rightBackWheelRotation;
-    float leftFrontWheelRotation;
-    float rightFrontWheelRotation;
+    float wheelRotations[4] = {0.0f}; // [backLeft, backRight, frontLeft, frontRight]
+    bool isScanning = false;
+    Vector3 scale = {1.0f, 1.0f, 1.0f};
+    Color tint = WHITE;
 };
