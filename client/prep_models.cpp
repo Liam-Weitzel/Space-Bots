@@ -844,8 +844,7 @@ int main(int argc, char *argv[]) {
     filename = filename ? filename + 1 : in;
 
     std::string out = "./resources/models/";
-    std::string filenameBin =
-        std::string(filename, strlen(filename) - 4) + ".bin";
+    std::string filenameBin = std::string(filename, strlen(filename) - 4) + ".bin";
     out += filenameBin;
 
     LOG_TRACE("%s -> %s", in, out.c_str());

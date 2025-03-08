@@ -383,21 +383,25 @@ void init(GameState *state) {
     LOG_TRACE("Entity ID: %i, Name: %s \n", e2.id, e2.name)
 
     // Access entities from the array from scratch
-    // Access the first allocated Map object from the raw memory
-    Map<char*, void*, 3>* arenaIndexFromScratch = reinterpret_cast<Map<char*, void*, 3>*>(arena.memory);
-
-    // Access the pointer to the "entities" array from the Map
-    void* voidArray = (*arenaIndexFromScratch)["entities"];
-
-    // Cast the pointer to the correct type
-    Array<Entity, 6>* entitiesArrayFromScratch = reinterpret_cast<Array<Entity, 6>*>(voidArray);
+    Array<Entity, 6>* entitiesFetched = arena.fetch<Array<Entity, 6>, Map<char*, void*, 3>>("entities");
 
     // Access entities
-    Entity& eA = (*entitiesArrayFromScratch)[1]; // Get the second entity (id = 2)
+    Entity& eA = (*entitiesFetched)[1]; // Get the second entity (id = 2)
     LOG_TRACE("Entity ID: %i, Name: %s \n", eA.id, eA.name);
 
-    Entity& eA2 = (*entitiesArrayFromScratch)[2]; // Get the third entity (id = 3)
+    Entity& eA2 = (*entitiesFetched)[2]; // Get the third entity (id = 3)
     LOG_TRACE("Entity ID: %i, Name: %s \n", eA2.id, eA2.name);
+
+    Array<int, 128>* GPUStuffs = arena.alloc<Array<int, 128>>();
+    (*arenaIndex)["GPUStuffs"] = GPUStuffs;
+    GPUStuffs->add(1);
+    GPUStuffs->add(1);
+    GPUStuffs->add(1);
+    GPUStuffs->add(1);
+    GPUStuffs->add(1);
+    GPUStuffs->add(1);
+    Array<int, 128>* GPUStuffsFetched = arena.fetch<Array<int, 128>, Map<char*, void*, 3>>("GPUStuffs");
+    LOG_TRACE("GPUStuffs: %i %i %i %i", (*GPUStuffsFetched)[0], (*GPUStuffsFetched)[1], (*GPUStuffsFetched)[2], (*GPUStuffsFetched)[3]);
   }
 
   state->dir = rresLoadCentralDirectory("resources.rres");
