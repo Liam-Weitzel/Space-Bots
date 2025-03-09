@@ -830,7 +830,7 @@ char **listFiles(const char* path, int &count, Arena* arena) {
 int main(int argc, char *argv[]) {
   InitWindow(800, 450, "prep models");
 
-  Map<char *, Model, 100> modelMap;
+  MapCT<char *, Model, 100> modelMap;
   Arena* arena = new Arena(1024 * 1024);
 
   int count = 0;

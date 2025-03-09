@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <stdio.h>
 #include <stdlib.h> // This is to get malloc
 #include <string.h> // This is to get memset
@@ -87,7 +88,7 @@ void _log(char* prefix, char* msg, TextColor textColor, Args... args)
 
 // NOTE: Array
 template<typename T, int N>
-struct Array {
+struct ArrayCT {
   static constexpr int maxElements = N;
   int count = 0;
   T elements[maxElements];
@@ -124,82 +125,53 @@ struct Array {
   }
 };
 
-// NOTE: Arena
-struct Arena {
-  size_t capacity;
-  size_t used;
-  char* memory;
+template<typename T>
+struct ArrayRT {
+  int capacity;  // runtime capacity, set when allocated
+  int count;     // number of elements added so far
+  T elements[1]; // Flexible array member (allocate extra space)
 
-  Arena(size_t size) {
-    memory = (char*)malloc(size);
-    if (!memory) LOG_ASSERT(false, "Failed to allocate memory!");
-    memset(memory, 0, size); // Sets the memory to 0
-    capacity = size;
-    used = 0;
+  T& operator[](int idx) {
+    LOG_ASSERT(idx >= 0 && idx < count, "Index out of bounds!");
+    return elements[idx];
   }
 
-  char& operator[](size_t idx) {
-    LOG_ASSERT(idx < used, "Index out of bounds!");
-    return memory[idx];
+  int add(T element) {
+    LOG_ASSERT(count < capacity, "Array Full!");
+    elements[count] = element;
+    return count++;
   }
 
-  char* alloc(size_t size) {
-    size_t aligned_size = (size + 7) & ~7;  // 8-byte alignment
-    if (used + aligned_size > capacity) LOG_ASSERT(false, "Arena is full");
-    char* result = memory + used;
-    used += aligned_size;
-    return result;
+  int add(const T* elements_list, int num_elements) {
+    for (int i = 0; i < num_elements; ++i)
+      add(elements_list[i]);
+    return count;
   }
 
-  // Allocates memory for a type and returns a pointer to the allocated space
-  template<typename T>
-  T* alloc() {
-    size_t size = sizeof(T);
-    size_t aligned_size = (size + 7) & ~7;  // 8-byte alignment
-    if (used + aligned_size > capacity) LOG_ASSERT(false, "Arena is full");
-    T* result = (T*)(memory + used);
-    used += aligned_size;
-    return result;
-  }
-
-  // Allocates memory for a type and returns a pointer to the allocated space
-  template<typename T>
-  T* alloc(size_t size) {
-    size_t aligned_size = (size + 7) & ~7;  // 8-byte alignment
-    if (used + aligned_size > capacity) LOG_ASSERT(false, "Arena is full");
-    T* result = (T*)(memory + used);
-    used += aligned_size;
-    return result;
-  }
-
-  template <typename E, typename M> 
-  E* fetch(char* key) {
-      M* map = reinterpret_cast<M*>((*this).memory);
-      void* ptr = (*map)[key];
-      LOG_ASSERT(ptr, "Arena index map doesn't contain key: %s", key);
-      E* element = reinterpret_cast<E*>(ptr);
-      return element;
+  void remove(int idx) { // O(1): swap with last and decrement
+    LOG_ASSERT(idx < count, "Index out of bounds!");
+    elements[idx] = elements[--count];
   }
 
   void clear() {
-    used = 0;
+    count = 0;
   }
 
-  ~Arena() {
-    free(memory);
+  bool is_full() const {
+    return count == capacity;
   }
 };
 
 //NOTE: Map
 template <typename KeyType, typename ValueType, int Size>
-struct Map {
+struct MapCT {
   struct Entry {
     KeyType key;
     ValueType value;
     bool in_use = false; // Flag to indicate if the entry is used
   };
 
-  Array<Entry, Size> entries;
+  ArrayCT<Entry, Size> entries;
 
   // Linear search to find an entry by key
   int find(KeyType key) const {
@@ -245,6 +217,165 @@ struct Map {
 
   Iterator begin() { return Iterator(entries.elements, entries.elements + Size); }
   Iterator end() { return Iterator(entries.elements + Size, entries.elements + Size); }
+};
+
+template <typename KeyType, typename ValueType>
+struct MapRT {
+  struct Entry {
+    KeyType key;
+    ValueType value;
+    bool in_use = false; // Flag to indicate if the entry is used
+  };
+
+  int capacity; // runtime capacity, set when allocated
+  ArrayRT<Entry>* entries; // set when allocated
+
+  // Linear search to find an entry by key
+  int find(KeyType key) const {
+    for (int i = 0; i < capacity; ++i) {
+      if (entries->elements[i].in_use && entries->elements[i].key == key) {
+        return i; // Return the index of the found entry
+      }
+    }
+    return -1; // Return -1 if the key is not found
+  }
+
+  // Overload the [] operator for getting/setting values
+  ValueType& operator[](KeyType key) {
+    int idx = find(key);
+    if (idx == -1) {
+      // Key not found, create a new entry
+      idx = entries->add(Entry{key, ValueType{}, true});
+    }
+    return (*entries)[idx].value; // Return the value of the found or newly created entry
+  }
+
+  // Custom iterator
+  struct Iterator {
+    Entry* ptr;
+    Entry* end;
+
+    Iterator(Entry* start, Entry* end) : ptr(start), end(end) {
+      // Skip unused entries
+      while (ptr != end && !ptr->in_use) ++ptr;
+    }
+
+    Iterator& operator++() {
+      do {
+        ++ptr;
+      } while (ptr != end && !ptr->in_use);
+      return *this;
+    }
+
+    bool operator!=(const Iterator& other) const { return ptr != other.ptr; }
+    Entry& operator*() const { return *ptr; }
+    Entry* operator->() const { return ptr; }
+  };
+
+  Iterator begin() { return Iterator(entries->elements, entries->elements + capacity); }
+  Iterator end() { return Iterator(entries->elements + capacity, entries->elements + capacity); }
+};
+
+// NOTE: Arena
+struct Arena {
+  size_t capacity;
+  size_t used;
+  char* memory;
+
+  Arena(size_t size) {
+    memory = (char*)malloc(size);
+    if (!memory) LOG_ASSERT(false, "Failed to allocate memory!");
+    memset(memory, 0, size); // Sets the memory to 0
+    capacity = size;
+    used = 0;
+  }
+
+  char& operator[](size_t idx) {
+    LOG_ASSERT(idx < used, "Index out of bounds!");
+    return memory[idx];
+  }
+
+  template<typename T>
+  T* alloc() {
+    size_t size = sizeof(T);
+    size_t aligned_size = (size + 7) & ~7;  // 8-byte alignment
+    if (used + aligned_size > capacity) LOG_ASSERT(false, "Arena is full");
+    T* result = (T*)(memory + used);
+    used += aligned_size;
+    return result;
+  }
+
+  template<typename T>
+  T* alloc(size_t size) {
+    size_t aligned_size = (size + 7) & ~7;  // 8-byte alignment
+    if (used + aligned_size > capacity) LOG_ASSERT(false, "Arena is full");
+    T* result = (T*)(memory + used);
+    used += aligned_size;
+    return result;
+  }
+
+  template<typename T>
+  T* alloc_count(size_t count) {
+    size_t total_size = sizeof(T) * count;
+    size_t aligned_size = (total_size + 7) & ~7;  // 8-byte alignment
+    if (used + aligned_size > capacity) LOG_ASSERT(false, "Arena is full");
+    T* result = reinterpret_cast<T*>(memory + used);
+    used += aligned_size;
+    return result;
+  }
+
+  template <typename E, typename M> 
+  E* fetch(char* key) {
+    M* map = reinterpret_cast<M*>(this->memory);
+    void* ptr = (*map)[key];
+    LOG_ASSERT(ptr, "Arena index map doesn't contain key: %s", key);
+    E* element = reinterpret_cast<E*>(ptr);
+    return element;
+  }
+
+  template<typename T>
+  ArrayRT<T>* create_array_rt(size_t capacity) {
+    size_t total_size = sizeof(ArrayRT<T>) + sizeof(T) * (capacity - 1);
+    ArrayRT<T>* arr = this->alloc<ArrayRT<T>>(total_size);
+    arr->capacity = capacity;
+    arr->count = 0;
+    return arr;
+  }
+
+  template<typename T, int N>
+  ArrayCT<T, N>* create_array_ct() {
+    ArrayCT<T, N>* arr = this->alloc<ArrayCT<T, N>>();
+    arr->count = 0;
+    return arr;
+  }
+
+  template<typename KeyType, typename ValueType>
+  MapRT<KeyType, ValueType>* create_map_rt(size_t capacity) {
+    struct Entry {
+      KeyType key;
+      ValueType value;
+      bool in_use = false; // Flag to indicate if the entry is used
+    };
+    MapRT<KeyType, ValueType>* map = this->alloc<MapRT<KeyType, ValueType>>(sizeof(MapRT<KeyType, ValueType>));
+    ArrayRT<Entry>* entities = this->create_array_rt<Entry>(capacity);
+    map->entries = reinterpret_cast<ArrayRT<typename MapRT<KeyType, ValueType>::Entry>*>(entities);
+    map->capacity = capacity;
+    return map;
+  }
+
+  template<typename KeyType, typename ValueType, int N>
+  MapCT<KeyType, ValueType, N>* create_map_ct() {
+    MapCT<KeyType, ValueType, N>* map = this->alloc<MapCT<KeyType, ValueType, N>>(sizeof(MapCT<KeyType, ValueType, N>));
+    return map;
+  }
+
+  void clear() {
+    used = 0;
+  }
+
+  ~Arena() {
+    free(memory);
+  }
 };
 
 // NOTE: File I/O
@@ -315,10 +446,10 @@ char* read_file(const char* filePath, int* fileSize, char* buffer) {
 
 char* read_file(const char* filePath, int* fileSize, Arena* arena) {
   char* file = nullptr;
-  long fileSize2 = get_file_size(filePath);
+  size_t fileSize2 = get_file_size(filePath);
 
   if(fileSize2) {
-    char* buffer = arena->alloc(fileSize2 + 1);
+    char* buffer = arena->alloc<char>(fileSize2 + 1);
 
     file = read_file(filePath, fileSize, buffer);
   }
@@ -362,10 +493,10 @@ bool copy_file(const char* fileName, const char* outputName, char* buffer) {
 
 bool copy_file(const char* fileName, const char* outputName, Arena* arena) {
   char* file = 0;
-  long fileSize2 = get_file_size(fileName);
+  size_t fileSize2 = get_file_size(fileName);
 
   if(fileSize2) {
-    char* buffer = arena->alloc(fileSize2 + 1);
+    char* buffer = arena->alloc<char>(fileSize2 + 1);
     return copy_file(fileName, outputName, buffer);
   }
 

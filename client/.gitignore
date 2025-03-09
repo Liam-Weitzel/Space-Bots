@@ -4,7 +4,7 @@ libclient.so
 libsteam_api.so
 client
 resources.rres
-prepmodels
+prep_models
 resources/models/*.bin
 
 # Dependencies
