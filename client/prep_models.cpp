@@ -2,11 +2,8 @@
 #include "utils.h"
 #include <cmath>
 #include <dirent.h>
-#include <map>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string>
-#include <utility>
 
 #define RRES_IMPLEMENTATION
 #include "rres.h"
@@ -124,8 +121,9 @@ bool CompareUShortArrays(const unsigned short *a, const unsigned short *b,
   return memcmp(a, b, size) == 0;
 }
 
-Model LoadModelFromChunk(const rresResourceChunk &chunk, Model &testModel) {
-  Model model = {0};
+Model *LoadModelFromChunk(const rresResourceChunk &chunk, Model &testModel,
+                          Arena* arena) {
+  Model *model = arena->alloc<Model>();
 
   if (!chunk.data.raw) {
     LOG_ERROR("Chunk data is null");
@@ -133,33 +131,33 @@ Model LoadModelFromChunk(const rresResourceChunk &chunk, Model &testModel) {
   }
 
   // Initialize all pointers to nullptr explicitly
-  model.meshes = nullptr;
-  model.materials = nullptr;
-  model.meshMaterial = nullptr;
-  model.bones = nullptr;
-  model.bindPose = nullptr;
+  model->meshes = nullptr;
+  model->materials = nullptr;
+  model->meshMaterial = nullptr;
+  model->bones = nullptr;
+  model->bindPose = nullptr;
 
   const unsigned char *data = (const unsigned char *)chunk.data.raw;
   size_t offset = 0;
 
   // Read transform matrix
-  memcpy(&model.transform, data + offset, sizeof(Matrix));
-  LOG_ASSERT(CompareMatrices(&model.transform, &testModel.transform, 1),
+  memcpy(&model->transform, data + offset, sizeof(Matrix));
+  LOG_ASSERT(CompareMatrices(&model->transform, &testModel.transform, 1),
              "testModel and model don't match...");
   offset += sizeof(Matrix);
 
   // Read counts
-  memcpy(&model.meshCount, data + offset, sizeof(int));
-  LOG_ASSERT(model.meshCount == testModel.meshCount,
+  memcpy(&model->meshCount, data + offset, sizeof(int));
+  LOG_ASSERT(model->meshCount == testModel.meshCount,
              "testModel and model don't match...");
   offset += sizeof(int);
-  memcpy(&model.materialCount, data + offset, sizeof(int));
-  LOG_ASSERT(model.materialCount == testModel.materialCount,
+  memcpy(&model->materialCount, data + offset, sizeof(int));
+  LOG_ASSERT(model->materialCount == testModel.materialCount,
              "testModel and model don't match...");
   offset += sizeof(int);
 
-  LOG_TRACE("Loading model with %d meshes and %d materials", model.meshCount,
-            model.materialCount);
+  LOG_TRACE("Loading model with %d meshes and %d materials", model->meshCount,
+            model->materialCount);
 
   // Read global flags
   unsigned char globalFlags;
@@ -168,13 +166,13 @@ Model LoadModelFromChunk(const rresResourceChunk &chunk, Model &testModel) {
 
   // Read meshes
   if (globalFlags & 1) {
-    int size = model.meshCount * sizeof(Mesh);
-    model.meshes = (Mesh *)malloc(size);
-    LOG_ASSERT(model.meshes != nullptr,
+    int size = model->meshCount * sizeof(Mesh);
+    model->meshes = arena->alloc<Mesh>(size);
+    LOG_ASSERT(model->meshes != nullptr,
                "Failed to allocate memory for meshes: %zu bytes", size);
 
-    for (int i = 0; i < model.meshCount; i++) {
-      Mesh *mesh = &model.meshes[i];
+    for (int i = 0; i < model->meshCount; i++) {
+      Mesh *mesh = &model->meshes[i];
 
       // Initialize all mesh pointers to nullptr
       mesh->vertices = nullptr;
@@ -199,16 +197,17 @@ Model LoadModelFromChunk(const rresResourceChunk &chunk, Model &testModel) {
 
       // Read counts
       memcpy(&mesh->vertexCount, data + offset, sizeof(int));
-      LOG_ASSERT(model.meshes[i].vertexCount == testModel.meshes[i].vertexCount,
+      LOG_ASSERT(model->meshes[i].vertexCount ==
+                     testModel.meshes[i].vertexCount,
                  "testModel and model don't match...");
       offset += sizeof(int);
       memcpy(&mesh->triangleCount, data + offset, sizeof(int));
-      LOG_ASSERT(model.meshes[i].triangleCount ==
+      LOG_ASSERT(model->meshes[i].triangleCount ==
                      testModel.meshes[i].triangleCount,
                  "testModel and model don't match...");
       offset += sizeof(int);
       memcpy(&mesh->boneCount, data + offset, sizeof(int));
-      LOG_ASSERT(model.meshes[i].boneCount == testModel.meshes[i].boneCount,
+      LOG_ASSERT(model->meshes[i].boneCount == testModel.meshes[i].boneCount,
                  "testModel and model don't match...");
       offset += sizeof(int);
 
@@ -225,11 +224,11 @@ Model LoadModelFromChunk(const rresResourceChunk &chunk, Model &testModel) {
         // Vertices
         if (meshFlags & 1) {
           size_t size = mesh->vertexCount * 3 * sizeof(float);
-          mesh->vertices = (float *)malloc(size);
+          mesh->vertices = arena->alloc<float>(size);
           LOG_ASSERT(mesh->vertices != nullptr,
                      "Failed to allocate memory for vertices: %zu bytes", size);
           memcpy(mesh->vertices, data + offset, size);
-          LOG_ASSERT(CompareFloatArrays(model.meshes[i].vertices,
+          LOG_ASSERT(CompareFloatArrays(model->meshes[i].vertices,
                                         testModel.meshes[i].vertices, size),
                      "testModel and model don't match...");
           offset += size;
@@ -237,12 +236,12 @@ Model LoadModelFromChunk(const rresResourceChunk &chunk, Model &testModel) {
         // Texcoords
         if (meshFlags & 2) {
           size_t size = mesh->vertexCount * 2 * sizeof(float);
-          mesh->texcoords = (float *)malloc(size);
+          mesh->texcoords = arena->alloc<float>(size);
           LOG_ASSERT(mesh->texcoords != nullptr,
                      "Failed to allocate memory for texcoords: %zu bytes",
                      size);
           memcpy(mesh->texcoords, data + offset, size);
-          LOG_ASSERT(CompareFloatArrays(model.meshes[i].texcoords,
+          LOG_ASSERT(CompareFloatArrays(model->meshes[i].texcoords,
                                         testModel.meshes[i].texcoords, size),
                      "testModel and model don't match...");
           offset += size;
@@ -250,12 +249,12 @@ Model LoadModelFromChunk(const rresResourceChunk &chunk, Model &testModel) {
         // Texcoords2
         if (meshFlags & 4) {
           size_t size = mesh->vertexCount * 2 * sizeof(float);
-          mesh->texcoords2 = (float *)malloc(size);
+          mesh->texcoords2 = arena->alloc<float>(size);
           LOG_ASSERT(mesh->texcoords2 != nullptr,
                      "Failed to allocate memory for texcoords2: %zu bytes",
                      size);
           memcpy(mesh->texcoords2, data + offset, size);
-          LOG_ASSERT(CompareFloatArrays(model.meshes[i].texcoords2,
+          LOG_ASSERT(CompareFloatArrays(model->meshes[i].texcoords2,
                                         testModel.meshes[i].texcoords2, size),
                      "testModel and model don't match...");
           offset += size;
@@ -263,11 +262,11 @@ Model LoadModelFromChunk(const rresResourceChunk &chunk, Model &testModel) {
         // Normals
         if (meshFlags & 8) {
           size_t size = mesh->vertexCount * 3 * sizeof(float);
-          mesh->normals = (float *)malloc(size);
+          mesh->normals = arena->alloc<float>(size);
           LOG_ASSERT(mesh->normals != nullptr,
                      "Failed to allocate memory for normals: %zu bytes", size);
           memcpy(mesh->normals, data + offset, size);
-          LOG_ASSERT(CompareFloatArrays(model.meshes[i].normals,
+          LOG_ASSERT(CompareFloatArrays(model->meshes[i].normals,
                                         testModel.meshes[i].normals, size),
                      "testModel and model don't match...");
           offset += size;
@@ -275,11 +274,11 @@ Model LoadModelFromChunk(const rresResourceChunk &chunk, Model &testModel) {
         // Tangents
         if (meshFlags & 16) {
           size_t size = mesh->vertexCount * 4 * sizeof(float);
-          mesh->tangents = (float *)malloc(size);
+          mesh->tangents = arena->alloc<float>(size);
           LOG_ASSERT(mesh->tangents != nullptr,
                      "Failed to allocate memory for tangents: %zu bytes", size);
           memcpy(mesh->tangents, data + offset, size);
-          LOG_ASSERT(CompareFloatArrays(model.meshes[i].tangents,
+          LOG_ASSERT(CompareFloatArrays(model->meshes[i].tangents,
                                         testModel.meshes[i].tangents, size),
                      "testModel and model don't match...");
           offset += size;
@@ -287,11 +286,11 @@ Model LoadModelFromChunk(const rresResourceChunk &chunk, Model &testModel) {
         // Colors
         if (meshFlags & 32) {
           size_t size = mesh->vertexCount * 4 * sizeof(unsigned char *);
-          mesh->colors = (unsigned char *)malloc(size);
+          mesh->colors = arena->alloc<unsigned char>(size);
           LOG_ASSERT(mesh->colors != nullptr,
                      "Failed to allocate memory for colors: %zu bytes", size);
           memcpy(mesh->colors, data + offset, size);
-          LOG_ASSERT(CompareUCharArrays(model.meshes[i].colors,
+          LOG_ASSERT(CompareUCharArrays(model->meshes[i].colors,
                                         testModel.meshes[i].colors, size),
                      "testModel and model don't match...");
           offset += size;
@@ -301,12 +300,12 @@ Model LoadModelFromChunk(const rresResourceChunk &chunk, Model &testModel) {
         // Animated vertices
         if (animFlags & 1) {
           size_t size = mesh->vertexCount * 3 * sizeof(float);
-          mesh->animVertices = (float *)malloc(size);
+          mesh->animVertices = arena->alloc<float>(size);
           LOG_ASSERT(mesh->animVertices != nullptr,
                      "Failed to allocate memory for anim vertices: %zu bytes",
                      size);
           memcpy(mesh->animVertices, data + offset, size);
-          LOG_ASSERT(CompareFloatArrays(model.meshes[i].animVertices,
+          LOG_ASSERT(CompareFloatArrays(model->meshes[i].animVertices,
                                         testModel.meshes[i].animVertices, size),
                      "testModel and model don't match...");
           offset += size;
@@ -314,12 +313,12 @@ Model LoadModelFromChunk(const rresResourceChunk &chunk, Model &testModel) {
         // Animated normals
         if (animFlags & 2) {
           size_t size = mesh->vertexCount * 3 * sizeof(float);
-          mesh->animNormals = (float *)malloc(size);
+          mesh->animNormals = arena->alloc<float>(size);
           LOG_ASSERT(mesh->animNormals != nullptr,
                      "Failed to allocate memory for anim normals: %zu bytes",
                      size);
           memcpy(mesh->animNormals, data + offset, size);
-          LOG_ASSERT(CompareFloatArrays(model.meshes[i].animNormals,
+          LOG_ASSERT(CompareFloatArrays(model->meshes[i].animNormals,
                                         testModel.meshes[i].animNormals, size),
                      "testModel and model don't match...");
           offset += size;
@@ -327,11 +326,11 @@ Model LoadModelFromChunk(const rresResourceChunk &chunk, Model &testModel) {
         // Bone IDs
         if (animFlags & 4) {
           size_t size = mesh->vertexCount * 4;
-          mesh->boneIds = (unsigned char *)malloc(size);
+          mesh->boneIds = arena->alloc<unsigned char>(size);
           LOG_ASSERT(mesh->boneIds != nullptr,
                      "Failed to allocate memory for bone IDs: %zu bytes", size);
           memcpy(mesh->boneIds, data + offset, size);
-          LOG_ASSERT(CompareUCharArrays(model.meshes[i].boneIds,
+          LOG_ASSERT(CompareUCharArrays(model->meshes[i].boneIds,
                                         testModel.meshes[i].boneIds, size),
                      "testModel and model don't match...");
           offset += size;
@@ -339,12 +338,12 @@ Model LoadModelFromChunk(const rresResourceChunk &chunk, Model &testModel) {
         // Bone weights
         if (animFlags & 8) {
           size_t size = mesh->vertexCount * 4 * sizeof(float);
-          mesh->boneWeights = (float *)malloc(size);
+          mesh->boneWeights = arena->alloc<float>(size);
           LOG_ASSERT(mesh->boneWeights != nullptr,
                      "Failed to allocate memory for bone weights: %zu bytes",
                      size);
           memcpy(mesh->boneWeights, data + offset, size);
-          LOG_ASSERT(CompareFloatArrays(model.meshes[i].boneWeights,
+          LOG_ASSERT(CompareFloatArrays(model->meshes[i].boneWeights,
                                         testModel.meshes[i].boneWeights, size),
                      "testModel and model don't match...");
           offset += size;
@@ -352,12 +351,12 @@ Model LoadModelFromChunk(const rresResourceChunk &chunk, Model &testModel) {
         // Bone matrices
         if (animFlags & 16 && mesh->boneCount > 0) {
           size_t size = mesh->boneCount * sizeof(Matrix);
-          mesh->boneMatrices = (Matrix *)malloc(size);
+          mesh->boneMatrices = arena->alloc<Matrix>(size);
           LOG_ASSERT(mesh->boneMatrices != nullptr,
                      "Failed to allocate memory for bone matrices: %zu bytes",
                      size);
           memcpy(mesh->boneMatrices, data + offset, size);
-          LOG_ASSERT(CompareMatrices(model.meshes[i].boneMatrices,
+          LOG_ASSERT(CompareMatrices(model->meshes[i].boneMatrices,
                                      testModel.meshes[i].boneMatrices,
                                      mesh->boneCount),
                      "testModel and model don't match...");
@@ -368,11 +367,11 @@ Model LoadModelFromChunk(const rresResourceChunk &chunk, Model &testModel) {
       // Read indices
       if (mesh->triangleCount > 0 && (meshFlags & 64)) {
         size_t size = mesh->triangleCount * 3 * sizeof(unsigned short);
-        mesh->indices = (unsigned short *)malloc(size);
+        mesh->indices = arena->alloc<unsigned short>(size);
         LOG_ASSERT(mesh->indices != nullptr,
                    "Failed to allocate memory for indices: %zu bytes", size);
         memcpy(mesh->indices, data + offset, size);
-        LOG_ASSERT(CompareUShortArrays(model.meshes[i].indices,
+        LOG_ASSERT(CompareUShortArrays(model->meshes[i].indices,
                                        testModel.meshes[i].indices, size),
                    "testModel and model don't match...");
         offset += size;
@@ -385,13 +384,13 @@ Model LoadModelFromChunk(const rresResourceChunk &chunk, Model &testModel) {
 
   // Read materials
   if (globalFlags & 2) {
-    int size = model.materialCount * sizeof(Material);
-    model.materials = (Material *)malloc(size);
-    LOG_ASSERT(model.materials != nullptr,
+    int size = model->materialCount * sizeof(Material);
+    model->materials = arena->alloc<Material>(size);
+    LOG_ASSERT(model->materials != nullptr,
                "Failed to allocate memory for materials: %zu bytes", size);
 
-    for (int i = 0; i < model.materialCount; i++) {
-      Material *material = &model.materials[i];
+    for (int i = 0; i < model->materialCount; i++) {
+      Material *material = &model->materials[i];
 
       // Initialize material pointers
       material->shader.locs = nullptr;
@@ -403,7 +402,7 @@ Model LoadModelFromChunk(const rresResourceChunk &chunk, Model &testModel) {
 
       // Read shader ID
       memcpy(&material->shader.id, data + offset, sizeof(unsigned int));
-      LOG_ASSERT(model.materials[i].shader.id ==
+      LOG_ASSERT(model->materials[i].shader.id ==
                      testModel.materials[i].shader.id,
                  "testModel and model don't match...");
       offset += sizeof(unsigned int);
@@ -411,12 +410,12 @@ Model LoadModelFromChunk(const rresResourceChunk &chunk, Model &testModel) {
       // Read shader locations
       if (matFlags & 1) {
         size_t size = RL_MAX_SHADER_LOCATIONS * sizeof(int);
-        material->shader.locs = (int *)malloc(size);
+        material->shader.locs = arena->alloc<int>(size);
         LOG_ASSERT(material->shader.locs != nullptr,
                    "Failed to allocate memory for shader locations: %zu bytes",
                    size);
         memcpy(material->shader.locs, data + offset, size);
-        LOG_ASSERT(CompareShaderLocs(model.materials[i].shader.locs,
+        LOG_ASSERT(CompareShaderLocs(model->materials[i].shader.locs,
                                      testModel.materials[i].shader.locs, size),
                    "testModel and model don't match...");
         offset += size;
@@ -424,7 +423,7 @@ Model LoadModelFromChunk(const rresResourceChunk &chunk, Model &testModel) {
       // Read material maps
       if (matFlags & 2) {
         size_t size = MAX_MATERIAL_MAPS * sizeof(MaterialMap);
-        material->maps = (MaterialMap *)malloc(size);
+        material->maps = arena->alloc<MaterialMap>(size);
         LOG_ASSERT(material->maps != nullptr,
                    "Failed to allocate memory for material maps: %zu bytes",
                    size);
@@ -433,21 +432,21 @@ Model LoadModelFromChunk(const rresResourceChunk &chunk, Model &testModel) {
         for (int j = 0; j < MAX_MATERIAL_MAPS; j++) {
           // Read texture
           memcpy(&material->maps[j].texture, data + offset, sizeof(Texture));
-          LOG_ASSERT(CompareTexture(model.materials[i].maps[j].texture,
+          LOG_ASSERT(CompareTexture(model->materials[i].maps[j].texture,
                                     testModel.materials[i].maps[j].texture),
                      "testModel and model don't match...");
           offset += sizeof(Texture);
 
           // Read color
           memcpy(&material->maps[j].color, data + offset, sizeof(Color));
-          LOG_ASSERT(CompareColor(model.materials[i].maps[j].color,
+          LOG_ASSERT(CompareColor(model->materials[i].maps[j].color,
                                   testModel.materials[i].maps[j].color),
                      "testModel and model don't match...");
           offset += sizeof(Color);
 
           // Read value
           memcpy(&material->maps[j].value, data + offset, sizeof(float));
-          LOG_ASSERT(model.materials[i].maps[j].value ==
+          LOG_ASSERT(model->materials[i].maps[j].value ==
                          testModel.materials[i].maps[j].value,
                      "testModel and model don't match...");
           offset += sizeof(float);
@@ -456,7 +455,7 @@ Model LoadModelFromChunk(const rresResourceChunk &chunk, Model &testModel) {
 
       // Read material params (all 4 floats)
       memcpy(&material->params, data + offset, sizeof(float) * 4);
-      LOG_ASSERT(CompareFloatArrays(model.materials[i].params,
+      LOG_ASSERT(CompareFloatArrays(model->materials[i].params,
                                     testModel.materials[i].params,
                                     sizeof(float) * 4),
                  "testModel and model don't match...");
@@ -466,55 +465,55 @@ Model LoadModelFromChunk(const rresResourceChunk &chunk, Model &testModel) {
 
   // Read mesh material indices
   if (globalFlags & 4) {
-    int size = model.meshCount * sizeof(int);
-    model.meshMaterial = (int *)malloc(size);
-    LOG_ASSERT(model.meshMaterial != nullptr,
+    int size = model->meshCount * sizeof(int);
+    model->meshMaterial = arena->alloc<int>(size);
+    LOG_ASSERT(model->meshMaterial != nullptr,
                "Failed to allocate memory for mesh materials: %zu bytes", size);
-    memcpy(model.meshMaterial, data + offset, size);
+    memcpy(model->meshMaterial, data + offset, size);
     LOG_ASSERT(
-        CompareMeshMaterials(model.meshMaterial, testModel.meshMaterial, size),
+        CompareMeshMaterials(model->meshMaterial, testModel.meshMaterial, size),
         "testModel and model don't match...");
     offset += size;
   }
 
-  memcpy(&model.boneCount, data + offset, sizeof(int));
-  LOG_ASSERT(model.boneCount == testModel.boneCount,
+  memcpy(&model->boneCount, data + offset, sizeof(int));
+  LOG_ASSERT(model->boneCount == testModel.boneCount,
              "testModel and model don't match...");
   offset += sizeof(int);
 
-  if (model.boneCount > 0) {
+  if (model->boneCount > 0) {
     // Read bones
     if (globalFlags & 8) {
-      int size = model.boneCount * sizeof(BoneInfo);
-      model.bones = (BoneInfo *)malloc(size);
-      LOG_ASSERT(model.bones != nullptr,
+      int size = model->boneCount * sizeof(BoneInfo);
+      model->bones = arena->alloc<BoneInfo>(size);
+      LOG_ASSERT(model->bones != nullptr,
                  "Failed to allocate memory for bones: %zu bytes", size);
-      memcpy(model.bones, data + offset, size);
-      LOG_ASSERT(CompareBones(model.bones, testModel.bones, size),
+      memcpy(model->bones, data + offset, size);
+      LOG_ASSERT(CompareBones(model->bones, testModel.bones, size),
                  "testModel and model don't match...");
       offset += size;
     }
 
     // Read bind pose
     if (globalFlags & 16) {
-      int size = model.boneCount * sizeof(Transform);
-      model.bindPose = (Transform *)malloc(size);
-      LOG_ASSERT(model.bindPose != nullptr,
+      int size = model->boneCount * sizeof(Transform);
+      model->bindPose = arena->alloc<Transform>(size);
+      LOG_ASSERT(model->bindPose != nullptr,
                  "Failed to allocate memory for bind pose: %zu bytes", size);
 
-      for (int i = 0; i < model.boneCount; i++) {
-        memcpy(&model.bindPose[i].translation, data + offset, sizeof(Vector3));
-        LOG_ASSERT(CompareVector3(model.bindPose[i].translation,
+      for (int i = 0; i < model->boneCount; i++) {
+        memcpy(&model->bindPose[i].translation, data + offset, sizeof(Vector3));
+        LOG_ASSERT(CompareVector3(model->bindPose[i].translation,
                                   testModel.bindPose[i].translation),
                    "testModel and model don't match...");
         offset += sizeof(Vector3);
-        memcpy(&model.bindPose[i].rotation, data + offset, sizeof(Vector4));
-        LOG_ASSERT(CompareVector4(model.bindPose[i].rotation,
+        memcpy(&model->bindPose[i].rotation, data + offset, sizeof(Vector4));
+        LOG_ASSERT(CompareVector4(model->bindPose[i].rotation,
                                   testModel.bindPose[i].rotation),
                    "testModel and model don't match...");
         offset += sizeof(Vector4);
-        memcpy(&model.bindPose[i].scale, data + offset, sizeof(Vector3));
-        LOG_ASSERT(CompareVector3(model.bindPose[i].scale,
+        memcpy(&model->bindPose[i].scale, data + offset, sizeof(Vector3));
+        LOG_ASSERT(CompareVector3(model->bindPose[i].scale,
                                   testModel.bindPose[i].scale),
                    "testModel and model don't match...");
         offset += sizeof(Vector3);
@@ -762,21 +761,20 @@ void ExportModelToBinary(const Model &model, const char *filename) {
   fclose(file);
 }
 
-char **listFiles(const char *path, int *count) {
+char **listFiles(const char* path, int &count, Arena* arena) {
   DIR *dir;
   struct dirent *entry;
-  char **files = NULL;
-  *count = 0;
+  char **files = nullptr;
+  count = 0;
   int capacity = 10;
 
-  files = (char **)malloc(capacity * sizeof(char *));
+  files = arena->alloc<char*>(capacity * sizeof(char *));
   if (!files)
-    return NULL;
+    return nullptr;
 
   dir = opendir(path);
   if (!dir) {
-    free(files);
-    return NULL;
+    return nullptr;
   }
 
   while ((entry = readdir(dir)) != NULL) {
@@ -785,7 +783,7 @@ char **listFiles(const char *path, int *count) {
         char fullpath[1024];
         snprintf(fullpath, sizeof(fullpath), "%s/%s", path, entry->d_name);
 
-        if (*count >= capacity) {
+        if (count >= capacity) {
           capacity *= 2;
           char **temp = (char **)realloc(files, capacity * sizeof(char *));
           if (!temp) {
@@ -795,8 +793,8 @@ char **listFiles(const char *path, int *count) {
           files = temp;
         }
 
-        files[*count] = strdup(fullpath);
-        (*count)++;
+        files[count] = strdup(fullpath);
+        count++;
       }
     } else if (entry->d_type == DT_DIR && strcmp(entry->d_name, ".") != 0 &&
                strcmp(entry->d_name, "..") != 0) {
@@ -804,11 +802,11 @@ char **listFiles(const char *path, int *count) {
       snprintf(subpath, sizeof(subpath), "%s/%s", path, entry->d_name);
 
       int subcount = 0;
-      char **subfiles = listFiles(subpath, &subcount);
+      char **subfiles = listFiles(subpath, subcount, arena);
 
       if (subfiles) {
-        if (*count + subcount >= capacity) {
-          capacity = *count + subcount;
+        if (count + subcount >= capacity) {
+          capacity = count + subcount;
           char **temp = (char **)realloc(files, capacity * sizeof(char *));
           if (!temp) {
             // Handle error
@@ -818,10 +816,9 @@ char **listFiles(const char *path, int *count) {
         }
 
         for (int i = 0; i < subcount; i++) {
-          files[*count + i] = subfiles[i];
+          files[count + i] = subfiles[i];
         }
-        *count += subcount;
-        free(subfiles);
+        count += subcount;
       }
     }
   }
@@ -833,41 +830,42 @@ char **listFiles(const char *path, int *count) {
 int main(int argc, char *argv[]) {
   InitWindow(800, 450, "prep models");
 
-  std::map<std::string, Model> modelMap;
+  Map<char *, Model, 100> modelMap;
+  Arena* arena = new Arena(1024 * 1024);
 
   int count = 0;
-  char **models = listFiles("resources/models", &count);
+  char **models = listFiles("resources/models", count, arena);
 
   for (int i = 0; i < count; i++) {
     const char *in = models[i];
     const char *filename = strrchr(in, '/');
     filename = filename ? filename + 1 : in;
 
-    std::string out = "./resources/models/";
-    std::string filenameBin = std::string(filename, strlen(filename) - 4) + ".bin";
-    out += filenameBin;
+    char filenameBin[256];
+    snprintf(filenameBin, sizeof(filenameBin), "%.*s.bin",
+             (int)(strlen(filename) - 4), filename);
+    char out[256];
+    snprintf(out, sizeof(out), "./resources/models/%s", filenameBin);
 
-    LOG_TRACE("%s -> %s", in, out.c_str());
+    LOG_TRACE("%s -> %s", in, out);
     Model model = LoadModel(in);
-    ExportModelToBinary(model, out.c_str());
-
+    ExportModelToBinary(model, out);
     modelMap[filenameBin] = model;
-
-    free(models[i]);
   }
-  free(models);
 
-  system("./pack.sh");
+  system("./libs/rrespacker/rrespacker -o resources.rres --rrp resources.rrp");
 
   rresCentralDir dir = rresLoadCentralDirectory("resources.rres");
-  for (auto [key, value] : modelMap) {
-    int idModel = rresGetResourceId(dir, key.c_str());
+  for (auto &[path, testModel, inUse] : modelMap) {
+    int idModel = rresGetResourceId(dir, path);
     rresResourceChunk chunkModel =
         rresLoadResourceChunk("resources.rres", idModel);
-    Model modelTest = LoadModelFromChunk(chunkModel, value);
+    Model* modelTest = LoadModelFromChunk(chunkModel, testModel, arena);
+    UnloadModel(testModel);
     rresUnloadResourceChunk(chunkModel);
-    UnloadModel(modelTest);
   }
+
+  delete arena;
   rresUnloadCentralDirectory(dir);
 
   return 0;

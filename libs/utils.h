@@ -162,6 +162,16 @@ struct Arena {
     return result;
   }
 
+  // Allocates memory for a type and returns a pointer to the allocated space
+  template<typename T>
+  T* alloc(size_t size) {
+    size_t aligned_size = (size + 7) & ~7;  // 8-byte alignment
+    if (used + aligned_size > capacity) LOG_ASSERT(false, "Arena is full");
+    T* result = (T*)(memory + used);
+    used += aligned_size;
+    return result;
+  }
+
   template <typename E, typename M> 
   E* fetch(char* key) {
       M* map = reinterpret_cast<M*>((*this).memory);
@@ -173,6 +183,10 @@ struct Arena {
 
   void clear() {
     used = 0;
+  }
+
+  ~Arena() {
+    free(memory);
   }
 };
 
@@ -206,6 +220,31 @@ struct Map {
     }
     return entries[idx].value; // Return the value of the found or newly created entry
   }
+
+  // Custom iterator
+  struct Iterator {
+    Entry* ptr;
+    Entry* end;
+
+    Iterator(Entry* start, Entry* end) : ptr(start), end(end) {
+      // Skip unused entries
+      while (ptr != end && !ptr->in_use) ++ptr;
+    }
+
+    Iterator& operator++() {
+      do {
+        ++ptr;
+      } while (ptr != end && !ptr->in_use);
+      return *this;
+    }
+
+    bool operator!=(const Iterator& other) const { return ptr != other.ptr; }
+    Entry& operator*() const { return *ptr; }
+    Entry* operator->() const { return ptr; }
+  };
+
+  Iterator begin() { return Iterator(entries.elements, entries.elements + Size); }
+  Iterator end() { return Iterator(entries.elements + Size, entries.elements + Size); }
 };
 
 // NOTE: File I/O
