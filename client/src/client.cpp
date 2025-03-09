@@ -33,15 +33,15 @@ void render(GameState *state) {
   BeginTextureMode(state->transientStorage.shadowMap);
   ClearBackground(WHITE);
   BeginMode3D(state->lightCamera);
-  lightView = rlGetMatrixModelview();
-  lightProj = rlGetMatrixProjection();
+    lightView = rlGetMatrixModelview();
+    lightProj = rlGetMatrixProjection();
 
-  DrawModelEx(state->transientStorage.resourceManager.roverAssets.body, state->transientStorage.resourceManager.roverAssets.bodyOffset, state->transientStorage.resourceManager.roverAssets.bodyRotationAxis, 0.0f, {1.0f, 1.0f, 1.0f}, WHITE);
-  DrawModelEx(state->transientStorage.resourceManager.roverAssets.wheel, state->transientStorage.resourceManager.roverAssets.wheelOffsets[0], state->transientStorage.resourceManager.roverAssets.wheelRotationAxis, 0.0f, {1.0f, 1.0f, 1.0f}, WHITE);
-  DrawModelEx(state->transientStorage.resourceManager.roverAssets.wheel, state->transientStorage.resourceManager.roverAssets.wheelOffsets[1], state->transientStorage.resourceManager.roverAssets.wheelRotationAxis, 0.0f, {1.0f, 1.0f, 1.0f}, WHITE);
-  DrawModelEx(state->transientStorage.resourceManager.roverAssets.wheel, state->transientStorage.resourceManager.roverAssets.wheelOffsets[2], state->transientStorage.resourceManager.roverAssets.wheelRotationAxis, 0.0f, {1.0f, 1.0f, 1.0f}, WHITE);
-  DrawModelEx(state->transientStorage.resourceManager.roverAssets.wheel, state->transientStorage.resourceManager.roverAssets.wheelOffsets[3], state->transientStorage.resourceManager.roverAssets.wheelRotationAxis, 0.0f, {1.0f, 1.0f, 1.0f}, WHITE);
-EndMode3D();
+    DrawModelEx(state->transientStorage.resourceManager.roverAssets.body, state->transientStorage.resourceManager.roverAssets.bodyOffset, state->transientStorage.resourceManager.roverAssets.bodyRotationAxis, 0.0f, {1.0f, 1.0f, 1.0f}, WHITE);
+    DrawModelEx(state->transientStorage.resourceManager.roverAssets.wheel, state->transientStorage.resourceManager.roverAssets.wheelOffsets[0], state->transientStorage.resourceManager.roverAssets.wheelRotationAxis, 0.0f, {1.0f, 1.0f, 1.0f}, WHITE);
+    DrawModelEx(state->transientStorage.resourceManager.roverAssets.wheel, state->transientStorage.resourceManager.roverAssets.wheelOffsets[1], state->transientStorage.resourceManager.roverAssets.wheelRotationAxis, 0.0f, {1.0f, 1.0f, 1.0f}, WHITE);
+    DrawModelEx(state->transientStorage.resourceManager.roverAssets.wheel, state->transientStorage.resourceManager.roverAssets.wheelOffsets[2], state->transientStorage.resourceManager.roverAssets.wheelRotationAxis, 0.0f, {1.0f, 1.0f, 1.0f}, WHITE);
+    DrawModelEx(state->transientStorage.resourceManager.roverAssets.wheel, state->transientStorage.resourceManager.roverAssets.wheelOffsets[3], state->transientStorage.resourceManager.roverAssets.wheelRotationAxis, 0.0f, {1.0f, 1.0f, 1.0f}, WHITE);
+  EndMode3D();
   EndTextureMode();
 
   Matrix lightViewProj = MatrixMultiply(lightView, lightProj);
@@ -356,11 +356,11 @@ void init(GameState *state) {
 
   { //NOTE: ARENA TESTING ZONE
     // Create an arena that can store up to 1024 bytes of memory
-    Arena arena = *new Arena(1024);
+    Arena* arena = new Arena(1024);
 
-    Map<char*, void*, 3>* arenaIndex = arena.alloc<Map<char*, void*, 3>>();
+    Map<char*, void*, 3>* arenaIndex = arena->alloc<Map<char*, void*, 3>>();
 
-    Array<Entity, 6>* entitiesArray = arena.alloc<Array<Entity, 6>>();
+    Array<Entity, 6>* entitiesArray = arena->alloc<Array<Entity, 6>>();
     (*arenaIndex)["entities"] = entitiesArray;
 
     // Create an array of entities
@@ -383,7 +383,7 @@ void init(GameState *state) {
     LOG_TRACE("Entity ID: %i, Name: %s \n", e2.id, e2.name)
 
     // Access entities from the array from scratch
-    Array<Entity, 6>* entitiesFetched = arena.fetch<Array<Entity, 6>, Map<char*, void*, 3>>("entities");
+    Array<Entity, 6>* entitiesFetched = arena->fetch<Array<Entity, 6>, Map<char*, void*, 3>>("entities");
 
     // Access entities
     Entity& eA = (*entitiesFetched)[1]; // Get the second entity (id = 2)
@@ -392,7 +392,7 @@ void init(GameState *state) {
     Entity& eA2 = (*entitiesFetched)[2]; // Get the third entity (id = 3)
     LOG_TRACE("Entity ID: %i, Name: %s \n", eA2.id, eA2.name);
 
-    Array<int, 128>* GPUStuffs = arena.alloc<Array<int, 128>>();
+    Array<int, 128>* GPUStuffs = arena->alloc<Array<int, 128>>();
     (*arenaIndex)["GPUStuffs"] = GPUStuffs;
     GPUStuffs->add(1);
     GPUStuffs->add(1);
@@ -400,8 +400,10 @@ void init(GameState *state) {
     GPUStuffs->add(1);
     GPUStuffs->add(1);
     GPUStuffs->add(1);
-    Array<int, 128>* GPUStuffsFetched = arena.fetch<Array<int, 128>, Map<char*, void*, 3>>("GPUStuffs");
+    Array<int, 128>* GPUStuffsFetched = arena->fetch<Array<int, 128>, Map<char*, void*, 3>>("GPUStuffs");
     LOG_TRACE("GPUStuffs: %i %i %i %i", (*GPUStuffsFetched)[0], (*GPUStuffsFetched)[1], (*GPUStuffsFetched)[2], (*GPUStuffsFetched)[3]);
+
+    delete arena;
   }
 
   state->dir = rresLoadCentralDirectory("resources.rres");
