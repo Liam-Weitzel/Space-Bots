@@ -163,20 +163,21 @@ struct ArrayRT {
 };
 
 //NOTE: Map
+
+template <typename KeyType, typename ValueType>
+struct Entry {
+  KeyType key;
+  ValueType value;
+};
+
 template <typename KeyType, typename ValueType, int Size>
 struct MapCT {
-  struct Entry {
-    KeyType key;
-    ValueType value;
-    bool in_use = false; // Flag to indicate if the entry is used
-  };
-
-  ArrayCT<Entry, Size> entries;
+  ArrayCT<Entry<KeyType, ValueType>, Size> entries;
 
   // Linear search to find an entry by key
   int find(KeyType key) const {
-    for (int i = 0; i < Size; ++i) {
-      if (entries.elements[i].in_use && entries.elements[i].key == key) {
+    for (int i = 0; i < entries.count; ++i) {
+      if (entries.elements[i].key == key) {
         return i; // Return the index of the found entry
       }
     }
@@ -188,52 +189,42 @@ struct MapCT {
     int idx = find(key);
     if (idx == -1) {
       // Key not found, create a new entry
-      idx = entries.add(Entry{key, ValueType{}, true});
+      idx = entries.add(Entry<KeyType, ValueType>{key, ValueType{}});
     }
     return entries[idx].value; // Return the value of the found or newly created entry
   }
 
-  // Custom iterator
   struct Iterator {
-    Entry* ptr;
-    Entry* end;
+    Entry<KeyType, ValueType>* ptr;
+    Entry<KeyType, ValueType>* end;
 
-    Iterator(Entry* start, Entry* end) : ptr(start), end(end) {
-      // Skip unused entries
-      while (ptr != end && !ptr->in_use) ++ptr;
-    }
+    Iterator(Entry<KeyType, ValueType>* start, Entry<KeyType, ValueType>* end) 
+        : ptr(start), end(end) {}
 
     Iterator& operator++() {
-      do {
+      if (ptr != end) {
         ++ptr;
-      } while (ptr != end && !ptr->in_use);
+      }
       return *this;
     }
 
     bool operator!=(const Iterator& other) const { return ptr != other.ptr; }
-    Entry& operator*() const { return *ptr; }
-    Entry* operator->() const { return ptr; }
+    Entry<KeyType, ValueType>& operator*() const { return *ptr; }
+    Entry<KeyType, ValueType>* operator->() const { return ptr; }
   };
 
-  Iterator begin() { return Iterator(entries.elements, entries.elements + Size); }
-  Iterator end() { return Iterator(entries.elements + Size, entries.elements + Size); }
+  Iterator begin() { return Iterator(entries.elements, entries.elements + entries.count); }
+  Iterator end() { return Iterator(entries.elements + entries.count, entries.elements + entries.count); }
 };
 
 template <typename KeyType, typename ValueType>
 struct MapRT {
-  struct Entry {
-    KeyType key;
-    ValueType value;
-    bool in_use = false; // Flag to indicate if the entry is used
-  };
-
-  int capacity; // runtime capacity, set when allocated
-  ArrayRT<Entry>* entries; // set when allocated
+  ArrayRT<Entry<KeyType, ValueType>>* entries; // set when allocated
 
   // Linear search to find an entry by key
   int find(KeyType key) const {
-    for (int i = 0; i < capacity; ++i) {
-      if (entries->elements[i].in_use && entries->elements[i].key == key) {
+    for (int i = 0; i < entries->count; ++i) {
+      if (entries->elements[i].key == key) {
         return i; // Return the index of the found entry
       }
     }
@@ -245,35 +236,32 @@ struct MapRT {
     int idx = find(key);
     if (idx == -1) {
       // Key not found, create a new entry
-      idx = entries->add(Entry{key, ValueType{}, true});
+      idx = entries->add(Entry<KeyType, ValueType>{key, ValueType{}});
     }
     return (*entries)[idx].value; // Return the value of the found or newly created entry
   }
 
-  // Custom iterator
   struct Iterator {
-    Entry* ptr;
-    Entry* end;
+    Entry<KeyType, ValueType>* ptr;
+    Entry<KeyType, ValueType>* end;
 
-    Iterator(Entry* start, Entry* end) : ptr(start), end(end) {
-      // Skip unused entries
-      while (ptr != end && !ptr->in_use) ++ptr;
-    }
+    Iterator(Entry<KeyType, ValueType>* start, Entry<KeyType, ValueType>* end) 
+        : ptr(start), end(end) {}
 
     Iterator& operator++() {
-      do {
+      if (ptr != end) {
         ++ptr;
-      } while (ptr != end && !ptr->in_use);
+      }
       return *this;
     }
 
     bool operator!=(const Iterator& other) const { return ptr != other.ptr; }
-    Entry& operator*() const { return *ptr; }
-    Entry* operator->() const { return ptr; }
+    Entry<KeyType, ValueType>& operator*() const { return *ptr; }
+    Entry<KeyType, ValueType>* operator->() const { return ptr; }
   };
 
-  Iterator begin() { return Iterator(entries->elements, entries->elements + capacity); }
-  Iterator end() { return Iterator(entries->elements + capacity, entries->elements + capacity); }
+  Iterator begin() { return Iterator(entries->elements, entries->elements + entries->count); }
+  Iterator end() { return Iterator(entries->elements + entries->count, entries->elements + entries->count); }
 };
 
 // NOTE: Arena
@@ -351,15 +339,9 @@ struct Arena {
 
   template<typename KeyType, typename ValueType>
   MapRT<KeyType, ValueType>* create_map_rt(size_t capacity) {
-    struct Entry {
-      KeyType key;
-      ValueType value;
-      bool in_use = false; // Flag to indicate if the entry is used
-    };
     MapRT<KeyType, ValueType>* map = this->alloc<MapRT<KeyType, ValueType>>(sizeof(MapRT<KeyType, ValueType>));
-    ArrayRT<Entry>* entities = this->create_array_rt<Entry>(capacity);
-    map->entries = reinterpret_cast<ArrayRT<typename MapRT<KeyType, ValueType>::Entry>*>(entities);
-    map->capacity = capacity;
+    ArrayRT<Entry<KeyType, ValueType>>* entities = this->create_array_rt<Entry<KeyType, ValueType>>(capacity);
+    map->entries = entities;
     return map;
   }
 
