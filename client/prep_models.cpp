@@ -830,8 +830,8 @@ char **listFiles(const char* path, int &count, Arena* arena) {
 int main(int argc, char *argv[]) {
   InitWindow(800, 450, "prep models");
 
-  MapCT<char *, Model, 100> modelMap;
   Arena* arena = new Arena(1024 * 1024);
+  MapCT<char*, Model, 100> modelMap = *arena->create_map_ct<char*, Model, 100>();
 
   int count = 0;
   char **models = listFiles("resources/models", count, arena);
@@ -856,7 +856,7 @@ int main(int argc, char *argv[]) {
   system("./libs/rrespacker/rrespacker -o resources.rres --rrp resources.rrp");
 
   rresCentralDir dir = rresLoadCentralDirectory("resources.rres");
-  for (auto &[path, testModel, inUse] : modelMap) {
+  for (auto &[path, testModel] : modelMap) {
     int idModel = rresGetResourceId(dir, path);
     rresResourceChunk chunkModel =
         rresLoadResourceChunk("resources.rres", idModel);
