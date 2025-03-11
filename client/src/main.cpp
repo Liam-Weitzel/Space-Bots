@@ -1,6 +1,6 @@
 #include <dlfcn.h>
 #include "game_state.h"
-#include "utils.h"
+#include "utils.cpp"
 
 typedef void (*client_main_fn)(GameState*);
 

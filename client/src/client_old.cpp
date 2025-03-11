@@ -1,6 +1,6 @@
 #include "game_state.h"
 #include "entt.hpp"
-#include "utils.h"
+#include "utils.cpp"
 #include "isteamuser.h"
 #include "isteamuserstats.h"
 #include "steam_api.h"

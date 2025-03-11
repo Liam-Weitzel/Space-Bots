@@ -2,7 +2,7 @@
 #include "raylib.h"
 #include "raymath.h"
 #include "rlgl.h"
-#include "utils.h"
+#include "utils.cpp"
 
 #define RAYGUI_IMPLEMENTATION
 #define RAYGUI_SUPPORT_ICONS
