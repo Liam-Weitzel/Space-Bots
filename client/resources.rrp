@@ -16,7 +16,5 @@ f /home/liam-w/Space-Bots/client/resources/models/rover_body.bin@rover_body.bin,
 f /home/liam-w/Space-Bots/client/resources/models/rover_scan.bin@rover_scan.bin,0,0,0x00000000,0,0
 f /home/liam-w/Space-Bots/client/resources/models/rover_wheel.bin@rover_wheel.bin,0,0,0x00000000,0,0
 
-f /home/liam-w/Space-Bots/client/resources/shaders/lighting.fs@lighting.fs,0,0,0x00000000,0,0
-f /home/liam-w/Space-Bots/client/resources/shaders/lighting.vs@lighting.vs,0,0,0x00000000,0,0
 f /home/liam-w/Space-Bots/client/resources/shaders/shadowmap.fs@shadowmap.fs,0,0,0x00000000,0,0
 f /home/liam-w/Space-Bots/client/resources/shaders/shadowmap.vs@shadowmap.vs,0,0,0x00000000,0,0

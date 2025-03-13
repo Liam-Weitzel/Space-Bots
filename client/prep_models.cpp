@@ -1,6 +1,6 @@
 #include "raylib.h"
-#include "utils.cpp"
-#include "utils_client.cpp"
+#include "utils.h"
+#include "utils_client.h"
 #include <cmath>
 #include <dirent.h>
 #include <stdio.h>
@@ -19,7 +19,7 @@
 #define MAX_MATERIAL_MAPS 12
 #define RL_MAX_SHADER_LOCATIONS 32
 
-Model *LoadModelFromChunk(const rresResourceChunk &chunk, Model &testModel,
+Model *LoadModelFromChunkTest(const rresResourceChunk &chunk, Model &testModel,
                           Arena* arena) {
   Model *model = arena->alloc<Model>();
 
@@ -313,7 +313,7 @@ Model *LoadModelFromChunk(const rresResourceChunk &chunk, Model &testModel,
                    "Failed to allocate memory for shader locations: %zu bytes",
                    size);
         memcpy(material->shader.locs, data + offset, size);
-        LOG_ASSERT(CompareShaderLocs(model->materials[i].shader.locs,
+        LOG_ASSERT(CompareIntArrays(model->materials[i].shader.locs,
                                      testModel.materials[i].shader.locs, size),
                    "testModel and model don't match...");
         offset += size;
@@ -369,7 +369,7 @@ Model *LoadModelFromChunk(const rresResourceChunk &chunk, Model &testModel,
                "Failed to allocate memory for mesh materials: %zu bytes", size);
     memcpy(model->meshMaterial, data + offset, size);
     LOG_ASSERT(
-        CompareMeshMaterials(model->meshMaterial, testModel.meshMaterial, size),
+        CompareIntArrays(model->meshMaterial, testModel.meshMaterial, size),
         "testModel and model don't match...");
     offset += size;
   }
@@ -728,7 +728,7 @@ char **listFiles(const char* path, int &count, Arena* arena) {
 int main(int argc, char *argv[]) {
   InitWindow(800, 450, "prep models");
 
-  Arena* arena = new Arena(1024 * 1024);
+  Arena* arena = new Arena(MB(1));
   MapCT<char*, Model, 100> modelMap = *arena->create_map_ct<char*, Model, 100>();
 
   int count = 0;
@@ -759,7 +759,7 @@ int main(int argc, char *argv[]) {
     int idModel = rresGetResourceId(dir, path);
     rresResourceChunk chunkModel =
         rresLoadResourceChunk("resources.rres", idModel);
-    Model* modelTest = LoadModelFromChunk(chunkModel, testModel, arena);
+    Model* modelTest = LoadModelFromChunkTest(chunkModel, testModel, arena);
     UnloadModel(testModel);
     rresUnloadResourceChunk(chunkModel);
   }
