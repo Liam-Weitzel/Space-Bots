@@ -3,6 +3,7 @@ compile_commands.json
 libclient.so
 libsteam_api.so
 client
+client_test
 resources.rres
 prep_models
 resources/models/*.bin

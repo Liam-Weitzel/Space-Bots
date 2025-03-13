@@ -2,7 +2,7 @@
 #include "raylib.h"
 #include "raymath.h"
 #include "rlgl.h"
-#include "utils.cpp"
+#include "utils_client.h"
 
 #define RAYGUI_IMPLEMENTATION
 #define RAYGUI_SUPPORT_ICONS
@@ -22,8 +22,6 @@
 
 #define GLSL_VERSION 330
 #define SHADOWMAP_RESOLUTION 1024
-#define MAX_MATERIAL_MAPS 12
-#define RL_MAX_SHADER_LOCATIONS 32
 
 void render(GameState *state) {
   BeginDrawing();
@@ -73,274 +71,15 @@ void render(GameState *state) {
   EndDrawing();
 }
 
-Model LoadModelFromChunk(const rresResourceChunk &chunk) {
-  Model model = {0};
-
-  if (!chunk.data.raw) {
-    LOG_ERROR("Chunk data is null");
-    return model;
-  }
-
-  // Initialize all pointers to nullptr explicitly
-  model.meshes = nullptr;
-  model.materials = nullptr;
-  model.meshMaterial = nullptr;
-  model.bones = nullptr;
-  model.bindPose = nullptr;
-
-  const unsigned char *data = (const unsigned char *)chunk.data.raw;
-  size_t offset = 0;
-
-  // Read transform matrix
-  memcpy(&model.transform, data + offset, sizeof(Matrix));
-  offset += sizeof(Matrix);
-
-  // Read counts
-  memcpy(&model.meshCount, data + offset, sizeof(int));
-  offset += sizeof(int);
-  memcpy(&model.materialCount, data + offset, sizeof(int));
-  offset += sizeof(int);
-
-  LOG_TRACE("Loading model with %d meshes and %d materials", model.meshCount,
-            model.materialCount);
-
-  // Read global flags
-  unsigned char globalFlags;
-  memcpy(&globalFlags, data + offset, sizeof(unsigned char));
-  offset += sizeof(unsigned char);
-
-  // Read meshes
-  if (globalFlags & 1) {
-    int size = model.meshCount * sizeof(Mesh);
-    model.meshes = (Mesh *)malloc(size);
-
-    for (int i = 0; i < model.meshCount; i++) {
-      Mesh *mesh = &model.meshes[i];
-
-      // Initialize all mesh pointers to nullptr
-      mesh->vertices = nullptr;
-      mesh->texcoords = nullptr;
-      mesh->texcoords2 = nullptr;
-      mesh->normals = nullptr;
-      mesh->tangents = nullptr;
-      mesh->colors = nullptr;
-      mesh->indices = nullptr;
-      mesh->animVertices = nullptr;
-      mesh->animNormals = nullptr;
-      mesh->boneIds = nullptr;
-      mesh->boneWeights = nullptr;
-      mesh->boneMatrices = nullptr;
-      mesh->vboId = nullptr;
-
-      // Initialize all values to be 0
-      mesh->vertexCount = 0;
-      mesh->triangleCount = 0;
-      mesh->vaoId = 0;
-      mesh->boneCount = 0;
-
-      // Read counts
-      memcpy(&mesh->vertexCount, data + offset, sizeof(int));
-      offset += sizeof(int);
-      memcpy(&mesh->triangleCount, data + offset, sizeof(int));
-      offset += sizeof(int);
-      memcpy(&mesh->boneCount, data + offset, sizeof(int));
-      offset += sizeof(int);
-
-      unsigned char meshFlags;
-      memcpy(&meshFlags, data + offset, sizeof(unsigned char));
-      offset += sizeof(unsigned char);
-
-      unsigned char animFlags;
-      memcpy(&animFlags, data + offset, sizeof(unsigned char));
-      offset += sizeof(unsigned char);
-
-      // Read vertex data
-      if (mesh->vertexCount > 0) {
-        // Vertices
-        if (meshFlags & 1) {
-          size_t size = mesh->vertexCount * 3 * sizeof(float);
-          mesh->vertices = (float *)malloc(size);
-          memcpy(mesh->vertices, data + offset, size);
-          offset += size;
-        }
-        // Texcoords
-        if (meshFlags & 2) {
-          size_t size = mesh->vertexCount * 2 * sizeof(float);
-          mesh->texcoords = (float *)malloc(size);
-          memcpy(mesh->texcoords, data + offset, size);
-          offset += size;
-        }
-        // Texcoords2
-        if (meshFlags & 4) {
-          size_t size = mesh->vertexCount * 2 * sizeof(float);
-          mesh->texcoords2 = (float *)malloc(size);
-          memcpy(mesh->texcoords2, data + offset, size);
-          offset += size;
-        }
-        // Normals
-        if (meshFlags & 8) {
-          size_t size = mesh->vertexCount * 3 * sizeof(float);
-          mesh->normals = (float *)malloc(size);
-          memcpy(mesh->normals, data + offset, size);
-          offset += size;
-        }
-        // Tangents
-        if (meshFlags & 16) {
-          size_t size = mesh->vertexCount * 4 * sizeof(float);
-          mesh->tangents = (float *)malloc(size);
-          memcpy(mesh->tangents, data + offset, size);
-          offset += size;
-        }
-        // Colors
-        if (meshFlags & 32) {
-          size_t size = mesh->vertexCount * 4 * sizeof(unsigned char *);
-          mesh->colors = (unsigned char *)malloc(size);
-          memcpy(mesh->colors, data + offset, size);
-          offset += size;
-        }
-
-        // Animation data
-        // Animated vertices
-        if (animFlags & 1) {
-          size_t size = mesh->vertexCount * 3 * sizeof(float);
-          mesh->animVertices = (float *)malloc(size);
-          memcpy(mesh->animVertices, data + offset, size);
-          offset += size;
-        }
-        // Animated normals
-        if (animFlags & 2) {
-          size_t size = mesh->vertexCount * 3 * sizeof(float);
-          mesh->animNormals = (float *)malloc(size);
-          memcpy(mesh->animNormals, data + offset, size);
-          offset += size;
-        }
-        // Bone IDs
-        if (animFlags & 4) {
-          size_t size = mesh->vertexCount * 4;
-          mesh->boneIds = (unsigned char *)malloc(size);
-          memcpy(mesh->boneIds, data + offset, size);
-          offset += size;
-        }
-        // Bone weights
-        if (animFlags & 8) {
-          size_t size = mesh->vertexCount * 4 * sizeof(float);
-          mesh->boneWeights = (float *)malloc(size);
-          memcpy(mesh->boneWeights, data + offset, size);
-          offset += size;
-        }
-        // Bone matrices
-        if (animFlags & 16 && mesh->boneCount > 0) {
-          size_t size = mesh->boneCount * sizeof(Matrix);
-          mesh->boneMatrices = (Matrix *)malloc(size);
-          memcpy(mesh->boneMatrices, data + offset, size);
-          offset += size;
-        }
-      }
-
-      // Read indices
-      if (mesh->triangleCount > 0 && (meshFlags & 64)) {
-        size_t size = mesh->triangleCount * 3 * sizeof(unsigned short);
-        mesh->indices = (unsigned short *)malloc(size);
-        memcpy(mesh->indices, data + offset, size);
-        offset += size;
-      }
-
-      // Read OpenGL identifiers
-      UploadMesh(mesh, false);
-    }
-  }
-
-  // Read materials
-  if (globalFlags & 2) {
-    int size = model.materialCount * sizeof(Material);
-    model.materials = (Material *)malloc(size);
-
-    for (int i = 0; i < model.materialCount; i++) {
-      Material *material = &model.materials[i];
-
-      // Initialize material pointers
-      material->shader.locs = nullptr;
-      material->maps = nullptr;
-
-      unsigned char matFlags;
-      memcpy(&matFlags, data + offset, sizeof(unsigned char));
-      offset += sizeof(unsigned char);
-
-      // Read shader ID
-      memcpy(&material->shader.id, data + offset, sizeof(unsigned int));
-      offset += sizeof(unsigned int);
-
-      // Read shader locations
-      if (matFlags & 1) {
-        size_t size = RL_MAX_SHADER_LOCATIONS * sizeof(int);
-        material->shader.locs = (int *)malloc(size);
-        memcpy(material->shader.locs, data + offset, size);
-        offset += size;
-      }
-      // Read material maps
-      if (matFlags & 2) {
-        size_t size = MAX_MATERIAL_MAPS * sizeof(MaterialMap);
-        material->maps = (MaterialMap *)malloc(size);
-
-        // Read each material map
-        for (int j = 0; j < MAX_MATERIAL_MAPS; j++) {
-          // Read texture
-          memcpy(&material->maps[j].texture, data + offset, sizeof(Texture));
-          offset += sizeof(Texture);
-
-          // Read color
-          memcpy(&material->maps[j].color, data + offset, sizeof(Color));
-          offset += sizeof(Color);
-
-          // Read value
-          memcpy(&material->maps[j].value, data + offset, sizeof(float));
-          offset += sizeof(float);
-        }
-      }
-
-      // Read material params (all 4 floats)
-      memcpy(&material->params, data + offset, sizeof(float) * 4);
-      offset += sizeof(float) * 4;
-    }
-  }
-
-  // Read mesh material indices
-  if (globalFlags & 4) {
-    int size = model.meshCount * sizeof(int);
-    model.meshMaterial = (int *)malloc(size);
-    memcpy(model.meshMaterial, data + offset, size);
-    offset += size;
-  }
-
-  memcpy(&model.boneCount, data + offset, sizeof(int));
-  offset += sizeof(int);
-
-  if (model.boneCount > 0) {
-    // Read bones
-    if (globalFlags & 8) {
-      int size = model.boneCount * sizeof(BoneInfo);
-      model.bones = (BoneInfo *)malloc(size);
-      memcpy(model.bones, data + offset, size);
-      offset += size;
-    }
-
-    // Read bind pose
-    if (globalFlags & 16) {
-      int size = model.boneCount * sizeof(Transform);
-      model.bindPose = (Transform *)malloc(size);
-
-      for (int i = 0; i < model.boneCount; i++) {
-        memcpy(&model.bindPose[i].translation, data + offset, sizeof(Vector3));
-        offset += sizeof(Vector3);
-        memcpy(&model.bindPose[i].rotation, data + offset, sizeof(Vector4));
-        offset += sizeof(Vector4);
-        memcpy(&model.bindPose[i].scale, data + offset, sizeof(Vector3));
-        offset += sizeof(Vector3);
-      }
-    }
-  }
-
-  return model;
+void cleanup(GameState *state) {
+  UnloadShader(state->transientStorage.shadowShader);
+  UnloadModel(state->transientStorage.resourceManager.roverAssets.body);
+  UnloadModel(state->transientStorage.resourceManager.roverAssets.scan);
+  UnloadModel(state->transientStorage.resourceManager.roverAssets.wheel);
+  if (state->transientStorage.shadowMap.id > 0)
+    rlUnloadFramebuffer(state->transientStorage.shadowMap.id);
+  rresUnloadCentralDirectory(state->dir);
+  CloseWindow();
 }
 
 void init(GameState *state) {
@@ -348,132 +87,20 @@ void init(GameState *state) {
   InitWindow(800, 450, "video game");
   SetTargetFPS(120);
 
-  // Example Entity
-  struct Entity {
-    int id;
-    char* name;
-  };
-  { //NOTE: ARENA COMPILE TIME TESTING ZONE
-    Arena* arena = new Arena(1024);
-    MapCT<char*, void*, 3>* arenaIndex = arena->create_map_ct<char*, void*, 3>();
-
-    ArrayCT<Entity, 6>* entitiesArray = arena->create_array_ct<Entity, 6>();
-    (*arenaIndex)["entities"] = entitiesArray;
-
-    // Create an array of entities
-    Entity entities[] = {
-      Entity{1, "Entity 1"},
-      Entity{2, "Entity 2"},
-      Entity{3, "Entity 3"}
-    };
-
-    // Add entities to the array within the arena
-    entitiesArray->add(entities, 3);
-
-    LOG_TRACE("Accessing index which doesn't exist: %i", (*arenaIndex)["test"]);
-
-    // Access entities from the array
-    Entity& e = (*entitiesArray)[1]; // Get the second entity (id = 2)
-    LOG_TRACE("Entity ID: %i, Name: %s", e.id, e.name)
-
-    Entity& e2 = (*entitiesArray)[2]; // Get the third entity (id = 3)
-    LOG_TRACE("Entity ID: %i, Name: %s", e2.id, e2.name)
-
-    // Access entities from the array from scratch
-    ArrayCT<Entity, 6>* entitiesFetched = arena->fetch<ArrayCT<Entity, 6>, MapCT<char*, void*, 3>>("entities");
-
-    // Access entities
-    Entity& eA = (*entitiesFetched)[1]; // Get the second entity (id = 2)
-    LOG_TRACE("Entity ID: %i, Name: %s", eA.id, eA.name);
-
-    Entity& eA2 = (*entitiesFetched)[2]; // Get the third entity (id = 3)
-    LOG_TRACE("Entity ID: %i, Name: %s", eA2.id, eA2.name);
-
-    ArrayCT<int, 128>* GPUStuffs = arena->create_array_ct<int, 128>();
-    (*arenaIndex)["GPUStuffs"] = GPUStuffs;
-    GPUStuffs->add(1);
-    GPUStuffs->add(1);
-    GPUStuffs->add(1);
-    GPUStuffs->add(1);
-    GPUStuffs->add(1);
-    GPUStuffs->add(1);
-    ArrayCT<int, 128>* GPUStuffsFetched = arena->fetch<ArrayCT<int, 128>, MapCT<char*, void*, 3>>("GPUStuffs");
-    LOG_TRACE("GPUStuffs: %i %i %i %i", (*GPUStuffsFetched)[0], (*GPUStuffsFetched)[1], (*GPUStuffsFetched)[2], (*GPUStuffsFetched)[3]);
-
-    for (Entry<char*, void*> i : *arenaIndex) {
-      LOG_TRACE("Key: %s", i.key);
-    }
-
-    delete arena;
-  }
-
-  { //NOTE: ARENA RUN TIME TESTING ZONE
-    Arena* arena = new Arena(1024);
-    MapRT<char*, void*>* arenaIndex = arena->create_map_rt<char*, void*>(3);
-
-    ArrayRT<Entity>* entitiesArray = arena->create_array_rt<Entity>(6);
-    (*arenaIndex)["entities"] = entitiesArray;
-
-    // Create an array of entities
-    Entity entities[] = {
-      Entity{1, "Entity 1"},
-      Entity{2, "Entity 2"},
-      Entity{3, "Entity 3"}
-    };
-
-    // Add entities to the array within the arena
-    entitiesArray->add(entities, 3);
-
-    LOG_TRACE("Accessing index which doesn't exist: %i", (*arenaIndex)["test"]);
-
-    // Access entities from the array
-    Entity& e = (*entitiesArray)[1]; // Get the second entity (id = 2)
-    LOG_TRACE("Entity ID: %i, Name: %s", e.id, e.name)
-
-    Entity& e2 = (*entitiesArray)[2]; // Get the third entity (id = 3)
-    LOG_TRACE("Entity ID: %i, Name: %s", e2.id, e2.name)
-
-    // Access entities from the array from scratch
-    ArrayRT<Entity>* entitiesFetched = arena->fetch<ArrayRT<Entity>, MapRT<char*, void*>>("entities");
-
-    // Access entities
-    Entity& eA = (*entitiesFetched)[1]; // Get the second entity (id = 2)
-    LOG_TRACE("Entity ID: %i, Name: %s", eA.id, eA.name);
-
-    Entity& eA2 = (*entitiesFetched)[2]; // Get the third entity (id = 3)
-    LOG_TRACE("Entity ID: %i, Name: %s", eA2.id, eA2.name);
-
-    ArrayRT<int>* GPUStuffs = arena->create_array_rt<int>(128);
-    (*arenaIndex)["GPUStuffs"] = GPUStuffs;
-    GPUStuffs->add(1);
-    GPUStuffs->add(1);
-    GPUStuffs->add(1);
-    GPUStuffs->add(1);
-    GPUStuffs->add(1);
-    GPUStuffs->add(1);
-    ArrayRT<int>* GPUStuffsFetched = arena->fetch<ArrayRT<int>, MapRT<char*, void*>>("GPUStuffs");
-    LOG_TRACE("GPUStuffs: %i %i %i %i", (*GPUStuffsFetched)[0], (*GPUStuffsFetched)[1], (*GPUStuffsFetched)[2], (*GPUStuffsFetched)[3]);
-
-    for (Entry<char*, void*> i : *arenaIndex) {
-      LOG_TRACE("Key: %s", i.key);
-    }
-
-    delete arena;
-  }
-
+  Arena* arena = new Arena(KB(32));
   state->dir = rresLoadCentralDirectory("resources.rres");
 
   int idRoverBody = rresGetResourceId(state->dir, "rover_body.bin");
   rresResourceChunk chunkRoverBody = rresLoadResourceChunk("resources.rres", idRoverBody);
-  state->transientStorage.resourceManager.roverAssets.body = LoadModelFromChunk(chunkRoverBody);
+  state->transientStorage.resourceManager.roverAssets.body = *LoadModelFromChunk(chunkRoverBody, arena);
 
   int idRoverScan = rresGetResourceId(state->dir, "rover_scan.bin");
   rresResourceChunk chunkRoverScan = rresLoadResourceChunk("resources.rres", idRoverScan);
-  state->transientStorage.resourceManager.roverAssets.scan = LoadModelFromChunk(chunkRoverScan);
+  state->transientStorage.resourceManager.roverAssets.scan = *LoadModelFromChunk(chunkRoverScan, arena);
 
   int idRoverWheel = rresGetResourceId(state->dir, "rover_wheel.bin");
   rresResourceChunk chunkRoverWheel = rresLoadResourceChunk("resources.rres", idRoverWheel);
-  state->transientStorage.resourceManager.roverAssets.wheel = LoadModelFromChunk(chunkRoverWheel);
+  state->transientStorage.resourceManager.roverAssets.wheel = *LoadModelFromChunk(chunkRoverWheel, arena);
 
   int shadowVsId = rresGetResourceId(state->dir, "shadowmap.vs");
   int shadowFsId = rresGetResourceId(state->dir, "shadowmap.fs");
@@ -627,18 +254,7 @@ void update(GameState *state) {
                  &state->transientStorage.lightDir, SHADER_UNIFORM_VEC3);
 }
 
-void cleanup(GameState *state) {
-  UnloadShader(state->transientStorage.shadowShader);
-  UnloadModel(state->transientStorage.resourceManager.roverAssets.body);
-  UnloadModel(state->transientStorage.resourceManager.roverAssets.scan);
-  UnloadModel(state->transientStorage.resourceManager.roverAssets.wheel);
-  if (state->transientStorage.shadowMap.id > 0)
-    rlUnloadFramebuffer(state->transientStorage.shadowMap.id);
-  rresUnloadCentralDirectory(state->dir);
-  CloseWindow();
-}
-
-extern "C" void client_main(GameState *state) {
+EXPORT_FN void client_main(GameState *state) {
   init(state);
   time_t last_write_time = get_timestamp("./libclient.so");
   while (!WindowShouldClose()) {
