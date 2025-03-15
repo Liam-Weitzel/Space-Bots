@@ -48,7 +48,8 @@ int main() {
     // client.main(&state);
     // NOTE: call whatever functions you want to test here
 
-    arena_test();
+    arena_e2e_test();
+    arena_create_and_fetch_in_different_scope_test();
 
     unload_client(&client);
 }
