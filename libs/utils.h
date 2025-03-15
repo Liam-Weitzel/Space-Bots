@@ -95,6 +95,11 @@ struct ArrayCT {
   int count = 0;
   T elements[maxElements];
 
+  ArrayCT(const ArrayCT&) = delete;
+  ArrayCT& operator=(const ArrayCT&) = delete;
+  ArrayCT(ArrayCT&& other) = delete;
+  ArrayCT& operator=(ArrayCT&& other) = delete;
+
   T& operator[](int idx) {
     LOG_ASSERT(idx >= 0 && idx < count, "Index out of bounds!");
     return elements[idx];
@@ -107,6 +112,7 @@ struct ArrayCT {
   }
 
   int add(const T* elements_list, int num_elements) {
+    LOG_ASSERT(count + num_elements <= maxElements, "Would overflow array!");
     for (int i = 0; i < num_elements; ++i) {
       add(elements_list[i]);
     }
@@ -118,12 +124,20 @@ struct ArrayCT {
     elements[idx] = elements[--count];
   }
 
-  void clear() {
+  void clear() noexcept {
     count = 0;
   }
 
-  bool is_full() {
+  bool is_full() const noexcept {
     return count == N;
+  }
+
+  bool empty() const noexcept {
+      return count == 0;
+  }
+
+  size_t size() const noexcept {
+      return count;
   }
 };
 
@@ -132,6 +146,11 @@ struct ArrayRT {
   int capacity;  // runtime capacity, set when allocated
   int count;     // number of elements added so far
   T elements[1]; // Flexible array member (allocate extra space)
+
+  ArrayRT(const ArrayRT&) = delete;
+  ArrayRT& operator=(const ArrayRT&) = delete;
+  ArrayRT(ArrayRT&& other) = delete;
+  ArrayRT& operator=(ArrayRT&& other) = delete;
 
   T& operator[](int idx) {
     LOG_ASSERT(idx >= 0 && idx < count, "Index out of bounds!");
@@ -145,6 +164,7 @@ struct ArrayRT {
   }
 
   int add(const T* elements_list, int num_elements) {
+    LOG_ASSERT(count + num_elements <= capacity, "Would overflow array!");
     for (int i = 0; i < num_elements; ++i)
       add(elements_list[i]);
     return count;
@@ -155,12 +175,20 @@ struct ArrayRT {
     elements[idx] = elements[--count];
   }
 
-  void clear() {
+  void clear() noexcept {
     count = 0;
   }
 
-  bool is_full() const {
+  bool is_full() const noexcept{
     return count == capacity;
+  }
+
+  bool empty() const noexcept {
+      return count == 0;
+  }
+
+  size_t size() const noexcept {
+      return count;
   }
 };
 
@@ -172,9 +200,39 @@ struct Entry {
   ValueType value;
 };
 
+template <typename KeyType, typename ValueType>
+struct MapIterator {
+    Entry<KeyType, ValueType>* ptr;
+    Entry<KeyType, ValueType>* end;
+
+    MapIterator(const MapIterator&) = delete;
+    MapIterator& operator=(const MapIterator&) = delete;
+    MapIterator(MapIterator&& other) = delete;
+    MapIterator& operator=(MapIterator&& other) = delete;
+
+    MapIterator(Entry<KeyType, ValueType>* start, Entry<KeyType, ValueType>* end) 
+        : ptr(start), end(end) {}
+
+    MapIterator& operator++() {
+        if (ptr != end) {
+            ++ptr;
+        }
+        return *this;
+    }
+
+    bool operator!=(const MapIterator& other) const { return ptr != other.ptr; }
+    Entry<KeyType, ValueType>& operator*() const { return *ptr; }
+    Entry<KeyType, ValueType>* operator->() const { return ptr; }
+};
+
 template <typename KeyType, typename ValueType, int Size>
 struct MapCT {
   ArrayCT<Entry<KeyType, ValueType>, Size> entries;
+
+  MapCT(const MapCT&) = delete;
+  MapCT& operator=(const MapCT&) = delete;
+  MapCT(MapCT&& other) = delete;
+  MapCT& operator=(MapCT&& other) = delete;
 
   // Linear search to find an entry by key
   int find(KeyType key) const {
@@ -186,35 +244,27 @@ struct MapCT {
     return -1; // Return -1 if the key is not found
   }
 
-  // Overload the [] operator for getting/setting values
-  ValueType& operator[](KeyType key) {
-    int idx = find(key);
-    if (idx == -1) {
-      // Key not found, create a new entry
-      idx = entries.add(Entry<KeyType, ValueType>{key, ValueType{}});
-    }
-    return entries[idx].value; // Return the value of the found or newly created entry
+  ValueType& get(KeyType key) {
+      int idx = find(key);
+      if (idx == -1) {
+          idx = entries.add(Entry<KeyType, ValueType>{key, ValueType{}});
+      }
+      return entries[idx].value;
   }
 
-  struct Iterator {
-    Entry<KeyType, ValueType>* ptr;
-    Entry<KeyType, ValueType>* end;
+  ValueType& operator[](KeyType key) {
+      return get(key);
+  }
 
-    Iterator(Entry<KeyType, ValueType>* start, Entry<KeyType, ValueType>* end) 
-        : ptr(start), end(end) {}
+  bool empty() const noexcept {
+      return entries.empty();
+  }
 
-    Iterator& operator++() {
-      if (ptr != end) {
-        ++ptr;
-      }
-      return *this;
-    }
+  size_t size() const noexcept {
+      return entries.size();
+  }
 
-    bool operator!=(const Iterator& other) const { return ptr != other.ptr; }
-    Entry<KeyType, ValueType>& operator*() const { return *ptr; }
-    Entry<KeyType, ValueType>* operator->() const { return ptr; }
-  };
-
+  using Iterator = MapIterator<KeyType, ValueType>;
   Iterator begin() { return Iterator(entries.elements, entries.elements + entries.count); }
   Iterator end() { return Iterator(entries.elements + entries.count, entries.elements + entries.count); }
 };
@@ -223,8 +273,14 @@ template <typename KeyType, typename ValueType>
 struct MapRT {
   ArrayRT<Entry<KeyType, ValueType>>* entries; // set when allocated
 
+  MapRT(const MapRT&) = delete;
+  MapRT& operator=(const MapRT&) = delete;
+  MapRT(MapRT&& other) = delete;
+  MapRT& operator=(MapRT&& other) = delete;
+
   // Linear search to find an entry by key
   int find(KeyType key) const {
+    LOG_ASSERT(entries != nullptr, "Null entries pointer!");
     for (int i = 0; i < entries->count; ++i) {
       if (entries->elements[i].key == key) {
         return i; // Return the index of the found entry
@@ -233,35 +289,27 @@ struct MapRT {
     return -1; // Return -1 if the key is not found
   }
 
-  // Overload the [] operator for getting/setting values
-  ValueType& operator[](KeyType key) {
-    int idx = find(key);
-    if (idx == -1) {
-      // Key not found, create a new entry
-      idx = entries->add(Entry<KeyType, ValueType>{key, ValueType{}});
-    }
-    return (*entries)[idx].value; // Return the value of the found or newly created entry
+  ValueType& get(KeyType key) {
+      int idx = find(key);
+      if (idx == -1) {
+          idx = entries->add(Entry<KeyType, ValueType>{key, ValueType{}});
+      }
+      return (*entries)[idx].value;
   }
 
-  struct Iterator {
-    Entry<KeyType, ValueType>* ptr;
-    Entry<KeyType, ValueType>* end;
+  ValueType& operator[](KeyType key) {
+      return get(key);
+  }
 
-    Iterator(Entry<KeyType, ValueType>* start, Entry<KeyType, ValueType>* end) 
-        : ptr(start), end(end) {}
+  bool empty() const noexcept {
+      return entries->empty();
+  }
 
-    Iterator& operator++() {
-      if (ptr != end) {
-        ++ptr;
-      }
-      return *this;
-    }
+  size_t size() const noexcept {
+      return entries->size();
+  }
 
-    bool operator!=(const Iterator& other) const { return ptr != other.ptr; }
-    Entry<KeyType, ValueType>& operator*() const { return *ptr; }
-    Entry<KeyType, ValueType>* operator->() const { return ptr; }
-  };
-
+  using Iterator = MapIterator<KeyType, ValueType>;
   Iterator begin() { return Iterator(entries->elements, entries->elements + entries->count); }
   Iterator end() { return Iterator(entries->elements + entries->count, entries->elements + entries->count); }
 };
@@ -271,6 +319,11 @@ struct Arena {
   size_t capacity;
   size_t used;
   char* memory;
+
+  Arena(const Arena&) = delete;
+  Arena& operator=(const Arena&) = delete;
+  Arena(Arena&& other) = delete;
+  Arena& operator=(Arena&& other) = delete;
 
   Arena(size_t size) {
     memory = (char*)malloc(size);
@@ -349,12 +402,24 @@ struct Arena {
 
   template<typename KeyType, typename ValueType, int N>
   MapCT<KeyType, ValueType, N>* create_map_ct() {
-    MapCT<KeyType, ValueType, N>* map = this->alloc<MapCT<KeyType, ValueType, N>>(sizeof(MapCT<KeyType, ValueType, N>));
+    MapCT<KeyType, ValueType, N>* map = this->alloc<MapCT<KeyType, ValueType, N>>();
     return map;
   }
 
-  void clear() {
+  void clear() noexcept {
     used = 0;
+  }
+
+  size_t size() const noexcept {
+      return used;
+  }
+
+  size_t available() const noexcept {
+      return capacity - used;
+  }
+
+  bool is_empty() const noexcept {
+      return used == 0;
   }
 
   ~Arena() {

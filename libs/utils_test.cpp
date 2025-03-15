@@ -1,11 +1,40 @@
 #include "utils_test.h"
+#include "utils.h"
 
-void arena_test() {
-  // Example Entity
-  struct Entity {
-    int id;
-    char* name;
-  };
+void arena_create_and_fetch_in_different_scope_test() {
+  Arena* arena = new Arena(80);
+  MapCT<char*, void*, 1>* arenaIndex = arena->create_map_ct<char*, void*, 1>();
+  {
+    ArrayCT<Entity, 3>* entitiesArray = arena->create_array_ct<Entity, 3>();
+    (*arenaIndex)["entities"] = entitiesArray;
+
+    // Create an array of entities
+    Entity entities[] = {
+      Entity{1, "Entity 1"},
+      Entity{2, "Entity 2"},
+      Entity{3, "Entity 3"}
+    };
+
+    // Add entities to the array within the arena
+    entitiesArray->add(entities, 3);
+  }
+  {
+    // Access entities from the array from scratch
+    ArrayCT<Entity, 3>* entitiesFetched = arena->fetch<ArrayCT<Entity, 3>, MapCT<char*, void*, 1>>("entities");
+
+    // Access entities
+    Entity& e0 = (*entitiesFetched)[0];
+    Entity& e1 = (*entitiesFetched)[1];
+    Entity& e2 = (*entitiesFetched)[2];
+
+    LOG_ASSERT(e0.id == 1 && e0.name == "Entity 1" &&
+               e1.id == 2 && e1.name == "Entity 2" &&
+               e2.id == 3 && e2.name == "Entity 3"
+               , "test");
+  }
+}
+
+void arena_e2e_test() {
   { //NOTE: ARENA COMPILE TIME TESTING ZONE
     Arena* arena = new Arena(KB(1));
     MapCT<char*, void*, 3>* arenaIndex = arena->create_map_ct<char*, void*, 3>();
@@ -59,7 +88,6 @@ void arena_test() {
 
     delete arena;
   }
-
   { //NOTE: ARENA RUN TIME TESTING ZONE
     Arena* arena = new Arena(KB(1));
     MapRT<char*, void*>* arenaIndex = arena->create_map_rt<char*, void*>(3);
