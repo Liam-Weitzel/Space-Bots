@@ -6,7 +6,7 @@
 	url = https://github.com/raysan5/raylib.git
 [submodule "client/libs/rres"]
 	path = client/libs/rres
-	url = https://github.com/IyuMashiro/rres.git
+	url = https://github.com/raysan5/rres.git
 [submodule "client/libs/rguiicons"]
 	path = client/libs/rguiicons
 	url = https://github.com/raysan5/rguiicons.git

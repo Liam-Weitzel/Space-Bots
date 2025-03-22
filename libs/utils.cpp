@@ -1,9 +1,11 @@
 #include "utils.h"
+#include <cstddef>
+#include <cstdio>
 
 // NOTE: File I/O
-long long get_timestamp(const char* file) {
+long long get_timestamp(const char* filePath) {
   struct stat file_stat = {};
-  stat(file, &file_stat);
+  stat(filePath, &file_stat);
   return file_stat.st_mtime;
 }
 
@@ -19,10 +21,10 @@ bool file_exists(const char* filePath) {
   return true;
 }
 
-long get_file_size(const char* filePath) {
+size_t get_file_size(const char* filePath) {
   LOG_ASSERT(filePath, "No filePath supplied!");
 
-  long fileSize = 0;
+  size_t fileSize = 0;
   auto file = fopen(filePath, "rb");
   if(!file) {
     LOG_ERROR("Failed opening File: %s", filePath);
@@ -37,49 +39,22 @@ long get_file_size(const char* filePath) {
   return fileSize;
 }
 
-/*
-* Reads a file into a supplied buffer. We manage our own
-* memory and therefore want more control over where it 
-* is allocated
-*/
-char* read_file(const char* filePath, int* fileSize, char* buffer) {
+char* read_file(const char* filePath, Arena* arena) {
   LOG_ASSERT(filePath, "No filePath supplied!");
-  LOG_ASSERT(fileSize, "No fileSize supplied!");
-  LOG_ASSERT(buffer, "No buffer supplied!");
+  LOG_ASSERT(arena, "No arena supplied!");
+  size_t fileSize = get_file_size(filePath);
 
-  *fileSize = 0;
+  char* buffer = arena->alloc<char>(fileSize + 1);
   auto file = fopen(filePath, "rb");
-  if(!file) {
-    LOG_ERROR("Failed opening File: %s", filePath);
-    return nullptr;
-  }
-
-  fseek(file, 0, SEEK_END);
-  *fileSize = ftell(file);
-  fseek(file, 0, SEEK_SET);
-
-  memset(buffer, 0, *fileSize + 1);
-  fread(buffer, sizeof(char), *fileSize, file);
+  memset(buffer, 0, fileSize + 1);
+  fread(buffer, sizeof(char), fileSize, file);
 
   fclose(file);
 
-  return buffer;
+  return buffer; 
 }
 
-char* read_file(const char* filePath, int* fileSize, Arena* arena) {
-  char* file = nullptr;
-  size_t fileSize2 = get_file_size(filePath);
-
-  if(fileSize2) {
-    char* buffer = arena->alloc<char>(fileSize2 + 1);
-
-    file = read_file(filePath, fileSize, buffer);
-  }
-
-  return file; 
-}
-
-void write_file(const char* filePath, char* buffer, int size) {
+void write_file(const char* filePath, char* buffer, size_t size) {
   LOG_ASSERT(filePath, "No filePath supplied!");
   LOG_ASSERT(buffer, "No buffer supplied!");
   auto file = fopen(filePath, "wb");
@@ -92,19 +67,19 @@ void write_file(const char* filePath, char* buffer, int size) {
   fclose(file);
 }
 
-bool copy_file(const char* fileName, const char* outputName, char* buffer) {
-  int fileSize = 0;
-  char* data = read_file(fileName, &fileSize, buffer);
+bool copy_file(const char* filePath, const char* outputPath, Arena* arena) {
+  char* data = read_file(filePath, arena);
 
-  auto outputFile = fopen(outputName, "wb");
+  auto outputFile = fopen(outputPath, "wb");
   if(!outputFile) {
-    LOG_ERROR("Failed opening File: %s", outputName);
+    LOG_ERROR("Failed opening File: %s", outputPath);
     return false;
   }
 
+  size_t fileSize = get_file_size(filePath);
   int result = fwrite(data, sizeof(char), fileSize, outputFile);
   if(!result) {
-    LOG_ERROR("Failed opening File: %s", outputName);
+    LOG_ERROR("Failed opening File: %s", outputPath);
     return false;
   }
   
@@ -113,16 +88,9 @@ bool copy_file(const char* fileName, const char* outputName, char* buffer) {
   return true;
 }
 
-bool copy_file(const char* fileName, const char* outputName, Arena* arena) {
-  char* file = 0;
-  size_t fileSize2 = get_file_size(fileName);
-
-  if(fileSize2) {
-    char* buffer = arena->alloc<char>(fileSize2 + 1);
-    return copy_file(fileName, outputName, buffer);
-  }
-
-  return false;
+// Wrapper around remove() for consistent naming
+void remove_file(const char* filePath) {
+  remove(filePath);
 }
 
 //NOTE: Testing
