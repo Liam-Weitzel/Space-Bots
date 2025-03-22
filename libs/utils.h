@@ -89,6 +89,32 @@ void _log(char* prefix, char* msg, TextColor textColor, Args... args)
 }
 
 // NOTE: Array
+
+template <typename T>
+struct ArrayIterator {
+    T* ptr;
+    T* end;
+
+    ArrayIterator(const ArrayIterator&) = delete;
+    ArrayIterator& operator=(const ArrayIterator&) = delete;
+    ArrayIterator(ArrayIterator&& other) = delete;
+    ArrayIterator& operator=(ArrayIterator&& other) = delete;
+
+    ArrayIterator(T* start, T* end) 
+        : ptr(start), end(end) {}
+
+    ArrayIterator& operator++() {
+        if (ptr != end) {
+            ++ptr;
+        }
+        return *this;
+    }
+
+    bool operator!=(const ArrayIterator& other) const { return ptr != other.ptr; }
+    T& operator*() const { return *ptr; }
+    T* operator->() const { return ptr; }
+};
+
 template<typename T, int N>
 struct ArrayCT {
   static constexpr int maxElements = N;
@@ -100,9 +126,13 @@ struct ArrayCT {
   ArrayCT(ArrayCT&& other) = delete;
   ArrayCT& operator=(ArrayCT&& other) = delete;
 
-  T& operator[](int idx) {
+  T& get(int idx) {
     LOG_ASSERT(idx >= 0 && idx < count, "Index out of bounds!");
     return elements[idx];
+  }
+
+  T& operator[](int idx) {
+    return this->get(idx);
   }
 
   int add(T element) {
@@ -139,12 +169,16 @@ struct ArrayCT {
   size_t size() const noexcept {
       return count;
   }
+
+  using Iterator = ArrayIterator<T>;
+  Iterator begin() { return Iterator(elements, elements + count); }
+  Iterator end() { return Iterator(elements + count, elements + count); }
 };
 
 template<typename T>
 struct ArrayRT {
   int capacity;  // runtime capacity, set when allocated
-  int count;     // number of elements added so far
+  int count = 0; // number of elements added so far
   T elements[1]; // Flexible array member (allocate extra space)
 
   ArrayRT(const ArrayRT&) = delete;
@@ -152,9 +186,13 @@ struct ArrayRT {
   ArrayRT(ArrayRT&& other) = delete;
   ArrayRT& operator=(ArrayRT&& other) = delete;
 
-  T& operator[](int idx) {
+  T& get(int idx) {
     LOG_ASSERT(idx >= 0 && idx < count, "Index out of bounds!");
     return elements[idx];
+  }
+
+  T& operator[](int idx) {
+    return this->get(idx);
   }
 
   int add(T element) {
@@ -190,6 +228,10 @@ struct ArrayRT {
   size_t size() const noexcept {
       return count;
   }
+
+  using Iterator = ArrayIterator<T>;
+  Iterator begin() { return Iterator(elements, elements + count); }
+  Iterator end() { return Iterator(elements + count, elements + count); }
 };
 
 //NOTE: Map
@@ -253,7 +295,7 @@ struct MapCT {
   }
 
   ValueType& operator[](KeyType key) {
-      return get(key);
+      return this->get(key);
   }
 
   bool empty() const noexcept {
@@ -298,7 +340,7 @@ struct MapRT {
   }
 
   ValueType& operator[](KeyType key) {
-      return get(key);
+      return this->get(key);
   }
 
   bool empty() const noexcept {
@@ -343,6 +385,7 @@ struct Arena {
     size_t size = sizeof(T);
     size_t aligned_size = (size + 7) & ~7;  // 8-byte alignment
     if (used + aligned_size > capacity) LOG_ASSERT(false, "Arena is full");
+    memset(memory + used, 0, aligned_size); // Sets the memory to 0
     T* result = (T*)(memory + used);
     used += aligned_size;
     return result;
@@ -352,6 +395,7 @@ struct Arena {
   T* alloc(size_t size) {
     size_t aligned_size = (size + 7) & ~7;  // 8-byte alignment
     if (used + aligned_size > capacity) LOG_ASSERT(false, "Arena is full");
+    memset(memory + used, 0, aligned_size); // Sets the memory to 0
     T* result = (T*)(memory + used);
     used += aligned_size;
     return result;
@@ -381,22 +425,20 @@ struct Arena {
     size_t total_size = sizeof(ArrayRT<T>) + sizeof(T) * (capacity - 1);
     ArrayRT<T>* arr = this->alloc<ArrayRT<T>>(total_size);
     arr->capacity = capacity;
-    arr->count = 0;
     return arr;
   }
 
   template<typename T, int N>
   ArrayCT<T, N>* create_array_ct() {
     ArrayCT<T, N>* arr = this->alloc<ArrayCT<T, N>>();
-    arr->count = 0;
     return arr;
   }
 
   template<typename KeyType, typename ValueType>
   MapRT<KeyType, ValueType>* create_map_rt(size_t capacity) {
     MapRT<KeyType, ValueType>* map = this->alloc<MapRT<KeyType, ValueType>>(sizeof(MapRT<KeyType, ValueType>));
-    ArrayRT<Entry<KeyType, ValueType>>* entities = this->create_array_rt<Entry<KeyType, ValueType>>(capacity);
-    map->entries = entities;
+    ArrayRT<Entry<KeyType, ValueType>>* entries = this->create_array_rt<Entry<KeyType, ValueType>>(capacity);
+    map->entries = entries;
     return map;
   }
 
@@ -435,11 +477,11 @@ struct Arena {
 // NOTE: File I/O
 long long get_timestamp(const char* file);
 bool file_exists(const char* filePath);
-long get_file_size(const char* filePath);
-char* read_file(const char* filePath, int* fileSize, char* buffer);
-void write_file(const char* filePath, char* buffer, int size);
-bool copy_file(const char* fileName, const char* outputName, char* buffer);
+size_t get_file_size(const char* filePath);
+char* read_file(const char* filePath, Arena* arena);
+void write_file(const char* filePath, char* buffer, size_t size);
 bool copy_file(const char* fileName, const char* outputName, Arena* arena);
+void remove_file(const char* fileName);
 
 //NOTE: Testing
 bool CompareFloat(float a, float b, float epsilon = 0.0001f);

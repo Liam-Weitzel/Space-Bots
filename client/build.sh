@@ -50,6 +50,17 @@ STEAM_LIBS=" -l steam_api -L $STEAM_LIB_DIR"
 SYSTEM_LIBS="-lGL -lm -lpthread -ldl -lrt -lX11"
 COMPILER_FLAGS="-Wl,-rpath,\$ORIGIN/ -fno-gnu-unique -Wno-format-security -Wno-write-strings -O0 -g"
 
+# Build raylib if not built
+if [ ! -f "$RAYLIB_SRC/libraylib.a" ]; then
+    print_status "Building raylib..."
+    cd $RAYLIB_SRC
+    make PLATFORM=PLATFORM_DESKTOP
+    cd ../../..
+fi
+
+# Copy steamworks library
+cp $STEAM_LIB_FILE ./
+
 g++ prep_models.cpp $CPP_FILES \
     $INCLUDES \
     $RAYLIB_LIBS \
@@ -59,13 +70,8 @@ g++ prep_models.cpp $CPP_FILES \
 
 ./prep_models
 
-# Build raylib if not built
-if [ ! -f "$RAYLIB_SRC/libraylib.a" ]; then
-    print_status "Building raylib..."
-    cd $RAYLIB_SRC
-    make PLATFORM=PLATFORM_DESKTOP
-    cd ../../..
-fi
+# Build the client
+build_shared_lib
 
 print_status "Building test executable..."
 g++ $SRC_DIR/main_test.cpp $CPP_FILES \
@@ -78,13 +84,6 @@ g++ $SRC_DIR/main_test.cpp $CPP_FILES \
 
 # Run the client tests
 ./client_test
-
-
-# Copy steamworks library
-cp $STEAM_LIB_FILE ./
-
-# Build the client
-build_shared_lib
 
 # Check if we're doing a hot reload build
 if [ "$1" = "hot" ]; then

@@ -46,10 +46,13 @@ int main() {
 
     // GameState state = {};
     // client.main(&state);
-    // NOTE: call whatever functions you want to test here
 
-    arena_e2e_test();
-    arena_create_and_fetch_in_different_scope_test();
+    iterators_arrays_CT_test();
+    iterators_arrays_RT_test();
+    create_and_fetch_arena_in_different_scope_CT_test();
+    create_and_fetch_arena_in_different_scope_RT_test();
+    create_arena_clear_test();
+    file_io_test();
 
     unload_client(&client);
 }
