@@ -43,7 +43,7 @@ enum TextColor
 };
 
 template <typename ...Args>
-void _log(char* prefix, char* msg, TextColor textColor, Args... args)
+void _log(const char* prefix, const char* msg, TextColor textColor, Args... args)
 {
   const static char* TextColorTable[TEXT_COLOR_COUNT] = 
   {    
@@ -135,7 +135,7 @@ struct ArrayCT {
     return this->get(idx);
   }
 
-  int add(T element) {
+  int add(const T& element) {
     LOG_ASSERT(count + 1 <= maxElements, "Array Full!");
     elements[count] = element;
     return count++;
@@ -171,8 +171,8 @@ struct ArrayCT {
   }
 
   using Iterator = ArrayIterator<T>;
-  Iterator begin() { return Iterator(elements, elements + count); }
-  Iterator end() { return Iterator(elements + count, elements + count); }
+  Iterator begin() noexcept { return Iterator(elements, elements + count); }
+  Iterator end() noexcept { return Iterator(elements + count, elements + count); }
 };
 
 template<typename T>
@@ -195,7 +195,7 @@ struct ArrayRT {
     return this->get(idx);
   }
 
-  int add(T element) {
+  int add(const T& element) {
     LOG_ASSERT(count < capacity, "Array Full!");
     elements[count] = element;
     return count++;
@@ -230,11 +230,14 @@ struct ArrayRT {
   }
 
   using Iterator = ArrayIterator<T>;
-  Iterator begin() { return Iterator(elements, elements + count); }
-  Iterator end() { return Iterator(elements + count, elements + count); }
+  Iterator begin() noexcept { return Iterator(elements, elements + count); }
+  Iterator end() noexcept { return Iterator(elements + count, elements + count); }
 };
 
 //NOTE: Map
+
+bool is_string_key(const void* key, size_t size);
+bool compare_keys(const void* a, const void* b, size_t size);
 
 template <typename KeyType, typename ValueType>
 struct Entry {
@@ -277,38 +280,45 @@ struct MapCT {
   MapCT& operator=(MapCT&& other) = delete;
 
   // Linear search to find an entry by key
-  int find(KeyType key) const {
+  int find(const KeyType& key) const {
     for (int i = 0; i < entries.count; ++i) {
-      if (entries.elements[i].key == key) {
-        return i; // Return the index of the found entry
+      if (compare_keys(&entries.elements[i].key, &key, sizeof(KeyType))) {
+        return i;
       }
     }
-    return -1; // Return -1 if the key is not found
+    return -1;
   }
 
-  ValueType& get(KeyType key) {
-      int idx = find(key);
-      if (idx == -1) {
-          idx = entries.add(Entry<KeyType, ValueType>{key, ValueType{}});
-      }
-      return entries[idx].value;
+  ValueType& get(const KeyType key) {
+    int idx = find(key);
+    if (idx == -1) {
+      idx = entries.add(Entry<KeyType, ValueType>{key, ValueType{}});
+    }
+    return entries[idx].value;
   }
 
-  ValueType& operator[](KeyType key) {
-      return this->get(key);
+  ValueType& operator[](const KeyType key) {
+    return this->get(key);
+  }
+
+  void remove(const KeyType& key) {
+    int idx = find(key);
+    if (idx != -1) {
+      entries.remove(idx);
+    }
   }
 
   bool empty() const noexcept {
-      return entries.empty();
+    return entries.empty();
   }
 
   size_t size() const noexcept {
-      return entries.size();
+    return entries.size();
   }
 
   using Iterator = MapIterator<KeyType, ValueType>;
-  Iterator begin() { return Iterator(entries.elements, entries.elements + entries.count); }
-  Iterator end() { return Iterator(entries.elements + entries.count, entries.elements + entries.count); }
+  Iterator begin() noexcept { return Iterator(entries.elements, entries.elements + entries.count); }
+  Iterator end() noexcept { return Iterator(entries.elements + entries.count, entries.elements + entries.count); }
 };
 
 template <typename KeyType, typename ValueType>
@@ -320,40 +330,50 @@ struct MapRT {
   MapRT(MapRT&& other) = delete;
   MapRT& operator=(MapRT&& other) = delete;
 
+  void set_entries(ArrayRT<Entry<KeyType, ValueType>>* e) {
+    entries = e;
+  }
+
   // Linear search to find an entry by key
-  int find(KeyType key) const {
-    LOG_ASSERT(entries != nullptr, "Null entries pointer!");
+  int find(const KeyType& key) const {
     for (int i = 0; i < entries->count; ++i) {
-      if (entries->elements[i].key == key) {
-        return i; // Return the index of the found entry
+      if (compare_keys(&entries->elements[i].key, &key, sizeof(KeyType))) {
+        return i;
       }
     }
-    return -1; // Return -1 if the key is not found
+    return -1;
   }
 
-  ValueType& get(KeyType key) {
-      int idx = find(key);
-      if (idx == -1) {
-          idx = entries->add(Entry<KeyType, ValueType>{key, ValueType{}});
-      }
-      return (*entries)[idx].value;
+  ValueType& get(const KeyType key) {
+    int idx = find(key);
+    if (idx == -1) {
+      idx = entries->add(Entry<KeyType, ValueType>{key, ValueType{}});
+    }
+    return entries->get(idx).value;
   }
 
-  ValueType& operator[](KeyType key) {
-      return this->get(key);
+  ValueType& operator[](const KeyType key) {
+    return this->get(key);
+  }
+
+  void remove(const KeyType& key) {
+    int idx = find(key);
+    if (idx != -1) {
+      entries->remove(idx);
+    }
   }
 
   bool empty() const noexcept {
-      return entries->empty();
+    return entries->empty();
   }
 
   size_t size() const noexcept {
-      return entries->size();
+    return entries->size();
   }
 
   using Iterator = MapIterator<KeyType, ValueType>;
-  Iterator begin() { return Iterator(entries->elements, entries->elements + entries->count); }
-  Iterator end() { return Iterator(entries->elements + entries->count, entries->elements + entries->count); }
+  Iterator begin() noexcept { return Iterator(entries->elements, entries->elements + entries->count); }
+  Iterator end() noexcept { return Iterator(entries->elements + entries->count, entries->elements + entries->count); }
 };
 
 // NOTE: Arena
@@ -375,9 +395,13 @@ struct Arena {
     used = 0;
   }
 
-  char& operator[](size_t idx) {
+  char& get(size_t idx) {
     LOG_ASSERT(idx < used, "Index out of bounds!");
     return memory[idx];
+  }
+
+  char& operator[](size_t idx) {
+    return this->get(idx);
   }
 
   template<typename T>
@@ -385,7 +409,6 @@ struct Arena {
     size_t size = sizeof(T);
     size_t aligned_size = (size + 7) & ~7;  // 8-byte alignment
     if (used + aligned_size > capacity) LOG_ASSERT(false, "Arena is full");
-    memset(memory + used, 0, aligned_size); // Sets the memory to 0
     T* result = (T*)(memory + used);
     used += aligned_size;
     return result;
@@ -395,7 +418,6 @@ struct Arena {
   T* alloc(size_t size) {
     size_t aligned_size = (size + 7) & ~7;  // 8-byte alignment
     if (used + aligned_size > capacity) LOG_ASSERT(false, "Arena is full");
-    memset(memory + used, 0, aligned_size); // Sets the memory to 0
     T* result = (T*)(memory + used);
     used += aligned_size;
     return result;
@@ -411,45 +433,44 @@ struct Arena {
     return result;
   }
 
-  template <typename E, typename M> 
-  E* fetch(char* key) {
-    M* map = reinterpret_cast<M*>(this->memory);
-    void* ptr = (*map)[key];
-    LOG_ASSERT(ptr, "Arena index map doesn't contain key: %s", key);
-    E* element = reinterpret_cast<E*>(ptr);
-    return element;
-  }
+template <typename E, typename M> 
+E& fetch(const char* key) {
+    M* map_ptr = reinterpret_cast<M*>(this->memory);
+    void* ptr = map_ptr->get(key);
+    return *reinterpret_cast<E*>(ptr);
+}
 
   template<typename T>
-  ArrayRT<T>* create_array_rt(size_t capacity) {
+  ArrayRT<T>& create_array_rt(size_t capacity) {
     size_t total_size = sizeof(ArrayRT<T>) + sizeof(T) * (capacity - 1);
-    ArrayRT<T>* arr = this->alloc<ArrayRT<T>>(total_size);
-    arr->capacity = capacity;
-    return arr;
+    ArrayRT<T>* arr_ptr = this->alloc<ArrayRT<T>>(total_size);
+    arr_ptr->capacity = capacity;
+    return *arr_ptr;
   }
 
   template<typename T, int N>
-  ArrayCT<T, N>* create_array_ct() {
-    ArrayCT<T, N>* arr = this->alloc<ArrayCT<T, N>>();
-    return arr;
+  ArrayCT<T, N>& create_array_ct() {
+    ArrayCT<T, N>* arr_ptr = this->alloc<ArrayCT<T, N>>();
+    return *arr_ptr;
   }
 
   template<typename KeyType, typename ValueType>
-  MapRT<KeyType, ValueType>* create_map_rt(size_t capacity) {
-    MapRT<KeyType, ValueType>* map = this->alloc<MapRT<KeyType, ValueType>>(sizeof(MapRT<KeyType, ValueType>));
-    ArrayRT<Entry<KeyType, ValueType>>* entries = this->create_array_rt<Entry<KeyType, ValueType>>(capacity);
-    map->entries = entries;
-    return map;
+  MapRT<KeyType, ValueType>& create_map_rt(size_t capacity) {
+    MapRT<KeyType, ValueType>* map_ptr = this->alloc<MapRT<KeyType, ValueType>>(sizeof(MapRT<KeyType, ValueType>));
+    ArrayRT<Entry<KeyType, ValueType>>& entries = this->create_array_rt<Entry<KeyType, ValueType>>(capacity);
+    map_ptr->set_entries(&entries);
+    return *map_ptr;
   }
 
   template<typename KeyType, typename ValueType, int N>
-  MapCT<KeyType, ValueType, N>* create_map_ct() {
-    MapCT<KeyType, ValueType, N>* map = this->alloc<MapCT<KeyType, ValueType, N>>();
-    return map;
+  MapCT<KeyType, ValueType, N>& create_map_ct() {
+    MapCT<KeyType, ValueType, N>* map_ptr = this->alloc<MapCT<KeyType, ValueType, N>>();
+    return *map_ptr;
   }
 
   void clear() noexcept {
     used = 0;
+    memset(memory, 0, capacity); // Sets the memory to 0
   }
 
   size_t size() const noexcept {
@@ -475,18 +496,18 @@ struct Arena {
 #define GB(x) ((x) * 1024ULL * 1024ULL * 1024ULL)
 
 // NOTE: File I/O
-long long get_timestamp(const char* file);
-bool file_exists(const char* filePath);
-size_t get_file_size(const char* filePath);
-char* read_file(const char* filePath, Arena* arena);
-void write_file(const char* filePath, char* buffer, size_t size);
-bool copy_file(const char* fileName, const char* outputName, Arena* arena);
-void remove_file(const char* fileName);
+long long get_timestamp(const char* file) noexcept;
+bool file_exists(const char* filePath) noexcept;
+size_t get_file_size(const char* filePath) noexcept;
+char* read_file(const char* filePath, Arena& arena) noexcept;
+void write_file(const char* filePath, const char* buffer, size_t size) noexcept;
+bool copy_file(const char* fileName, const char* outputName, Arena& arena) noexcept;
+void remove_file(const char* fileName) noexcept;
 
 //NOTE: Testing
-bool CompareFloat(float a, float b, float epsilon = 0.0001f);
-bool CompareIntArrays(const int *a, const int *b, size_t size);
-bool CompareFloatArrays(const float *a, const float *b, size_t size);
-bool CompareUCharArrays(const unsigned char *a, const unsigned char *b, size_t size);
-bool CompareUIntArrays(const unsigned int *a, const unsigned int *b, size_t size);
-bool CompareUShortArrays(const unsigned short *a, const unsigned short *b, size_t size);
+bool CompareFloat(float a, float b, float epsilon = 0.0001f) noexcept;
+bool CompareIntArrays(const int *a, const int *b, size_t size) noexcept;
+bool CompareFloatArrays(const float *a, const float *b, size_t size) noexcept;
+bool CompareUCharArrays(const unsigned char *a, const unsigned char *b, size_t size) noexcept;
+bool CompareUIntArrays(const unsigned int *a, const unsigned int *b, size_t size) noexcept;
+bool CompareUShortArrays(const unsigned short *a, const unsigned short *b, size_t size) noexcept;

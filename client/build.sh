@@ -61,6 +61,7 @@ fi
 # Copy steamworks library
 cp $STEAM_LIB_FILE ./
 
+print_status "Building prep models executable..."
 g++ prep_models.cpp $CPP_FILES \
     $INCLUDES \
     $RAYLIB_LIBS \

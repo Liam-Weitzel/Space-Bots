@@ -10,10 +10,10 @@ struct GUI {
 };
 
 struct RoverAssets {
-    Model body;
+    Model* body;
     Vector3 bodyOffset = {0.0f, 0.5f, 0.0f};
     Vector3 bodyRotationAxis = {0.0f, 1.0f, 0.0f};
-    Model wheel;
+    Model* wheel;
     Vector3 wheelOffsets[4] = {
         {0.0f, 0.5f, 0.0f},    // backLeft
         {-2.1f, 0.5f, 0.0f},   // backRight
@@ -21,7 +21,7 @@ struct RoverAssets {
         {-2.1f, 0.5f, -1.25f}  // frontRight
     };
     Vector3 wheelRotationAxis = {0.0f, 1.0f, 0.0f};
-    Model scan;
+    Model* scan;
     Vector3 scanOffset = {0.0f, 0.5f, 0.0f};
     Vector3 scanRotationAxis = {0.0f, 1.0f, 0.0f};
 };

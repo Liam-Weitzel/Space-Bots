@@ -11,7 +11,7 @@
 #define RL_MAX_SHADER_LOCATIONS 32
 
 // NOTE: Load model from chunk for use with rres
-Model *LoadModelFromChunk(const rresResourceChunk &chunk, Arena* arena);
+Model& LoadModelFromChunk(const rresResourceChunk &chunk, Arena &arena);
 
 // NOTE: Comparisons
 bool CompareVector3(const Vector3 &a, const Vector3 &b, float epsilon = 0.0001f);

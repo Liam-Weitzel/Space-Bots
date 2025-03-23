@@ -56,11 +56,11 @@ void iterators_arrays_RT_test() {
 
 void create_and_fetch_arena_in_different_scope_CT_test() {
   char* failedMsg = "[ FAILED ] create_and_fetch_arena_in_different_scope_CT_test";
-  Arena* arena = new Arena(80);
-  MapCT<char*, void*, 1>* arenaIndex = arena->create_map_ct<char*, void*, 1>();
+  Arena& arena = *new Arena(80);
+  MapCT<const char*, void*, 1>& arenaIndex = arena.create_map_ct<const char*, void*, 1>();
   {
-    ArrayCT<Entity, 3>* entitiesArray = arena->create_array_ct<Entity, 3>();
-    (*arenaIndex)["entities"] = entitiesArray;
+    ArrayCT<Entity, 3>& entitiesArray = arena.create_array_ct<Entity, 3>();
+    arenaIndex["entities"] = &entitiesArray;
 
     // Create an array of entities
     Entity entities[] = {
@@ -70,33 +70,33 @@ void create_and_fetch_arena_in_different_scope_CT_test() {
     };
 
     // Add entities to the array within the arena
-    entitiesArray->add(entities, 3);
+    entitiesArray.add(entities, 3);
   }
   {
     // Access entities from the array from scratch
-    ArrayCT<Entity, 3>* entitiesFetched = arena->fetch<ArrayCT<Entity, 3>, MapCT<char*, void*, 1>>("entities");
+    ArrayCT<Entity, 3>& entitiesFetched = arena.fetch<ArrayCT<Entity, 3>, MapCT<const char*, void*, 1>>("entities");
 
     // Access entities
-    Entity e0 = entitiesFetched->get(0);
-    Entity e1 = entitiesFetched->get(1);
-    Entity e2 = entitiesFetched->get(2);
+    Entity e0 = entitiesFetched[0];
+    Entity e1 = entitiesFetched[1];
+    Entity e2 = entitiesFetched[2];
 
     LOG_ASSERT(e0.id == 1 && strcmp(e0.name, "Entity 1") == 0 &&
                e1.id == 2 && strcmp(e1.name, "Entity 2") == 0 &&
                e2.id == 3 && strcmp(e2.name, "Entity 3") == 0
                , failedMsg);
   }
-  delete arena;
+  delete &arena;
   LOG_TRACE("[ PASSED ] create_and_fetch_arena_in_different_scope_CT_test")
 }
 
 void create_and_fetch_arena_in_different_scope_RT_test() {
   char* failedMsg = "[ FAILED ] create_and_fetch_arena_in_different_scope_RT_test";
-  Arena* arena = new Arena(88); //NOTE: 8 more bytes than CT... 2x extra 32 bit int for size...
-  MapRT<char*, void*>* arenaIndex = arena->create_map_rt<char*, void*>(1);
+  Arena& arena = *new Arena(88); //NOTE: 8 more bytes than CT... 2x extra 32 bit int for size...
+  MapRT<const char*, void*>& arenaIndex = arena.create_map_rt<const char*, void*>(1);
   {
-    ArrayRT<Entity>* entitiesArray = arena->create_array_rt<Entity>(3);
-    (*arenaIndex)["entities"] = entitiesArray;
+    ArrayRT<Entity>& entitiesArray = arena.create_array_rt<Entity>(3);
+    arenaIndex["entities"] = &entitiesArray;
 
     // Create an array of entities
     Entity entities[] = {
@@ -106,34 +106,34 @@ void create_and_fetch_arena_in_different_scope_RT_test() {
     };
 
     // Add entities to the array within the arena
-    entitiesArray->add(entities, 3);
+    entitiesArray.add(entities, 3);
   }
   {
     // Access entities from the array from scratch
-    ArrayRT<Entity>* entitiesFetched = arena->fetch<ArrayRT<Entity>, MapRT<char*, void*>>("entities");
+    ArrayRT<Entity>& entitiesFetched = arena.fetch<ArrayRT<Entity>, MapRT<const char*, void*>>("entities");
 
     // Access entities
-    const Entity e0 = entitiesFetched->get(0);
-    const Entity e1 = entitiesFetched->get(1);
-    const Entity e2 = entitiesFetched->get(2);
+    Entity e0 = entitiesFetched[0];
+    Entity e1 = entitiesFetched[1];
+    Entity e2 = entitiesFetched[2];
 
     LOG_ASSERT(e0.id == 1 && strcmp(e0.name, "Entity 1") == 0 &&
                e1.id == 2 && strcmp(e1.name, "Entity 2") == 0 &&
                e2.id == 3 && strcmp(e2.name, "Entity 3") == 0
                , failedMsg);
   }
-  delete arena;
+  delete &arena;
   LOG_TRACE("[ PASSED ] create_and_fetch_arena_in_different_scope_RT_test")
 }
 
 void create_arena_clear_test() {
-  Arena* arena = new Arena(KB(1));
+  Arena& arena = *new Arena(KB(1));
   char* failedMsg = "[ FAILED ] create_arena_clear_test";
   {
-    MapCT<char*, void*, 1>* arenaIndex = arena->create_map_ct<char*, void*, 1>();
+    MapCT<const char*, void*, 1>& arenaIndex = arena.create_map_ct<const char*, void*, 1>();
 
-    ArrayCT<Entity, 3>* entitiesArray = arena->create_array_ct<Entity, 3>();
-    (*arenaIndex)["entities"] = entitiesArray;
+    ArrayCT<Entity, 3>& entitiesArray = arena.create_array_ct<Entity, 3>();
+    arenaIndex["entities"] = &entitiesArray;
 
     // Create an array of entities
     Entity entities[] = {
@@ -143,17 +143,17 @@ void create_arena_clear_test() {
     };
 
     // Add entities to the array within the arena
-    entitiesArray->add(entities, 3);
+    entitiesArray.add(entities, 3);
 
-    LOG_ASSERT(arena->size() == 80, failedMsg)
+    LOG_ASSERT(arena.size() == 80, failedMsg)
   }
-  arena->clear();
-  LOG_ASSERT(arena->size() == 0, failedMsg)
+  arena.clear();
+  LOG_ASSERT(arena.size() == 0, failedMsg)
   {
-    MapCT<char*, void*, 1>* arenaIndex = arena->create_map_ct<char*, void*, 1>();
+    MapCT<const char*, void*, 1>& arenaIndex = arena.create_map_ct<const char*, void*, 1>();
 
-    ArrayCT<Entity, 3>* entitiesArray = arena->create_array_ct<Entity, 3>();
-    (*arenaIndex)["entities"] = entitiesArray;
+    ArrayCT<Entity, 3>& entitiesArray = arena.create_array_ct<Entity, 3>();
+    arenaIndex["entities"] = &entitiesArray;
 
     // Create an array of entities
     Entity entities[] = {
@@ -163,11 +163,11 @@ void create_arena_clear_test() {
     };
 
     // Add entities to the array within the arena
-    entitiesArray->add(entities, 3);
+    entitiesArray.add(entities, 3);
 
-    LOG_ASSERT(arena->size() == 80, failedMsg);
+    LOG_ASSERT(arena.size() == 80, failedMsg);
   }
-  delete arena;
+  delete &arena;
   LOG_TRACE("[ PASSED ] create_arena_clear_test")
 }
 
@@ -175,8 +175,8 @@ void create_arena_clear_test() {
 void file_io_test() {
   char* failedMsg = "[ FAILED ] create_and_remove_file_test, please clean up";
   const char* filePath = "./create_and_remove_file_test";
-  char* contents = "create_and_remove_file_test";
-  Arena* arena = new Arena(KB(1));
+  const char* contents = "create_and_remove_file_test";
+  Arena& arena = *new Arena(KB(1));
 
   write_file(filePath, contents, strlen(contents));
   LOG_ASSERT(file_exists(filePath), failedMsg);
@@ -203,6 +203,6 @@ void file_io_test() {
   remove_file(filePath);
   LOG_ASSERT(!file_exists(filePath), failedMsg);
 
-  delete arena;
-  LOG_TRACE("[ PASSED ] create_and_remove_file_test, please clean up");
+  delete &arena;
+  LOG_TRACE("[ PASSED ] create_and_remove_file_test");
 }
