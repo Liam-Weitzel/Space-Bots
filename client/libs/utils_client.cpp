@@ -1,8 +1,8 @@
 #include "utils_client.h"
 
 // NOTE: Load model from chunk for use with rres
-Model *LoadModelFromChunk(const rresResourceChunk &chunk, Arena* arena) {
-  Model *model = arena->alloc<Model>();
+Model& LoadModelFromChunk(const rresResourceChunk &chunk, Arena& arena) {
+  Model& model = *arena.alloc<Model>();
 
   if (!chunk.data.raw) {
     LOG_ERROR("Chunk data is null");
@@ -10,27 +10,27 @@ Model *LoadModelFromChunk(const rresResourceChunk &chunk, Arena* arena) {
   }
 
   // Initialize all pointers to nullptr explicitly
-  model->meshes = nullptr;
-  model->materials = nullptr;
-  model->meshMaterial = nullptr;
-  model->bones = nullptr;
-  model->bindPose = nullptr;
+  model.meshes = nullptr;
+  model.materials = nullptr;
+  model.meshMaterial = nullptr;
+  model.bones = nullptr;
+  model.bindPose = nullptr;
 
   const unsigned char *data = (const unsigned char *)chunk.data.raw;
   size_t offset = 0;
 
   // Read transform matrix
-  memcpy(&model->transform, data + offset, sizeof(Matrix));
+  memcpy(&model.transform, data + offset, sizeof(Matrix));
   offset += sizeof(Matrix);
 
   // Read counts
-  memcpy(&model->meshCount, data + offset, sizeof(int));
+  memcpy(&model.meshCount, data + offset, sizeof(int));
   offset += sizeof(int);
-  memcpy(&model->materialCount, data + offset, sizeof(int));
+  memcpy(&model.materialCount, data + offset, sizeof(int));
   offset += sizeof(int);
 
-  LOG_TRACE("Loading model with %d meshes and %d materials", model->meshCount,
-            model->materialCount);
+  LOG_TRACE("Loading model with %d meshes and %d materials", model.meshCount,
+            model.materialCount);
 
   // Read global flags
   unsigned char globalFlags;
@@ -39,41 +39,41 @@ Model *LoadModelFromChunk(const rresResourceChunk &chunk, Arena* arena) {
 
   // Read meshes
   if (globalFlags & 1) {
-    int size = model->meshCount * sizeof(Mesh);
-    model->meshes = arena->alloc<Mesh>(size);
-    LOG_ASSERT(model->meshes != nullptr,
+    int size = model.meshCount * sizeof(Mesh);
+    model.meshes = arena.alloc<Mesh>(size);
+    LOG_ASSERT(model.meshes != nullptr,
                "Failed to allocate memory for meshes: %zu bytes", size);
 
-    for (int i = 0; i < model->meshCount; i++) {
-      Mesh *mesh = &model->meshes[i];
+    for (int i = 0; i < model.meshCount; i++) {
+      Mesh& mesh = model.meshes[i];
 
       // Initialize all mesh pointers to nullptr
-      mesh->vertices = nullptr;
-      mesh->texcoords = nullptr;
-      mesh->texcoords2 = nullptr;
-      mesh->normals = nullptr;
-      mesh->tangents = nullptr;
-      mesh->colors = nullptr;
-      mesh->indices = nullptr;
-      mesh->animVertices = nullptr;
-      mesh->animNormals = nullptr;
-      mesh->boneIds = nullptr;
-      mesh->boneWeights = nullptr;
-      mesh->boneMatrices = nullptr;
-      mesh->vboId = nullptr;
+      mesh.vertices = nullptr;
+      mesh.texcoords = nullptr;
+      mesh.texcoords2 = nullptr;
+      mesh.normals = nullptr;
+      mesh.tangents = nullptr;
+      mesh.colors = nullptr;
+      mesh.indices = nullptr;
+      mesh.animVertices = nullptr;
+      mesh.animNormals = nullptr;
+      mesh.boneIds = nullptr;
+      mesh.boneWeights = nullptr;
+      mesh.boneMatrices = nullptr;
+      mesh.vboId = nullptr;
 
       // Initialize all values to be 0
-      mesh->vertexCount = 0;
-      mesh->triangleCount = 0;
-      mesh->vaoId = 0;
-      mesh->boneCount = 0;
+      mesh.vertexCount = 0;
+      mesh.triangleCount = 0;
+      mesh.vaoId = 0;
+      mesh.boneCount = 0;
 
       // Read counts
-      memcpy(&mesh->vertexCount, data + offset, sizeof(int));
+      memcpy(&mesh.vertexCount, data + offset, sizeof(int));
       offset += sizeof(int);
-      memcpy(&mesh->triangleCount, data + offset, sizeof(int));
+      memcpy(&mesh.triangleCount, data + offset, sizeof(int));
       offset += sizeof(int);
-      memcpy(&mesh->boneCount, data + offset, sizeof(int));
+      memcpy(&mesh.boneCount, data + offset, sizeof(int));
       offset += sizeof(int);
 
       unsigned char meshFlags;
@@ -85,225 +85,230 @@ Model *LoadModelFromChunk(const rresResourceChunk &chunk, Arena* arena) {
       offset += sizeof(unsigned char);
 
       // Read vertex data
-      if (mesh->vertexCount > 0) {
+      if (mesh.vertexCount > 0) {
         // Vertices
         if (meshFlags & 1) {
-          size_t size = mesh->vertexCount * 3 * sizeof(float);
-          mesh->vertices = arena->alloc<float>(size);
-          memcpy(mesh->vertices, data + offset, size);
+          size_t size = mesh.vertexCount * 3 * sizeof(float);
+          mesh.vertices = arena.alloc<float>(size);
+          LOG_ASSERT(mesh.vertices != nullptr,
+                     "Failed to allocate memory for vertices: %zu bytes", size);
+          memcpy(mesh.vertices, data + offset, size);
           offset += size;
         }
         // Texcoords
         if (meshFlags & 2) {
-          size_t size = mesh->vertexCount * 2 * sizeof(float);
-          mesh->texcoords = arena->alloc<float>(size);
-          memcpy(mesh->texcoords, data + offset, size);
+          size_t size = mesh.vertexCount * 2 * sizeof(float);
+          mesh.texcoords = arena.alloc<float>(size);
+          LOG_ASSERT(mesh.texcoords != nullptr,
+                     "Failed to allocate memory for texcoords: %zu bytes",
+                     size);
+          memcpy(mesh.texcoords, data + offset, size);
           offset += size;
         }
         // Texcoords2
         if (meshFlags & 4) {
-          size_t size = mesh->vertexCount * 2 * sizeof(float);
-          mesh->texcoords2 = arena->alloc<float>(size);
-          LOG_ASSERT(mesh->texcoords2 != nullptr,
+          size_t size = mesh.vertexCount * 2 * sizeof(float);
+          mesh.texcoords2 = arena.alloc<float>(size);
+          LOG_ASSERT(mesh.texcoords2 != nullptr,
                      "Failed to allocate memory for texcoords2: %zu bytes",
                      size);
-          memcpy(mesh->texcoords2, data + offset, size);
+          memcpy(mesh.texcoords2, data + offset, size);
           offset += size;
         }
         // Normals
         if (meshFlags & 8) {
-          size_t size = mesh->vertexCount * 3 * sizeof(float);
-          mesh->normals = arena->alloc<float>(size);
-          LOG_ASSERT(mesh->normals != nullptr,
+          size_t size = mesh.vertexCount * 3 * sizeof(float);
+          mesh.normals = arena.alloc<float>(size);
+          LOG_ASSERT(mesh.normals != nullptr,
                      "Failed to allocate memory for normals: %zu bytes", size);
-          memcpy(mesh->normals, data + offset, size);
+          memcpy(mesh.normals, data + offset, size);
           offset += size;
         }
         // Tangents
         if (meshFlags & 16) {
-          size_t size = mesh->vertexCount * 4 * sizeof(float);
-          mesh->tangents = arena->alloc<float>(size);
-          LOG_ASSERT(mesh->tangents != nullptr,
+          size_t size = mesh.vertexCount * 4 * sizeof(float);
+          mesh.tangents = arena.alloc<float>(size);
+          LOG_ASSERT(mesh.tangents != nullptr,
                      "Failed to allocate memory for tangents: %zu bytes", size);
-          memcpy(mesh->tangents, data + offset, size);
+          memcpy(mesh.tangents, data + offset, size);
           offset += size;
         }
         // Colors
         if (meshFlags & 32) {
-          size_t size = mesh->vertexCount * 4 * sizeof(unsigned char *);
-          mesh->colors = arena->alloc<unsigned char>(size);
-          LOG_ASSERT(mesh->colors != nullptr,
+          size_t size = mesh.vertexCount * 4 * sizeof(unsigned char *);
+          mesh.colors = arena.alloc<unsigned char>(size);
+          LOG_ASSERT(mesh.colors != nullptr,
                      "Failed to allocate memory for colors: %zu bytes", size);
-          memcpy(mesh->colors, data + offset, size);
+          memcpy(mesh.colors, data + offset, size);
           offset += size;
         }
 
         // Animation data
         // Animated vertices
         if (animFlags & 1) {
-          size_t size = mesh->vertexCount * 3 * sizeof(float);
-          mesh->animVertices = arena->alloc<float>(size);
-          LOG_ASSERT(mesh->animVertices != nullptr,
+          size_t size = mesh.vertexCount * 3 * sizeof(float);
+          mesh.animVertices = arena.alloc<float>(size);
+          LOG_ASSERT(mesh.animVertices != nullptr,
                      "Failed to allocate memory for anim vertices: %zu bytes",
                      size);
-          memcpy(mesh->animVertices, data + offset, size);
+          memcpy(mesh.animVertices, data + offset, size);
           offset += size;
         }
         // Animated normals
         if (animFlags & 2) {
-          size_t size = mesh->vertexCount * 3 * sizeof(float);
-          mesh->animNormals = arena->alloc<float>(size);
-          LOG_ASSERT(mesh->animNormals != nullptr,
+          size_t size = mesh.vertexCount * 3 * sizeof(float);
+          mesh.animNormals = arena.alloc<float>(size);
+          LOG_ASSERT(mesh.animNormals != nullptr,
                      "Failed to allocate memory for anim normals: %zu bytes",
                      size);
-          memcpy(mesh->animNormals, data + offset, size);
+          memcpy(mesh.animNormals, data + offset, size);
           offset += size;
         }
         // Bone IDs
         if (animFlags & 4) {
-          size_t size = mesh->vertexCount * 4;
-          mesh->boneIds = arena->alloc<unsigned char>(size);
-          LOG_ASSERT(mesh->boneIds != nullptr,
+          size_t size = mesh.vertexCount * 4;
+          mesh.boneIds = arena.alloc<unsigned char>(size);
+          LOG_ASSERT(mesh.boneIds != nullptr,
                      "Failed to allocate memory for bone IDs: %zu bytes", size);
-          memcpy(mesh->boneIds, data + offset, size);
+          memcpy(mesh.boneIds, data + offset, size);
           offset += size;
         }
         // Bone weights
         if (animFlags & 8) {
-          size_t size = mesh->vertexCount * 4 * sizeof(float);
-          mesh->boneWeights = arena->alloc<float>(size);
-          LOG_ASSERT(mesh->boneWeights != nullptr,
+          size_t size = mesh.vertexCount * 4 * sizeof(float);
+          mesh.boneWeights = arena.alloc<float>(size);
+          LOG_ASSERT(mesh.boneWeights != nullptr,
                      "Failed to allocate memory for bone weights: %zu bytes",
                      size);
-          memcpy(mesh->boneWeights, data + offset, size);
+          memcpy(mesh.boneWeights, data + offset, size);
           offset += size;
         }
         // Bone matrices
-        if (animFlags & 16 && mesh->boneCount > 0) {
-          size_t size = mesh->boneCount * sizeof(Matrix);
-          mesh->boneMatrices = arena->alloc<Matrix>(size);
-          LOG_ASSERT(mesh->boneMatrices != nullptr,
+        if (animFlags & 16 && mesh.boneCount > 0) {
+          size_t size = mesh.boneCount * sizeof(Matrix);
+          mesh.boneMatrices = arena.alloc<Matrix>(size);
+          LOG_ASSERT(mesh.boneMatrices != nullptr,
                      "Failed to allocate memory for bone matrices: %zu bytes",
                      size);
-          memcpy(mesh->boneMatrices, data + offset, size);
+          memcpy(mesh.boneMatrices, data + offset, size);
           offset += size;
         }
       }
 
       // Read indices
-      if (mesh->triangleCount > 0 && (meshFlags & 64)) {
-        size_t size = mesh->triangleCount * 3 * sizeof(unsigned short);
-        mesh->indices = arena->alloc<unsigned short>(size);
-        LOG_ASSERT(mesh->indices != nullptr,
+      if (mesh.triangleCount > 0 && (meshFlags & 64)) {
+        size_t size = mesh.triangleCount * 3 * sizeof(unsigned short);
+        mesh.indices = arena.alloc<unsigned short>(size);
+        LOG_ASSERT(mesh.indices != nullptr,
                    "Failed to allocate memory for indices: %zu bytes", size);
-        memcpy(mesh->indices, data + offset, size);
+        memcpy(mesh.indices, data + offset, size);
         offset += size;
       }
 
       // Read OpenGL identifiers
-      UploadMesh(mesh, false);
+      UploadMesh(&mesh, false);
     }
   }
 
   // Read materials
   if (globalFlags & 2) {
-    int size = model->materialCount * sizeof(Material);
-    model->materials = arena->alloc<Material>(size);
-    LOG_ASSERT(model->materials != nullptr,
+    int size = model.materialCount * sizeof(Material);
+    model.materials = arena.alloc<Material>(size);
+    LOG_ASSERT(model.materials != nullptr,
                "Failed to allocate memory for materials: %zu bytes", size);
 
-    for (int i = 0; i < model->materialCount; i++) {
-      Material *material = &model->materials[i];
+    for (int i = 0; i < model.materialCount; i++) {
+      Material& material = model.materials[i];
 
       // Initialize material pointers
-      material->shader.locs = nullptr;
-      material->maps = nullptr;
+      material.shader.locs = nullptr;
+      material.maps = nullptr;
 
       unsigned char matFlags;
       memcpy(&matFlags, data + offset, sizeof(unsigned char));
       offset += sizeof(unsigned char);
 
       // Read shader ID
-      memcpy(&material->shader.id, data + offset, sizeof(unsigned int));
+      memcpy(&material.shader.id, data + offset, sizeof(unsigned int));
       offset += sizeof(unsigned int);
 
       // Read shader locations
       if (matFlags & 1) {
         size_t size = RL_MAX_SHADER_LOCATIONS * sizeof(int);
-        material->shader.locs = arena->alloc<int>(size);
-        LOG_ASSERT(material->shader.locs != nullptr,
+        material.shader.locs = arena.alloc<int>(size);
+        LOG_ASSERT(material.shader.locs != nullptr,
                    "Failed to allocate memory for shader locations: %zu bytes",
                    size);
-        memcpy(material->shader.locs, data + offset, size);
+        memcpy(material.shader.locs, data + offset, size);
         offset += size;
       }
       // Read material maps
       if (matFlags & 2) {
         size_t size = MAX_MATERIAL_MAPS * sizeof(MaterialMap);
-        material->maps = arena->alloc<MaterialMap>(size);
-        LOG_ASSERT(material->maps != nullptr,
+        material.maps = arena.alloc<MaterialMap>(size);
+        LOG_ASSERT(material.maps != nullptr,
                    "Failed to allocate memory for material maps: %zu bytes",
                    size);
 
         // Read each material map
         for (int j = 0; j < MAX_MATERIAL_MAPS; j++) {
           // Read texture
-          memcpy(&material->maps[j].texture, data + offset, sizeof(Texture));
+          memcpy(&material.maps[j].texture, data + offset, sizeof(Texture));
           offset += sizeof(Texture);
 
           // Read color
-          memcpy(&material->maps[j].color, data + offset, sizeof(Color));
+          memcpy(&material.maps[j].color, data + offset, sizeof(Color));
           offset += sizeof(Color);
 
           // Read value
-          memcpy(&material->maps[j].value, data + offset, sizeof(float));
+          memcpy(&material.maps[j].value, data + offset, sizeof(float));
           offset += sizeof(float);
         }
       }
 
       // Read material params (all 4 floats)
-      memcpy(&material->params, data + offset, sizeof(float) * 4);
+      memcpy(&material.params, data + offset, sizeof(float) * 4);
       offset += sizeof(float) * 4;
     }
   }
 
   // Read mesh material indices
   if (globalFlags & 4) {
-    int size = model->meshCount * sizeof(int);
-    model->meshMaterial = arena->alloc<int>(size);
-    LOG_ASSERT(model->meshMaterial != nullptr,
+    int size = model.meshCount * sizeof(int);
+    model.meshMaterial = arena.alloc<int>(size);
+    LOG_ASSERT(model.meshMaterial != nullptr,
                "Failed to allocate memory for mesh materials: %zu bytes", size);
-    memcpy(model->meshMaterial, data + offset, size);
+    memcpy(model.meshMaterial, data + offset, size);
     offset += size;
   }
 
-  memcpy(&model->boneCount, data + offset, sizeof(int));
+  memcpy(&model.boneCount, data + offset, sizeof(int));
   offset += sizeof(int);
 
-  if (model->boneCount > 0) {
+  if (model.boneCount > 0) {
     // Read bones
     if (globalFlags & 8) {
-      int size = model->boneCount * sizeof(BoneInfo);
-      model->bones = arena->alloc<BoneInfo>(size);
-      LOG_ASSERT(model->bones != nullptr,
+      int size = model.boneCount * sizeof(BoneInfo);
+      model.bones = arena.alloc<BoneInfo>(size);
+      LOG_ASSERT(model.bones != nullptr,
                  "Failed to allocate memory for bones: %zu bytes", size);
-      memcpy(model->bones, data + offset, size);
+      memcpy(model.bones, data + offset, size);
       offset += size;
     }
 
     // Read bind pose
     if (globalFlags & 16) {
-      int size = model->boneCount * sizeof(Transform);
-      model->bindPose = arena->alloc<Transform>(size);
-      LOG_ASSERT(model->bindPose != nullptr,
+      int size = model.boneCount * sizeof(Transform);
+      model.bindPose = arena.alloc<Transform>(size);
+      LOG_ASSERT(model.bindPose != nullptr,
                  "Failed to allocate memory for bind pose: %zu bytes", size);
 
-      for (int i = 0; i < model->boneCount; i++) {
-        memcpy(&model->bindPose[i].translation, data + offset, sizeof(Vector3));
+      for (int i = 0; i < model.boneCount; i++) {
+        memcpy(&model.bindPose[i].translation, data + offset, sizeof(Vector3));
         offset += sizeof(Vector3);
-        memcpy(&model->bindPose[i].rotation, data + offset, sizeof(Vector4));
+        memcpy(&model.bindPose[i].rotation, data + offset, sizeof(Vector4));
         offset += sizeof(Vector4);
-        memcpy(&model->bindPose[i].scale, data + offset, sizeof(Vector3));
+        memcpy(&model.bindPose[i].scale, data + offset, sizeof(Vector3));
         offset += sizeof(Vector3);
       }
     }
