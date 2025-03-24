@@ -87,7 +87,7 @@ void init(GameState *state) {
   InitWindow(800, 450, "video game");
   SetTargetFPS(120);
 
-  Arena& arena = *new Arena(KB(32));
+  Arena& arena = Arena::create(KB(32));
   state->dir = rresLoadCentralDirectory("resources.rres");
 
   int idRoverBody = rresGetResourceId(state->dir, "rover_body.bin");

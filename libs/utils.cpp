@@ -4,7 +4,7 @@
 #include <cstdio>
 
 // NOTE: Map
-bool is_string_key(const void* key, size_t size) {
+bool is_string_key(const void* key, size_t size) noexcept {
     // If it's exactly a char* or const char* type
     if (size == sizeof(char*)) {
         return true;
@@ -14,7 +14,7 @@ bool is_string_key(const void* key, size_t size) {
     return size > 1 && (isprint(test[0]) || test[0] == '\0');
 }
 
-bool compare_keys(const void* a, const void* b, size_t size) {
+bool compare_keys(const void* a, const void* b, size_t size) noexcept {
   if (is_string_key(a, size)) {
     if (size == sizeof(char*)) {
       const char* str_a = *(const char**)a;
@@ -71,7 +71,7 @@ char* read_file(const char* filePath, Arena& arena) noexcept {
   LOG_ASSERT(filePath, "No filePath supplied!");
   size_t fileSize = get_file_size(filePath);
 
-  char* buffer = arena.alloc<char>(fileSize + 1);
+  char* buffer = arena.alloc_raw<char>(fileSize + 1);
   auto file = fopen(filePath, "rb");
   fread(buffer, sizeof(char), fileSize, file);
   fclose(file);

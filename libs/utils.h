@@ -132,7 +132,7 @@ struct ArrayCT {
   }
 
   T& operator[](int idx) {
-    return this->get(idx);
+    return get(idx);
   }
 
   int add(const T& element) {
@@ -154,6 +154,24 @@ struct ArrayCT {
     elements[idx] = elements[--count];
   }
 
+  void ordered_remove(int idx) noexcept {
+    LOG_ASSERT(idx < count, "idx out of bounds!");
+    for (int i = idx; i < count - 1; ++i) {
+      elements[i] = elements[i + 1];
+    }
+    count--;
+  }
+
+  T& front() {
+    LOG_ASSERT(count > 0, "Array is empty!");
+    return elements[0];
+  }
+
+  T& back() {
+    LOG_ASSERT(count > 0, "Array is empty!");
+    return elements[count - 1];
+  }
+
   void clear() noexcept {
     count = 0;
   }
@@ -168,6 +186,10 @@ struct ArrayCT {
 
   size_t size() const noexcept {
       return count;
+  }
+
+  size_t max_elements() const noexcept {
+    return maxElements;
   }
 
   using Iterator = ArrayIterator<T>;
@@ -192,7 +214,7 @@ struct ArrayRT {
   }
 
   T& operator[](int idx) {
-    return this->get(idx);
+    return get(idx);
   }
 
   int add(const T& element) {
@@ -213,6 +235,24 @@ struct ArrayRT {
     elements[idx] = elements[--count];
   }
 
+  void ordered_remove(int idx) noexcept {
+    LOG_ASSERT(idx < count, "idx out of bounds!");
+    for (int i = idx; i < count - 1; ++i) {
+      elements[i] = elements[i + 1];
+    }
+    count--;
+  }
+
+  T& front() {
+    LOG_ASSERT(count > 0, "Array is empty!");
+    return elements[0];
+  }
+
+  T& back() {
+    LOG_ASSERT(count > 0, "Array is empty!");
+    return elements[count - 1];
+  }
+
   void clear() noexcept {
     count = 0;
   }
@@ -229,6 +269,10 @@ struct ArrayRT {
       return count;
   }
 
+  size_t max_elements() const noexcept {
+    return capacity;
+  }
+
   using Iterator = ArrayIterator<T>;
   Iterator begin() noexcept { return Iterator(elements, elements + count); }
   Iterator end() noexcept { return Iterator(elements + count, elements + count); }
@@ -236,8 +280,8 @@ struct ArrayRT {
 
 //NOTE: Map
 
-bool is_string_key(const void* key, size_t size);
-bool compare_keys(const void* a, const void* b, size_t size);
+bool is_string_key(const void* key, size_t size) noexcept;
+bool compare_keys(const void* a, const void* b, size_t size) noexcept;
 
 template <typename KeyType, typename ValueType>
 struct Entry {
@@ -298,7 +342,7 @@ struct MapCT {
   }
 
   ValueType& operator[](const KeyType key) {
-    return this->get(key);
+    return get(key);
   }
 
   void remove(const KeyType& key) {
@@ -308,12 +352,31 @@ struct MapCT {
     }
   }
 
+  void ordered_remove(const KeyType& key) {
+    int idx = find(key);
+    if (idx != -1) {
+      entries.ordered_remove(idx);
+    }
+  }
+
   bool empty() const noexcept {
     return entries.empty();
   }
 
   size_t size() const noexcept {
     return entries.size();
+  }
+
+  size_t capacity() const noexcept {
+    return entries.max_elements();
+  }
+
+  bool is_full() const noexcept {
+    return size() == capacity();
+  }
+
+  bool contains(const KeyType& key) const noexcept {
+    return find(key) != -1;
   }
 
   using Iterator = MapIterator<KeyType, ValueType>;
@@ -330,7 +393,7 @@ struct MapRT {
   MapRT(MapRT&& other) = delete;
   MapRT& operator=(MapRT&& other) = delete;
 
-  void set_entries(ArrayRT<Entry<KeyType, ValueType>>* e) {
+  void set_entries(ArrayRT<Entry<KeyType, ValueType>>* e) noexcept {
     entries = e;
   }
 
@@ -353,13 +416,20 @@ struct MapRT {
   }
 
   ValueType& operator[](const KeyType key) {
-    return this->get(key);
+    return get(key);
   }
 
   void remove(const KeyType& key) {
     int idx = find(key);
     if (idx != -1) {
       entries->remove(idx);
+    }
+  }
+
+  void ordered_remove(const KeyType& key) {
+    int idx = find(key);
+    if (idx != -1) {
+      entries->ordered_remove(idx);
     }
   }
 
@@ -371,10 +441,26 @@ struct MapRT {
     return entries->size();
   }
 
+  size_t capacity() const noexcept {
+    return entries->max_elements();
+  }
+
+  bool is_full() const noexcept {
+    return size() == capacity();
+  }
+
+  bool contains(const KeyType& key) const noexcept {
+    return find(key) != -1;
+  }
+
   using Iterator = MapIterator<KeyType, ValueType>;
   Iterator begin() noexcept { return Iterator(entries->elements, entries->elements + entries->count); }
   Iterator end() noexcept { return Iterator(entries->elements + entries->count, entries->elements + entries->count); }
 };
+
+// TODO: treemap
+
+// TODO: hashmap
 
 // NOTE: Arena
 struct Arena {
@@ -387,25 +473,29 @@ struct Arena {
   Arena(Arena&& other) = delete;
   Arena& operator=(Arena&& other) = delete;
 
-  Arena(size_t size) {
+  explicit Arena(size_t size) {
     memory = (char*)malloc(size);
     if (!memory) LOG_ASSERT(false, "Failed to allocate memory!");
-    memset(memory, 0, size); // Sets the memory to 0
+    memset(memory, 0, size);
     capacity = size;
     used = 0;
   }
 
-  char& get(size_t idx) {
+  static Arena& create(size_t size) {
+    return *new Arena(size);
+  }
+
+  char& get(size_t idx) noexcept {
     LOG_ASSERT(idx < used, "Index out of bounds!");
     return memory[idx];
   }
 
-  char& operator[](size_t idx) {
-    return this->get(idx);
+  char& operator[](size_t idx) noexcept {
+    return get(idx);
   }
 
   template<typename T>
-  T* alloc() {
+  T* alloc_raw() noexcept { // Guaranteed to return valid memory or assert
     size_t size = sizeof(T);
     size_t aligned_size = (size + 7) & ~7;  // 8-byte alignment
     if (used + aligned_size > capacity) LOG_ASSERT(false, "Arena is full");
@@ -415,7 +505,12 @@ struct Arena {
   }
 
   template<typename T>
-  T* alloc(size_t size) {
+  T& alloc() noexcept {
+    return *alloc_raw<T>();
+  }
+
+  template<typename T>
+  T* alloc_raw(size_t size) noexcept { // Guaranteed to return valid memory or assert
     size_t aligned_size = (size + 7) & ~7;  // 8-byte alignment
     if (used + aligned_size > capacity) LOG_ASSERT(false, "Arena is full");
     T* result = (T*)(memory + used);
@@ -424,7 +519,12 @@ struct Arena {
   }
 
   template<typename T>
-  T* alloc_count(size_t count) {
+  T& alloc(size_t size) noexcept {
+    return *alloc_raw<T>(size);
+  }
+
+  template<typename T>
+  T* alloc_count_raw(size_t count) noexcept { // Guaranteed to return valid memory or assert
     size_t total_size = sizeof(T) * count;
     size_t aligned_size = (total_size + 7) & ~7;  // 8-byte alignment
     if (used + aligned_size > capacity) LOG_ASSERT(false, "Arena is full");
@@ -433,39 +533,44 @@ struct Arena {
     return result;
   }
 
-template <typename E, typename M> 
-E& fetch(const char* key) {
-    M* map_ptr = reinterpret_cast<M*>(this->memory);
+  template<typename T>
+  T& alloc_count(size_t count) noexcept {
+    return *alloc_count_raw<T>(count);
+  }
+
+  template <typename E, typename M> 
+  E& fetch(const char* key) {
+    M* map_ptr = reinterpret_cast<M*>(memory);
     void* ptr = map_ptr->get(key);
     return *reinterpret_cast<E*>(ptr);
-}
+  }
 
   template<typename T>
   ArrayRT<T>& create_array_rt(size_t capacity) {
     size_t total_size = sizeof(ArrayRT<T>) + sizeof(T) * (capacity - 1);
-    ArrayRT<T>* arr_ptr = this->alloc<ArrayRT<T>>(total_size);
-    arr_ptr->capacity = capacity;
-    return *arr_ptr;
+    ArrayRT<T>& arr = alloc<ArrayRT<T>>(total_size);
+    arr.capacity = capacity;
+    return arr;
   }
 
   template<typename T, int N>
   ArrayCT<T, N>& create_array_ct() {
-    ArrayCT<T, N>* arr_ptr = this->alloc<ArrayCT<T, N>>();
-    return *arr_ptr;
+    ArrayCT<T, N>& arr = alloc<ArrayCT<T, N>>();
+    return arr;
   }
 
   template<typename KeyType, typename ValueType>
   MapRT<KeyType, ValueType>& create_map_rt(size_t capacity) {
-    MapRT<KeyType, ValueType>* map_ptr = this->alloc<MapRT<KeyType, ValueType>>(sizeof(MapRT<KeyType, ValueType>));
-    ArrayRT<Entry<KeyType, ValueType>>& entries = this->create_array_rt<Entry<KeyType, ValueType>>(capacity);
-    map_ptr->set_entries(&entries);
-    return *map_ptr;
+    MapRT<KeyType, ValueType>& map = alloc<MapRT<KeyType, ValueType>>(sizeof(MapRT<KeyType, ValueType>));
+    ArrayRT<Entry<KeyType, ValueType>>& entries = create_array_rt<Entry<KeyType, ValueType>>(capacity);
+    map.set_entries(&entries);
+    return map;
   }
 
   template<typename KeyType, typename ValueType, int N>
   MapCT<KeyType, ValueType, N>& create_map_ct() {
-    MapCT<KeyType, ValueType, N>* map_ptr = this->alloc<MapCT<KeyType, ValueType, N>>();
-    return *map_ptr;
+    MapCT<KeyType, ValueType, N>& map = alloc<MapCT<KeyType, ValueType, N>>();
+    return map;
   }
 
   void clear() noexcept {
@@ -489,6 +594,10 @@ E& fetch(const char* key) {
     free(memory);
   }
 };
+
+inline Arena& create_arena(size_t size) {
+    return Arena::create(size);
+}
 
 // NOTE: Size defs
 #define KB(x) ((x) * 1024ULL)
