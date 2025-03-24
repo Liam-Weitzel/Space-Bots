@@ -2,7 +2,7 @@
 
 // NOTE: Load model from chunk for use with rres
 Model& LoadModelFromChunk(const rresResourceChunk &chunk, Arena& arena) {
-  Model& model = *arena.alloc<Model>();
+  Model& model = arena.alloc<Model>();
 
   if (!chunk.data.raw) {
     LOG_ERROR("Chunk data is null");
@@ -40,7 +40,7 @@ Model& LoadModelFromChunk(const rresResourceChunk &chunk, Arena& arena) {
   // Read meshes
   if (globalFlags & 1) {
     int size = model.meshCount * sizeof(Mesh);
-    model.meshes = arena.alloc<Mesh>(size);
+    model.meshes = arena.alloc_raw<Mesh>(size);
     LOG_ASSERT(model.meshes != nullptr,
                "Failed to allocate memory for meshes: %zu bytes", size);
 
@@ -89,7 +89,7 @@ Model& LoadModelFromChunk(const rresResourceChunk &chunk, Arena& arena) {
         // Vertices
         if (meshFlags & 1) {
           size_t size = mesh.vertexCount * 3 * sizeof(float);
-          mesh.vertices = arena.alloc<float>(size);
+          mesh.vertices = arena.alloc_raw<float>(size);
           LOG_ASSERT(mesh.vertices != nullptr,
                      "Failed to allocate memory for vertices: %zu bytes", size);
           memcpy(mesh.vertices, data + offset, size);
@@ -98,7 +98,7 @@ Model& LoadModelFromChunk(const rresResourceChunk &chunk, Arena& arena) {
         // Texcoords
         if (meshFlags & 2) {
           size_t size = mesh.vertexCount * 2 * sizeof(float);
-          mesh.texcoords = arena.alloc<float>(size);
+          mesh.texcoords = arena.alloc_raw<float>(size);
           LOG_ASSERT(mesh.texcoords != nullptr,
                      "Failed to allocate memory for texcoords: %zu bytes",
                      size);
@@ -108,7 +108,7 @@ Model& LoadModelFromChunk(const rresResourceChunk &chunk, Arena& arena) {
         // Texcoords2
         if (meshFlags & 4) {
           size_t size = mesh.vertexCount * 2 * sizeof(float);
-          mesh.texcoords2 = arena.alloc<float>(size);
+          mesh.texcoords2 = arena.alloc_raw<float>(size);
           LOG_ASSERT(mesh.texcoords2 != nullptr,
                      "Failed to allocate memory for texcoords2: %zu bytes",
                      size);
@@ -118,7 +118,7 @@ Model& LoadModelFromChunk(const rresResourceChunk &chunk, Arena& arena) {
         // Normals
         if (meshFlags & 8) {
           size_t size = mesh.vertexCount * 3 * sizeof(float);
-          mesh.normals = arena.alloc<float>(size);
+          mesh.normals = arena.alloc_raw<float>(size);
           LOG_ASSERT(mesh.normals != nullptr,
                      "Failed to allocate memory for normals: %zu bytes", size);
           memcpy(mesh.normals, data + offset, size);
@@ -127,7 +127,7 @@ Model& LoadModelFromChunk(const rresResourceChunk &chunk, Arena& arena) {
         // Tangents
         if (meshFlags & 16) {
           size_t size = mesh.vertexCount * 4 * sizeof(float);
-          mesh.tangents = arena.alloc<float>(size);
+          mesh.tangents = arena.alloc_raw<float>(size);
           LOG_ASSERT(mesh.tangents != nullptr,
                      "Failed to allocate memory for tangents: %zu bytes", size);
           memcpy(mesh.tangents, data + offset, size);
@@ -136,7 +136,7 @@ Model& LoadModelFromChunk(const rresResourceChunk &chunk, Arena& arena) {
         // Colors
         if (meshFlags & 32) {
           size_t size = mesh.vertexCount * 4 * sizeof(unsigned char *);
-          mesh.colors = arena.alloc<unsigned char>(size);
+          mesh.colors = arena.alloc_raw<unsigned char>(size);
           LOG_ASSERT(mesh.colors != nullptr,
                      "Failed to allocate memory for colors: %zu bytes", size);
           memcpy(mesh.colors, data + offset, size);
@@ -147,7 +147,7 @@ Model& LoadModelFromChunk(const rresResourceChunk &chunk, Arena& arena) {
         // Animated vertices
         if (animFlags & 1) {
           size_t size = mesh.vertexCount * 3 * sizeof(float);
-          mesh.animVertices = arena.alloc<float>(size);
+          mesh.animVertices = arena.alloc_raw<float>(size);
           LOG_ASSERT(mesh.animVertices != nullptr,
                      "Failed to allocate memory for anim vertices: %zu bytes",
                      size);
@@ -157,7 +157,7 @@ Model& LoadModelFromChunk(const rresResourceChunk &chunk, Arena& arena) {
         // Animated normals
         if (animFlags & 2) {
           size_t size = mesh.vertexCount * 3 * sizeof(float);
-          mesh.animNormals = arena.alloc<float>(size);
+          mesh.animNormals = arena.alloc_raw<float>(size);
           LOG_ASSERT(mesh.animNormals != nullptr,
                      "Failed to allocate memory for anim normals: %zu bytes",
                      size);
@@ -167,7 +167,7 @@ Model& LoadModelFromChunk(const rresResourceChunk &chunk, Arena& arena) {
         // Bone IDs
         if (animFlags & 4) {
           size_t size = mesh.vertexCount * 4;
-          mesh.boneIds = arena.alloc<unsigned char>(size);
+          mesh.boneIds = arena.alloc_raw<unsigned char>(size);
           LOG_ASSERT(mesh.boneIds != nullptr,
                      "Failed to allocate memory for bone IDs: %zu bytes", size);
           memcpy(mesh.boneIds, data + offset, size);
@@ -176,7 +176,7 @@ Model& LoadModelFromChunk(const rresResourceChunk &chunk, Arena& arena) {
         // Bone weights
         if (animFlags & 8) {
           size_t size = mesh.vertexCount * 4 * sizeof(float);
-          mesh.boneWeights = arena.alloc<float>(size);
+          mesh.boneWeights = arena.alloc_raw<float>(size);
           LOG_ASSERT(mesh.boneWeights != nullptr,
                      "Failed to allocate memory for bone weights: %zu bytes",
                      size);
@@ -186,7 +186,7 @@ Model& LoadModelFromChunk(const rresResourceChunk &chunk, Arena& arena) {
         // Bone matrices
         if (animFlags & 16 && mesh.boneCount > 0) {
           size_t size = mesh.boneCount * sizeof(Matrix);
-          mesh.boneMatrices = arena.alloc<Matrix>(size);
+          mesh.boneMatrices = arena.alloc_raw<Matrix>(size);
           LOG_ASSERT(mesh.boneMatrices != nullptr,
                      "Failed to allocate memory for bone matrices: %zu bytes",
                      size);
@@ -198,7 +198,7 @@ Model& LoadModelFromChunk(const rresResourceChunk &chunk, Arena& arena) {
       // Read indices
       if (mesh.triangleCount > 0 && (meshFlags & 64)) {
         size_t size = mesh.triangleCount * 3 * sizeof(unsigned short);
-        mesh.indices = arena.alloc<unsigned short>(size);
+        mesh.indices = arena.alloc_raw<unsigned short>(size);
         LOG_ASSERT(mesh.indices != nullptr,
                    "Failed to allocate memory for indices: %zu bytes", size);
         memcpy(mesh.indices, data + offset, size);
@@ -213,7 +213,7 @@ Model& LoadModelFromChunk(const rresResourceChunk &chunk, Arena& arena) {
   // Read materials
   if (globalFlags & 2) {
     int size = model.materialCount * sizeof(Material);
-    model.materials = arena.alloc<Material>(size);
+    model.materials = arena.alloc_raw<Material>(size);
     LOG_ASSERT(model.materials != nullptr,
                "Failed to allocate memory for materials: %zu bytes", size);
 
@@ -235,7 +235,7 @@ Model& LoadModelFromChunk(const rresResourceChunk &chunk, Arena& arena) {
       // Read shader locations
       if (matFlags & 1) {
         size_t size = RL_MAX_SHADER_LOCATIONS * sizeof(int);
-        material.shader.locs = arena.alloc<int>(size);
+        material.shader.locs = arena.alloc_raw<int>(size);
         LOG_ASSERT(material.shader.locs != nullptr,
                    "Failed to allocate memory for shader locations: %zu bytes",
                    size);
@@ -245,7 +245,7 @@ Model& LoadModelFromChunk(const rresResourceChunk &chunk, Arena& arena) {
       // Read material maps
       if (matFlags & 2) {
         size_t size = MAX_MATERIAL_MAPS * sizeof(MaterialMap);
-        material.maps = arena.alloc<MaterialMap>(size);
+        material.maps = arena.alloc_raw<MaterialMap>(size);
         LOG_ASSERT(material.maps != nullptr,
                    "Failed to allocate memory for material maps: %zu bytes",
                    size);
@@ -275,7 +275,7 @@ Model& LoadModelFromChunk(const rresResourceChunk &chunk, Arena& arena) {
   // Read mesh material indices
   if (globalFlags & 4) {
     int size = model.meshCount * sizeof(int);
-    model.meshMaterial = arena.alloc<int>(size);
+    model.meshMaterial = arena.alloc_raw<int>(size);
     LOG_ASSERT(model.meshMaterial != nullptr,
                "Failed to allocate memory for mesh materials: %zu bytes", size);
     memcpy(model.meshMaterial, data + offset, size);
@@ -289,7 +289,7 @@ Model& LoadModelFromChunk(const rresResourceChunk &chunk, Arena& arena) {
     // Read bones
     if (globalFlags & 8) {
       int size = model.boneCount * sizeof(BoneInfo);
-      model.bones = arena.alloc<BoneInfo>(size);
+      model.bones = arena.alloc_raw<BoneInfo>(size);
       LOG_ASSERT(model.bones != nullptr,
                  "Failed to allocate memory for bones: %zu bytes", size);
       memcpy(model.bones, data + offset, size);
@@ -299,7 +299,7 @@ Model& LoadModelFromChunk(const rresResourceChunk &chunk, Arena& arena) {
     // Read bind pose
     if (globalFlags & 16) {
       int size = model.boneCount * sizeof(Transform);
-      model.bindPose = arena.alloc<Transform>(size);
+      model.bindPose = arena.alloc_raw<Transform>(size);
       LOG_ASSERT(model.bindPose != nullptr,
                  "Failed to allocate memory for bind pose: %zu bytes", size);
 
