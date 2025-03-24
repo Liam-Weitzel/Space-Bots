@@ -75,6 +75,7 @@ void _log(const char* prefix, const char* msg, TextColor textColor, Args... args
 }
 
 #define LOG_TRACE(msg, ...) _log("TRACE: ", msg, TEXT_COLOR_GREEN, ##__VA_ARGS__);
+// #define LOG_TRACE(msg, ...) ((void)0);
 #define LOG_WARN(msg, ...) _log("WARN: ", msg, TEXT_COLOR_YELLOW, ##__VA_ARGS__);
 #define LOG_ERROR(msg, ...) _log("ERROR: ", msg, TEXT_COLOR_RED, ##__VA_ARGS__);
 
@@ -121,6 +122,7 @@ struct ArrayCT {
   int count = 0;
   T elements[maxElements];
 
+  ArrayCT() = default;
   ArrayCT(const ArrayCT&) = delete;
   ArrayCT& operator=(const ArrayCT&) = delete;
   ArrayCT(ArrayCT&& other) = delete;
@@ -203,6 +205,7 @@ struct ArrayRT {
   int count = 0; // number of elements added so far
   T elements[1]; // Flexible array member (allocate extra space)
 
+  ArrayRT() = delete;
   ArrayRT(const ArrayRT&) = delete;
   ArrayRT& operator=(const ArrayRT&) = delete;
   ArrayRT(ArrayRT&& other) = delete;
@@ -318,6 +321,7 @@ template <typename KeyType, typename ValueType, int Size>
 struct MapCT {
   ArrayCT<Entry<KeyType, ValueType>, Size> entries;
 
+  MapCT() = default;
   MapCT(const MapCT&) = delete;
   MapCT& operator=(const MapCT&) = delete;
   MapCT(MapCT&& other) = delete;
@@ -388,6 +392,7 @@ template <typename KeyType, typename ValueType>
 struct MapRT {
   ArrayRT<Entry<KeyType, ValueType>>* entries; // set when allocated
 
+  MapRT() = delete;
   MapRT(const MapRT&) = delete;
   MapRT& operator=(const MapRT&) = delete;
   MapRT(MapRT&& other) = delete;
