@@ -1,13 +1,12 @@
 #include "utils.h"
 #include "utils_test.h"
-#include <chrono>
 
-// g++ utils_performance_test.cpp utils.cpp utils_test.cpp -O0 -g -o utils_performance_test
+// g++ utils_benchmark.cpp utils.cpp utils_test.cpp -O0 -g -o utils_benchmark
 
-const int NUM_ITERATIONS = 100;
 const size_t CACHE_SIZE = MB(1); // 1MB for quick methods
 const size_t FULL_CACHE_SIZE = MB(4); // 4MB for thorough method
 const size_t STRIDE = 64;
+const int ITERATIONS = 100;
 
 constexpr size_t THOROUGH_ARRAY_SIZE = FULL_CACHE_SIZE / sizeof(int);
 constexpr size_t QUICK_ARRAY_SIZE = CACHE_SIZE / sizeof(int);
@@ -59,86 +58,79 @@ void clear_cache_random() {
   }
 }
 
-template<typename F>
-double measure_average_time(F&& func, const char* operation_name, CacheClearMethod method) {
-  using namespace std::chrono;
-  using Duration = duration<double, std::nano>;
-
-  auto total = Duration::zero();
-  for (int i = 0; i < NUM_ITERATIONS; i++) {
-    switch (method) {
-      case CacheClearMethod::Thorough: clear_cache_thorough(); break;
-      case CacheClearMethod::Stride: clear_cache_stride(); break;
-      case CacheClearMethod::Random: clear_cache_random(); break;
-      case CacheClearMethod::None: break;
-    }
-
-    auto t1 = high_resolution_clock::now();
-    func();
-    auto t2 = high_resolution_clock::now();
-    total += t2 - t1;
-  }
-
-  double avg_ns = total.count() / NUM_ITERATIONS;
-  printf("        %s avg: %.2f ns\n", operation_name, avg_ns);
-  return avg_ns;
-}
-
 void run_iterator_tests(CacheClearMethod method) {
-  printf("\n    === Iterator Tests (Cache: %s) ===\n",
+  printf("\n=== Iterator Tests (Cache: %s) ===\n",
          method == CacheClearMethod::Thorough ? "Thorough" :
          method == CacheClearMethod::Stride ? "Stride" :
          method == CacheClearMethod::Random ? "Random" : "None");
 
-  measure_average_time(
-    []() { iterators_arrays_CT_test(); },
-    "CT Array Iterator Test",
-    method
-  );
+  auto run_ct_test = [method]() {
+    if (method == CacheClearMethod::Thorough) clear_cache_thorough();
+    else if (method == CacheClearMethod::Stride) clear_cache_stride();
+    else if (method == CacheClearMethod::Random) clear_cache_random();
+    iterators_arrays_CT_test();
+  };
+  printf("  CT Array Iterator Test: ");
+  BENCHMARK(run_ct_test, ITERATIONS);
 
-  measure_average_time(
-    []() { iterators_arrays_RT_test(); },
-    "RT Array Iterator Test",
-    method
-  );
+  auto run_rt_test = [method]() {
+    if (method == CacheClearMethod::Thorough) clear_cache_thorough();
+    else if (method == CacheClearMethod::Stride) clear_cache_stride();
+    else if (method == CacheClearMethod::Random) clear_cache_random();
+    iterators_arrays_RT_test();
+  };
+  printf("  RT Array Iterator Test: ");
+  BENCHMARK(run_rt_test, ITERATIONS);
 }
 
 void run_arena_tests(CacheClearMethod method) {
-  printf("\n    === Arena Tests (Cache: %s) ===\n",
+  printf("\n=== Arena Tests (Cache: %s) ===\n",
          method == CacheClearMethod::Thorough ? "Thorough" :
          method == CacheClearMethod::Stride ? "Stride" :
          method == CacheClearMethod::Random ? "Random" : "None");
 
-  measure_average_time(
-    []() { create_and_fetch_arena_in_different_scope_CT_test(); },
-    "Arena CT Create/Fetch Test",
-    method
-  );
+  auto run_ct_arena = [method]() {
+    if (method == CacheClearMethod::Thorough) clear_cache_thorough();
+    else if (method == CacheClearMethod::Stride) clear_cache_stride();
+    else if (method == CacheClearMethod::Random) clear_cache_random();
+    create_and_fetch_arena_in_different_scope_CT_test();
+  };
+  printf("  Arena CT Create/Fetch Test: ");
+  BENCHMARK(run_ct_arena, ITERATIONS);
 
-  measure_average_time(
-    []() { create_and_fetch_arena_in_different_scope_RT_test(); },
-    "Arena RT Create/Fetch Test",
-    method
-  );
+  auto run_rt_arena = [method]() {
+    if (method == CacheClearMethod::Thorough) clear_cache_thorough();
+    else if (method == CacheClearMethod::Stride) clear_cache_stride();
+    else if (method == CacheClearMethod::Random) clear_cache_random();
+    create_and_fetch_arena_in_different_scope_RT_test();
+  };
+  printf("  Arena RT Create/Fetch Test: ");
+  BENCHMARK(run_rt_arena, ITERATIONS);
 
-  measure_average_time(
-    []() { create_arena_clear_test(); },
-    "Arena Clear Test",
-    method
-  );
+  auto run_clear = [method]() {
+    if (method == CacheClearMethod::Thorough) clear_cache_thorough();
+    else if (method == CacheClearMethod::Stride) clear_cache_stride();
+    else if (method == CacheClearMethod::Random) clear_cache_random();
+    create_arena_clear_test();
+  };
+  printf("  Arena Clear Test: ");
+  BENCHMARK(run_clear, ITERATIONS);
 }
 
 void run_file_io_tests(CacheClearMethod method) {
-  printf("\n    === File I/O Tests (Cache: %s) ===\n",
+  printf("\n=== File I/O Tests (Cache: %s) ===\n",
          method == CacheClearMethod::Thorough ? "Thorough" :
          method == CacheClearMethod::Stride ? "Stride" :
          method == CacheClearMethod::Random ? "Random" : "None");
 
-  measure_average_time(
-    []() { file_io_test(); },
-    "File I/O Operations Test",
-    method
-  );
+  auto run_io = [method]() {
+    if (method == CacheClearMethod::Thorough) clear_cache_thorough();
+    else if (method == CacheClearMethod::Stride) clear_cache_stride();
+    else if (method == CacheClearMethod::Random) clear_cache_random();
+    file_io_test();
+  };
+  printf("  File I/O Operations Test: ");
+  BENCHMARK(run_io, ITERATIONS);
 }
 
 void run_all_tests(CacheClearMethod method) {
@@ -150,17 +142,11 @@ void run_all_tests(CacheClearMethod method) {
 int main(int argc, char *argv[]) {
   printf("Running performance tests with different cache clearing methods...\n");
 
-  printf("\n=== No Cache Clearing ===");
   run_all_tests(CacheClearMethod::None);
-
-  printf("\n=== Thorough Cache Clearing ===");
   run_all_tests(CacheClearMethod::Thorough);
-
-  printf("\n=== Stride-based Cache Clearing ===");
   run_all_tests(CacheClearMethod::Stride);
-
-  printf("\n=== Random Cache Clearing ===");
   run_all_tests(CacheClearMethod::Random);
 
   return 0;
 }
+
