@@ -10,14 +10,36 @@
 
 // NOTE: Cross platform stuffs
 #ifdef _WIN32
-#define DEBUG_BREAK() __debugbreak()
-#define EXPORT_FN __declspec(dllexport)
-#elif __linux__
-#define DEBUG_BREAK() __builtin_trap()
-#define EXPORT_FN extern "C"
-#elif __APPLE__
-#define DEBUG_BREAK() __builtin_trap()
-#define EXPORT_FN
+    #define DEBUG_BREAK() __debugbreak()
+    #define EXPORT_FN __declspec(dllexport)
+    #include <windows.h>
+    
+    #define BENCHMARK(fn, iterations) do { \
+        FILETIME creationTime, exitTime, kernelTime, userTime; \
+        GetProcessTimes(GetCurrentProcess(), &creationTime, &exitTime, &kernelTime, &userTime); \
+        ULARGE_INTEGER start, end; \
+        start.LowPart = userTime.dwLowDateTime; \
+        start.HighPart = userTime.dwHighDateTime; \
+        for (int i = 0; i < iterations; ++i) { fn(); } \
+        GetProcessTimes(GetCurrentProcess(), &creationTime, &exitTime, &kernelTime, &userTime); \
+        end.LowPart = userTime.dwLowDateTime; \
+        end.HighPart = userTime.dwHighDateTime; \
+        double elapsed = (end.QuadPart - start.QuadPart) / 10.0; \
+        printf("%.3f µs\n", elapsed / iterations); \
+    } while (0)
+
+#elif __linux__ || __APPLE__
+    #define DEBUG_BREAK() __builtin_trap()
+    #define EXPORT_FN extern "C"
+    #include <ctime>
+    
+    #define BENCHMARK(fn, iterations) do { \
+        clock_t start = clock(); \
+        for (int i = 0; i < iterations; ++i) { fn(); } \
+        clock_t end = clock(); \
+        double elapsed = (double)(end - start) / CLOCKS_PER_SEC * 1e6; \
+        printf("%.3f µs\n", elapsed / iterations); \
+    } while (0)
 #endif
 
 // NOTE: Logging
