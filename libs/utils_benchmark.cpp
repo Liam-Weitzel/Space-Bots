@@ -115,6 +115,40 @@ void run_arena_tests(CacheClearMethod method) {
   };
   printf("  Arena Clear Test: ");
   BENCHMARK(run_clear, ITERATIONS);
+
+  auto run_ct_hashmap = [method]() {
+    if (method == CacheClearMethod::Thorough) clear_cache_thorough();
+    else if (method == CacheClearMethod::Stride) clear_cache_stride();
+    else if (method == CacheClearMethod::Random) clear_cache_random();
+    create_hashmap_in_arena_CT_test();
+  };
+  printf("  Arena CT Hashmap Test: ");
+  BENCHMARK(run_ct_hashmap, ITERATIONS);
+
+  auto run_rt_hashmap = [method]() {
+    if (method == CacheClearMethod::Thorough) clear_cache_thorough();
+    else if (method == CacheClearMethod::Stride) clear_cache_stride();
+    else if (method == CacheClearMethod::Random) clear_cache_random();
+    create_hashmap_in_arena_RT_test();
+  };
+  printf("  Arena RT Hashmap Test: ");
+  BENCHMARK(run_rt_hashmap, ITERATIONS);
+}
+
+void run_sort_tests(CacheClearMethod method) {
+  printf("\n=== Sort Tests (Cache: %s) ===\n",
+         method == CacheClearMethod::Thorough ? "Thorough" :
+         method == CacheClearMethod::Stride ? "Stride" :
+         method == CacheClearMethod::Random ? "Random" : "None");
+
+  auto run_sort = [method]() {
+    if (method == CacheClearMethod::Thorough) clear_cache_thorough();
+    else if (method == CacheClearMethod::Stride) clear_cache_stride();
+    else if (method == CacheClearMethod::Random) clear_cache_random();
+    quicksort_test();
+  };
+  printf("  Sort Test: ");
+  BENCHMARK(run_sort, ITERATIONS);
 }
 
 void run_file_io_tests(CacheClearMethod method) {
@@ -137,6 +171,7 @@ void run_all_tests(CacheClearMethod method) {
   run_iterator_tests(method);
   run_arena_tests(method);
   run_file_io_tests(method);
+  run_sort_tests(method);
 }
 
 int main(int argc, char *argv[]) {
