@@ -32,6 +32,7 @@ void iterators_arrays_RT_test() {
   size_t total_size = sizeof(ArrayRT<Entity>) + sizeof(Entity) * (3 - 1);
   ArrayRT<Entity>* array = (ArrayRT<Entity>*)malloc(total_size);
   array->capacity = 3;
+  array->count = 0;
 
   // Create an array of entities
   Entity entities[] = {
@@ -55,7 +56,7 @@ void iterators_arrays_RT_test() {
 }
 
 void create_and_fetch_arena_in_different_scope_CT_test() {
-  char* failedMsg = "[ FAILED ] create_and_fetch_arena_in_different_scope_CT_test";
+  const char* failedMsg = "[ FAILED ] create_and_fetch_arena_in_different_scope_CT_test";
   Arena& arena = Arena::create(80);
   MapCT<const char*, void*, 1>& arenaIndex = arena.create_map_ct<const char*, void*, 1>();
   {
@@ -91,7 +92,7 @@ void create_and_fetch_arena_in_different_scope_CT_test() {
 }
 
 void create_and_fetch_arena_in_different_scope_RT_test() {
-  char* failedMsg = "[ FAILED ] create_and_fetch_arena_in_different_scope_RT_test";
+  const char* failedMsg = "[ FAILED ] create_and_fetch_arena_in_different_scope_RT_test";
   Arena& arena = Arena::create(88); //NOTE: 8 more bytes than CT... 2x extra 32 bit int for size...
   MapRT<const char*, void*>& arenaIndex = arena.create_map_rt<const char*, void*>(1);
   {
@@ -126,9 +127,168 @@ void create_and_fetch_arena_in_different_scope_RT_test() {
   LOG_TRACE("[ PASSED ] create_and_fetch_arena_in_different_scope_RT_test")
 }
 
+void create_hashmap_in_arena_CT_test() {
+  const char* failedMsg = "[ FAILED ] create_hashmap_in_arena_CT_test";
+  Arena& arena = create_arena(KB(4));
+  auto& arena_index = arena.create_hashmap_ct<const char*, void*, 1>();
+
+  // Create hashmap and test basic operations
+  auto& map = arena.create_hashmap_ct<const char*, int, 16>();
+  arena_index["map"] = &map;
+
+  // Test empty state
+  LOG_ASSERT(map.empty() && map.size() == 0, failedMsg);
+
+  // Test insertion
+  map["test1"] = 42;
+  map["test2"] = 84;
+
+  LOG_ASSERT(map.size() == 2, failedMsg);
+
+  auto& map_fetched = arena.fetch<HashMapCT<const char*, int, 16>, HashMapCT<const char*, void*, 1>>("map");
+  LOG_ASSERT(map_fetched["test1"] == 42, failedMsg);
+
+  // Test retrieval
+  LOG_ASSERT(map["test1"] == 42 && map["test2"] == 84, failedMsg);
+
+  // Test contains
+  LOG_ASSERT(map.contains("test1") && map.contains("test2"), failedMsg);
+  LOG_ASSERT(!map.contains("nonexistent"), failedMsg);
+
+  // Test removal
+  map.remove("test1");
+  LOG_ASSERT(!map.contains("test1") && map.size() == 1, failedMsg);
+
+  // Test clear
+  map.clear();
+  LOG_ASSERT(map.empty() && map.size() == 0, failedMsg);
+
+  // Test load factor limit
+  for(int i = 0; i < 11; i++) { // Should work up to 70% capacity
+      char key[8];
+      sprintf(key, "key%d", i);
+      map[key] = i;
+  }
+
+  LOG_ASSERT(map.size() == 11, failedMsg);
+  LOG_TRACE("[ PASSED ] create_hashmap_in_arena_CT_test")
+}
+
+void create_hashmap_in_arena_RT_test() {
+  const char* failedMsg = "[ FAILED ] create_hashmap_in_arena_CT_test";
+  Arena& arena = create_arena(KB(4));
+  auto& arena_index = arena.create_hashmap_rt<const char*, void*>(1);
+
+  // Create hashmap and test basic operations
+  auto& map = arena.create_hashmap_rt<const char*, int>(16);
+  arena_index["map"] = &map;
+
+  // Test empty state
+  LOG_ASSERT(map.empty() && map.size() == 0, failedMsg);
+
+  // Test insertion
+  map["test1"] = 42;
+  map["test2"] = 84;
+
+  LOG_ASSERT(map.size() == 2, failedMsg);
+
+  auto& map_fetched = arena.fetch<HashMapRT<const char*, int>, HashMapRT<const char*, void*>>("map");
+  LOG_ASSERT(map_fetched["test1"] == 42, failedMsg);
+
+  // Test retrieval
+  LOG_ASSERT(map["test1"] == 42 && map["test2"] == 84, failedMsg);
+
+  // Test contains
+  LOG_ASSERT(map.contains("test1") && map.contains("test2"), failedMsg);
+  LOG_ASSERT(!map.contains("nonexistent"), failedMsg);
+
+  // Test removal
+  map.remove("test1");
+  LOG_ASSERT(!map.contains("test1") && map.size() == 1, failedMsg);
+
+  // Test clear
+  map.clear();
+  LOG_ASSERT(map.empty() && map.size() == 0, failedMsg);
+  LOG_TRACE("[ PASSED ] create_hashmap_in_arena_RT_test")
+}
+
+void quicksort_test() {
+  const char* failedMsg = "[ FAILED ] quicksort_test";
+  
+  // Test CT array with integers
+  {
+    ArrayCT<int, 5> arr = {};
+    int numbers[] = {64, 34, 25, 12, 22};
+    arr.add(numbers, 5);
+    
+    quicksort(arr);
+    
+    LOG_ASSERT(arr[0] == 12 && arr[1] == 22 && arr[2] == 25 && 
+               arr[3] == 34 && arr[4] == 64, failedMsg);
+  }
+  
+  // Test RT array with integers
+  {
+    // Calculate total size including the flexible array member
+    size_t total_size = offsetof(ArrayRT<int>, elements) + sizeof(int) * 5;
+    
+    // Allocate memory
+    ArrayRT<int>* arr = (ArrayRT<int>*)malloc(total_size);
+    
+    // Initialize members
+    arr->capacity = 5;
+    arr->count = 0;
+    
+    int numbers[] = {64, 34, 25, 12, 22};
+    arr->add(numbers, 5);
+    
+    quicksort(*arr);
+    
+    LOG_ASSERT((*arr)[0] == 12 && (*arr)[1] == 22 && (*arr)[2] == 25 && 
+               (*arr)[3] == 34 && (*arr)[4] == 64, failedMsg);
+    
+    free(arr);
+  }
+  
+  // Test partial range sorting
+  {
+    ArrayCT<int, 5> arr = {};
+    int numbers[] = {64, 34, 25, 12, 22};
+    arr.add(numbers, 5);
+    
+    quicksort(arr, 1, 3); // Sort only indices 1 through 3
+    
+    LOG_ASSERT(arr[0] == 64 && arr[1] == 12 && arr[2] == 25 && 
+               arr[3] == 34 && arr[4] == 22, failedMsg);
+  }
+  
+  // Test edge cases
+  {
+    // Empty array
+    ArrayCT<int, 1> empty_arr = {};
+    quicksort(empty_arr);
+    LOG_ASSERT(empty_arr.count == 0, failedMsg);
+    
+    // Single element
+    ArrayCT<int, 1> single_arr = {};
+    single_arr.add(42);
+    quicksort(single_arr);
+    LOG_ASSERT(single_arr[0] == 42, failedMsg);
+    
+    // Already sorted array
+    ArrayCT<int, 3> sorted_arr = {};
+    int sorted[] = {1, 2, 3};
+    sorted_arr.add(sorted, 3);
+    quicksort(sorted_arr);
+    LOG_ASSERT(sorted_arr[0] == 1 && sorted_arr[1] == 2 && sorted_arr[2] == 3, failedMsg);
+  }
+  
+  LOG_TRACE("[ PASSED ] quicksort_test");
+}
+
 void create_arena_clear_test() {
   Arena& arena = Arena::create(KB(1));
-  char* failedMsg = "[ FAILED ] create_arena_clear_test";
+  const char* failedMsg = "[ FAILED ] create_arena_clear_test";
   {
     MapCT<const char*, void*, 1>& arenaIndex = arena.create_map_ct<const char*, void*, 1>();
 
@@ -171,9 +331,61 @@ void create_arena_clear_test() {
   LOG_TRACE("[ PASSED ] create_arena_clear_test")
 }
 
+// NOTE: ECS
+
+void ecs_test() {
+  const char* failedMsg = "[ FAILED ] ecs_test";
+  struct Position { float x, y; };
+  struct Velocity { float dx, dy; };
+
+  Arena& arena = create_arena(MB(64));
+  ECS<1000> ecs(arena);
+
+  // Register components
+  ecs.register_component<Position>();
+  ecs.register_component<Velocity>();
+
+  LOG_ASSERT(ecs.component_count == 2, failedMsg);
+
+  // Create some entities
+  EntityID e1 = ecs.create_entity();
+  ecs.add_component(e1, Position{0, 0});
+  ecs.add_component(e1, Velocity{1, 1});
+
+  EntityID e2 = ecs.create_entity();
+  ecs.add_component(e2, Position{5, 5});
+  // Note: e2 has no Velocity
+
+  EntityID e3 = ecs.create_entity();
+  ecs.add_component(e3, Position{10, 10});
+  ecs.add_component(e3, Velocity{-1, -1});
+
+  LOG_ASSERT(ecs.has_component<Position>(e1) && ecs.has_component<Velocity>(e1) &&
+             ecs.has_component<Position>(e2) && !ecs.has_component<Velocity>(e2) &&
+             ecs.has_component<Position>(e3) && ecs.has_component<Velocity>(e3),
+             failedMsg);
+
+  // Iterate over all entities that have BOTH Position and Velocity
+  for (auto [pos, vel] : ecs.view<Position, Velocity>()) {
+      pos.x += vel.dx;
+      pos.y += vel.dy;
+  }
+
+  // Verify the updates worked
+  LOG_ASSERT(CompareFloat(ecs.get_component<Position>(e1).x, 1.0f) &&
+             CompareFloat(ecs.get_component<Position>(e1).y, 1.0f) &&
+             CompareFloat(ecs.get_component<Position>(e2).x, 5.0f) && // Unchanged
+             CompareFloat(ecs.get_component<Position>(e2).y, 5.0f) && // Unchanged
+             CompareFloat(ecs.get_component<Position>(e3).x, 9.0f) &&
+             CompareFloat(ecs.get_component<Position>(e3).y, 9.0f),
+             failedMsg);
+
+  LOG_TRACE("[ PASSED ] ecs_test");
+}
+
 // NOTE: File I/O
 void file_io_test() {
-  char* failedMsg = "[ FAILED ] create_and_remove_file_test, please clean up";
+  const char* failedMsg = "[ FAILED ] create_and_remove_file_test, please clean up";
   const char* filePath = "./create_and_remove_file_test";
   const char* contents = "create_and_remove_file_test";
   Arena& arena = Arena::create(KB(1));

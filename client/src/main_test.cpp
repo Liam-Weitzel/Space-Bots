@@ -51,6 +51,10 @@ int main() {
     iterators_arrays_RT_test();
     create_and_fetch_arena_in_different_scope_CT_test();
     create_and_fetch_arena_in_different_scope_RT_test();
+    create_hashmap_in_arena_CT_test();
+    create_hashmap_in_arena_RT_test();
+    quicksort_test();
+    ecs_test();
     create_arena_clear_test();
     file_io_test();
 
