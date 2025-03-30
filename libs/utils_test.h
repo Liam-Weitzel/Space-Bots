@@ -42,7 +42,6 @@ void create_and_fetch_arena_in_different_scope_RT_test();
 void create_hashmap_in_arena_CT_test();
 void create_hashmap_in_arena_RT_test();
 void quicksort_test();
-void ecs_test();
 void create_arena_clear_test();
 
 // NOTE: File I/O
