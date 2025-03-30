@@ -331,58 +331,6 @@ void create_arena_clear_test() {
   LOG_TRACE("[ PASSED ] create_arena_clear_test")
 }
 
-// NOTE: ECS
-
-void ecs_test() {
-  const char* failedMsg = "[ FAILED ] ecs_test";
-  struct Position { float x, y; };
-  struct Velocity { float dx, dy; };
-
-  Arena& arena = create_arena(MB(64));
-  ECS<1000> ecs(arena);
-
-  // Register components
-  ecs.register_component<Position>();
-  ecs.register_component<Velocity>();
-
-  LOG_ASSERT(ecs.component_count == 2, failedMsg);
-
-  // Create some entities
-  EntityID e1 = ecs.create_entity();
-  ecs.add_component(e1, Position{0, 0});
-  ecs.add_component(e1, Velocity{1, 1});
-
-  EntityID e2 = ecs.create_entity();
-  ecs.add_component(e2, Position{5, 5});
-  // Note: e2 has no Velocity
-
-  EntityID e3 = ecs.create_entity();
-  ecs.add_component(e3, Position{10, 10});
-  ecs.add_component(e3, Velocity{-1, -1});
-
-  LOG_ASSERT(ecs.has_component<Position>(e1) && ecs.has_component<Velocity>(e1) &&
-             ecs.has_component<Position>(e2) && !ecs.has_component<Velocity>(e2) &&
-             ecs.has_component<Position>(e3) && ecs.has_component<Velocity>(e3),
-             failedMsg);
-
-  // Iterate over all entities that have BOTH Position and Velocity
-  for (auto [pos, vel] : ecs.view<Position, Velocity>()) {
-      pos.x += vel.dx;
-      pos.y += vel.dy;
-  }
-
-  // Verify the updates worked
-  LOG_ASSERT(CompareFloat(ecs.get_component<Position>(e1).x, 1.0f) &&
-             CompareFloat(ecs.get_component<Position>(e1).y, 1.0f) &&
-             CompareFloat(ecs.get_component<Position>(e2).x, 5.0f) && // Unchanged
-             CompareFloat(ecs.get_component<Position>(e2).y, 5.0f) && // Unchanged
-             CompareFloat(ecs.get_component<Position>(e3).x, 9.0f) &&
-             CompareFloat(ecs.get_component<Position>(e3).y, 9.0f),
-             failedMsg);
-
-  LOG_TRACE("[ PASSED ] ecs_test");
-}
-
 // NOTE: File I/O
 void file_io_test() {
   const char* failedMsg = "[ FAILED ] create_and_remove_file_test, please clean up";

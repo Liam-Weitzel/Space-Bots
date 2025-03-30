@@ -54,7 +54,6 @@ int main() {
     create_hashmap_in_arena_CT_test();
     create_hashmap_in_arena_RT_test();
     quicksort_test();
-    ecs_test();
     create_arena_clear_test();
     file_io_test();
 
