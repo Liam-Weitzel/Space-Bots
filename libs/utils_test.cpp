@@ -331,6 +331,87 @@ void create_arena_clear_test() {
   LOG_TRACE("[ PASSED ] create_arena_clear_test")
 }
 
+void gen_sparse_set_test() {
+  Arena& arena = Arena::create(KB(1));
+  const char* failedMsg = "[ FAILED ] gen_sparse_set_test";
+  
+  auto& set = arena.create_gen_sparse_set_ct<Entity, 8>();
+
+  // Test initial state
+  LOG_ASSERT(set.empty(), failedMsg);
+  LOG_ASSERT(set.size() == 0, failedMsg);
+
+  // Test invalid lookups
+  GenId invalid_id = GenId::create(9999, 0);  // Out of bounds
+  LOG_ASSERT(!set.contains(invalid_id), failedMsg);
+  LOG_ASSERT(set.get(invalid_id) == nullptr, failedMsg);
+
+  // Add and test first entity
+  GenId id1 = set.add(Entity{1, "First"});
+  LOG_ASSERT(set.size() == 1, failedMsg);
+  LOG_ASSERT(set.contains(id1), failedMsg);
+  LOG_ASSERT(set.get(id1)->id == 1, failedMsg);
+  
+  // Fill the set
+  GenId ids[7];
+  for(int i = 0; i < 7; i++) {
+    ids[i] = set.add(Entity{i + 2, "Entity"});
+    LOG_ASSERT(set.contains(ids[i]), failedMsg);
+  }
+  LOG_ASSERT(set.size() == 8, failedMsg);
+
+  // Test removal and generations
+  set.remove(ids[2]);  // Remove middle element
+  LOG_ASSERT(set.size() == 7, failedMsg);
+  LOG_ASSERT(!set.contains(ids[2]), failedMsg);
+  LOG_ASSERT(set.get(ids[2]) == nullptr, failedMsg);
+
+  // Test reuse of slot with generation increment
+  GenId new_id = set.add(Entity{99, "Reused"});
+  LOG_ASSERT(new_id.id() == ids[2].id(), failedMsg);
+  LOG_ASSERT(new_id.gen() == ids[2].gen() + 1, failedMsg);
+  LOG_ASSERT(set.contains(new_id), failedMsg);
+  LOG_ASSERT(!set.contains(ids[2]), failedMsg);
+  LOG_ASSERT(set.get(new_id)->id == 99, failedMsg);
+
+  // Test multiple removes and adds
+  set.remove(ids[0]);
+  set.remove(ids[4]);
+  set.remove(new_id);
+  LOG_ASSERT(set.size() == 5, failedMsg);
+
+  GenId reused_ids[3];
+  for(int i = 0; i < 3; i++) {
+    reused_ids[i] = set.add(Entity{100 + i, "Reused"});
+    LOG_ASSERT(set.contains(reused_ids[i]), failedMsg);
+    LOG_ASSERT(set.get(reused_ids[i])->id == 100 + i, failedMsg);
+  }
+  LOG_ASSERT(set.size() == 8, failedMsg);
+
+  // Test clear and reuse
+  set.clear();
+  LOG_ASSERT(set.empty(), failedMsg);
+  LOG_ASSERT(set.size() == 0, failedMsg);
+
+  // Test that generations persisted after clear
+  GenId post_clear_id = set.add(Entity{1, "Post Clear"});
+  // Should have incremented generation for previously used slot
+  LOG_ASSERT(post_clear_id.gen() > 0, failedMsg);
+  
+  // Verify old IDs are invalid
+  LOG_ASSERT(!set.contains(id1), failedMsg);
+  LOG_ASSERT(!set.contains(new_id), failedMsg);
+  for(auto& id : ids) {
+    LOG_ASSERT(!set.contains(id), failedMsg);
+  }
+  for(auto& id : reused_ids) {
+    LOG_ASSERT(!set.contains(id), failedMsg);
+  }
+
+  delete &arena;
+  LOG_TRACE("[ PASSED ] gen_sparse_set_test");
+}
+
 // NOTE: File I/O
 void file_io_test() {
   const char* failedMsg = "[ FAILED ] create_and_remove_file_test, please clean up";
