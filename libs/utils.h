@@ -206,12 +206,11 @@ struct ArrayCT {
     count += amount;
   }
 
-  void init(int amount) noexcept {
-    reserve(amount);
-  }
-
-  void set_count(int amount) noexcept {
+  void set_reserve(int amount) noexcept {
     LOG_ASSERT(amount <= maxElements, "Cannot set count to more than max capacity!");
+    for (int i = 0; i < amount; i++) {
+        elements[i] = T{};
+    }
     count = amount;
   }
 
@@ -300,12 +299,11 @@ struct ArrayRT {
     count += amount;
   }
 
-  void init(int amount) noexcept {
-    reserve(amount);
-  }
-
-  void set_count(int amount) noexcept {
+  void set_reserve(int amount) noexcept {
     LOG_ASSERT(amount <= capacity, "Cannot set count to more than max capacity!");
+    for (int i = 0; i < amount; i++) {
+        elements[i] = T{};
+    }
     count = amount;
   }
 
@@ -405,85 +403,6 @@ void quicksort(ArrayRT<T>& arr, int start, int end) {
     if(end - start <= 0) return;
     quicksort_internal(arr.elements, start, end);
 }
-
-// NOTE: GenArray
-
-struct ID {
-  static constexpr uint32_t INDEX_BITS = 24;
-  static constexpr uint32_t GEN_BITS = 8;
-  static constexpr uint32_t INDEX_MASK = (1 << INDEX_BITS) - 1;
-  static constexpr uint32_t GEN_MASK = (1 << GEN_BITS) - 1;
-
-  uint32_t value;  // packed index and generation
-
-  uint32_t index() const { return value & INDEX_MASK; }
-  uint32_t generation() const { return (value >> INDEX_BITS) & GEN_MASK; }
-
-  static ID make(uint32_t idx, uint32_t gen) {
-    return {(gen << INDEX_BITS) | idx};
-  }
-};
-
-template<typename T, size_t N>
-class GenArrayCT {
-public:
-  ArrayCT<T, N> entries;
-  ArrayCT<uint8_t, N> generations;
-
-  GenArrayCT() = default;
-  GenArrayCT(const GenArrayCT&) = delete;
-  GenArrayCT& operator=(const GenArrayCT&) = delete;
-  GenArrayCT(GenArrayCT&& other) = delete;
-  GenArrayCT& operator=(GenArrayCT&& other) = delete;
-
-  ID add(const T& data = T{}) noexcept {
-    uint32_t idx = entries.add(data);
-    return ID::make(idx, generations[idx]);
-  }
-
-  T* get(ID idx) noexcept {
-    if (idx.index() >= entries.size()) return nullptr;
-    return (generations[idx.index()] == idx.generation()) ? &entries[idx.index()] : nullptr;
-  }
-
-  void remove(ID idx) noexcept {
-    if (idx.index() >= entries.size()) return;
-    if (generations[idx.index()] == idx.generation()) {
-      generations[idx.index()]++;
-      entries.remove(idx.index());
-    }
-  }
-};
-
-template<typename T>
-struct GenArrayRT {
-  ArrayRT<T>* entries;
-  ArrayRT<uint8_t>* generations;
-
-  GenArrayRT() = default;
-  GenArrayRT(const GenArrayRT&) = delete;
-  GenArrayRT& operator=(const GenArrayRT&) = delete;
-  GenArrayRT(GenArrayRT&& other) = delete;
-  GenArrayRT& operator=(GenArrayRT&& other) = delete;
-
-  ID add(const T& data = T{}) noexcept {
-    uint32_t idx = entries->add(data);
-    return ID::make(idx, generations->get(idx));
-  }
-
-  T* get(ID idx) noexcept {
-    if (idx.index() >= entries->size()) return nullptr;
-    return (generations->get(idx.index()) == idx.generation()) ? &entries->get(idx.index()) : nullptr;
-  }
-
-  void remove(ID idx) noexcept {
-    if (idx.index() >= entries->size()) return;
-    if (generations->get(idx.index()) == idx.generation()) {
-      generations->get(idx.index())++;
-      entries->remove(idx.index());
-    }
-  }
-};
 
 //NOTE: Map
 
@@ -886,6 +805,127 @@ struct HashMapRT {
   }
 };
 
+// NOTE: Generational Sparse set
+
+struct GenId {
+  static constexpr uint32_t GEN_BITS = 8;
+  static constexpr uint32_t ID_BITS = 24;
+  static constexpr uint32_t ID_MASK = (1u << ID_BITS) - 1;
+  static constexpr uint32_t GEN_MASK = ((1u << GEN_BITS) - 1) << ID_BITS;
+
+  uint32_t packed;
+
+  bool operator==(const GenId& other) const {
+    return packed == other.packed;
+  }
+
+  bool operator!=(const GenId& other) const {
+    return packed != other.packed;
+  }
+
+  static GenId create(uint32_t id, uint8_t gen) {
+    LOG_ASSERT(id < (1u << ID_BITS), "ID exceeds 24 bits");
+    return GenId{(gen << ID_BITS) | id};
+  }
+
+  void set_id(uint32_t id) {
+    LOG_ASSERT(id < (1u << ID_BITS), "ID exceeds 24 bits");
+    packed = (packed & ~ID_MASK) | id;
+  }
+
+  void set_gen(uint8_t gen) {
+    packed = (packed & ID_MASK) | (gen << ID_BITS);
+  }
+
+  void increment_gen() {
+    uint8_t next_gen = (gen() + 1) & ((1 << GEN_BITS) - 1);
+    set_gen(next_gen);
+  }
+
+  uint32_t id() const { return packed & ID_MASK; }
+
+  uint8_t gen() const { return (packed >> ID_BITS) & ((1u << GEN_BITS) - 1); }
+};
+
+template<typename T, size_t N>
+struct GenSparseSetCT {
+  ArrayCT<T, N> dense;
+  ArrayCT<GenId, N> sparse;
+  uint32_t free_head;
+
+  void init() {
+    sparse.set_reserve(N);
+    for (uint32_t i = 0; i < N-1; i++) {
+      auto& entry = sparse[i];
+      entry.set_id(i + 1);
+      entry.set_gen(0);
+    }
+    auto& last = sparse[N-1];
+    last.set_id(N);
+    last.set_gen(0);
+    free_head = 0;
+  }
+
+  GenId add(const T& val) {
+    auto& entry = sparse[free_head];
+    uint32_t next_free = entry.id();
+    uint32_t dense_idx = dense.add(val);
+
+    entry.set_id(dense_idx);
+    free_head = next_free;
+
+    return entry;
+  }
+
+  void remove(GenId genId) {
+    if (genId.id() >= N) return;
+
+    auto& entry = sparse[genId.id()];
+    if (entry != genId) return;
+
+    dense.remove(entry.id());
+    entry.set_id(free_head);
+    entry.increment_gen();
+    free_head = genId.id();
+  }
+
+  T* get(GenId genId) {
+    if (genId.id() >= N) return nullptr;
+    const auto& entry = sparse[genId.id()];
+    if (entry.id() >= dense.size()) return nullptr;
+    if (entry != genId) return nullptr;
+    return &dense[entry.id()];
+  }
+
+  bool contains(GenId genId) {
+    const auto& entry = sparse[genId.id()];
+    if (entry.id() >= dense.size()) return false;
+    return entry == genId;
+  }
+
+  void clear() {
+    dense.clear();
+    sparse.set_reserve(N);
+
+    // Rebuild free list while preserving generations
+    for (uint32_t i = 0; i < N-1; i++) {
+      auto& entry = sparse[i];
+      uint8_t gen = entry.gen();  // preserve generation
+      entry.set_id(i + 1);        // rebuild free list
+    }
+
+    auto& last = sparse[N-1];
+    uint8_t gen = last.gen();  // preserve generation
+    last.set_id(N);
+
+    free_head = 0;
+  }
+
+  size_t size() const { return dense.size(); }
+
+  bool empty() const { return dense.empty(); }
+};
+
 // NOTE: Arena
 class Arena {
 public:
@@ -1025,22 +1065,11 @@ public:
     return map;
   }
 
-  template<typename T>
-  GenArrayRT<T>& create_genarray_rt(size_t capacity) {
-    LOG_ASSERT(capacity <= (1 << ID::INDEX_BITS), "GenArray size cannot exceed 16M elements");
-    GenArrayRT<T>& arr = alloc<GenArrayRT<T>>();
-    arr.entries = &create_array_rt<T>(capacity);
-    arr.generations = &create_array_rt<uint8_t>(capacity);
-    arr.generations->reserve(capacity);
-    return arr;
-  }
-
-  template<typename T, int N>
-  GenArrayCT<T, N>& create_genarray_ct() {
-    LOG_ASSERT(N <= (1 << ID::INDEX_BITS), "GenArray size cannot exceed 16M elements");
-    GenArrayCT<T, N>& arr = alloc<GenArrayCT<T, N>>();
-    arr.generations.reserve(N);
-    return arr;
+  template<typename T, size_t N>
+  GenSparseSetCT<T, N>& create_gen_sparse_set_ct() {
+    GenSparseSetCT<T, N>& genSparseSet = alloc<GenSparseSetCT<T, N>>();
+    genSparseSet.init();
+    return genSparseSet;
   }
 
   void clear() noexcept {
