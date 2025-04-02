@@ -408,9 +408,16 @@ void gen_sparse_set_ct_test() {
     LOG_ASSERT(!set.contains(id), failedMsg);
   }
 
-  // Test iterator
-  for(auto& value : set) {
+  // Test iterator & find
+  int count = 0;
+  for(const auto& entity : set) {
+    LOG_ASSERT(entity.id == 1 || (entity.id >= 100 && entity.id <= 102), failedMsg);
+    GenId* found = set.find(entity);
+    LOG_ASSERT(found != nullptr, failedMsg);
+    LOG_ASSERT(set.get(*found)->id == entity.id, failedMsg);
+    count++;
   }
+  LOG_ASSERT(count == 1, failedMsg); // Should only have the post-clear entity
 
   delete &arena;
   LOG_TRACE("[ PASSED ] gen_sparse_set_test");
