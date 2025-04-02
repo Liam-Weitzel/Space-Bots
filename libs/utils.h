@@ -207,15 +207,15 @@ struct ArrayCT {
     count += amount;
   }
 
-  void set_reserve(int amount) noexcept {
+  void reserve_until(int amount) noexcept {
     LOG_ASSERT(amount <= maxElements, "Cannot set count to more than max capacity!");
-    for (int i = 0; i < amount; i++) {
+    for (int i = count; i < amount; i++) {
         elements[i] = T{};
     }
     count = amount;
   }
 
-  T& pop() noexcept {
+  void pop() noexcept {
     LOG_ASSERT(!empty(), "Cannot pop an empty array");
     count--;
   }
@@ -313,15 +313,11 @@ struct ArrayRT {
     count += amount;
   }
 
-  void set_reserve(int amount) noexcept {
-    LOG_ASSERT(amount <= capacity, "Cannot set count to more than max capacity!");
-    for (int i = 0; i < amount; i++) {
-        elements[i] = T{};
-    }
-    count = amount;
+  void reserve_until(int amount) noexcept {
+    reserve(amount - count);
   }
 
-  T& pop() noexcept {
+  void pop() noexcept {
     LOG_ASSERT(!empty(), "Cannot pop an empty array");
     count--;
   }
@@ -376,59 +372,59 @@ struct ArrayRT {
 
 template<typename T>
 void swap(T& a, T& b) {
-    T temp = a;
-    a = b;
-    b = temp;
+  T temp = a;
+  a = b;
+  b = temp;
 }
 
 template<typename T>
 int partition(T* arr, int low, int high) {
-    T pivot = arr[high];
-    int i = low - 1;
+  T pivot = arr[high];
+  int i = low - 1;
 
-    for(int j = low; j < high; j++) {
-        if(arr[j] <= pivot) {
-            i++;
-            swap(arr[i], arr[j]);
-        }
+  for(int j = low; j < high; j++) {
+    if(arr[j] <= pivot) {
+      i++;
+      swap(arr[i], arr[j]);
     }
-    swap(arr[i + 1], arr[high]);
-    return i + 1;
+  }
+  swap(arr[i + 1], arr[high]);
+  return i + 1;
 }
 
 template<typename T>
 void quicksort_internal(T* arr, int low, int high) {
-    if(low < high) {
-        int pi = partition(arr, low, high);
-        quicksort_internal(arr, low, pi - 1);
-        quicksort_internal(arr, pi + 1, high);
-    }
+  if(low < high) {
+    int pi = partition(arr, low, high);
+    quicksort_internal(arr, low, pi - 1);
+    quicksort_internal(arr, pi + 1, high);
+  }
 }
 
 template<typename T, int N>
 void quicksort(ArrayCT<T, N>& arr) {
-    if(arr.count <= 1) return;
-    quicksort_internal(arr.elements, 0, arr.count - 1);
+  if(arr.count <= 1) return;
+  quicksort_internal(arr.elements, 0, arr.count - 1);
 }
 
 template<typename T>
 void quicksort(ArrayRT<T>& arr) {
-    if(arr.count <= 1) return;
-    quicksort_internal(arr.elements, 0, arr.count - 1);
+  if(arr.count <= 1) return;
+  quicksort_internal(arr.elements, 0, arr.count - 1);
 }
 
 template<typename T, int N>
 void quicksort(ArrayCT<T, N>& arr, int start, int end) {
-    LOG_ASSERT(start >= 0 && end < arr.count, "Index out of bounds!");
-    if(end - start <= 0) return;
-    quicksort_internal(arr.elements, start, end);
+  LOG_ASSERT(start >= 0 && end < arr.count, "Index out of bounds!");
+  if(end - start <= 0) return;
+  quicksort_internal(arr.elements, start, end);
 }
 
 template<typename T>
 void quicksort(ArrayRT<T>& arr, int start, int end) {
-    LOG_ASSERT(start >= 0 && end < arr.count, "Index out of bounds!");
-    if(end - start <= 0) return;
-    quicksort_internal(arr.elements, start, end);
+  LOG_ASSERT(start >= 0 && end < arr.count, "Index out of bounds!");
+  if(end - start <= 0) return;
+  quicksort_internal(arr.elements, start, end);
 }
 
 //NOTE: Map
@@ -471,30 +467,30 @@ struct Entry {
 
 template <typename KeyType, typename ValueType>
 struct MapIterator {
-    Entry<KeyType, ValueType>* ptr;
-    Entry<KeyType, ValueType>* end;
+  Entry<KeyType, ValueType>* ptr;
+  Entry<KeyType, ValueType>* end;
 
-    MapIterator(const MapIterator&) = delete;
-    MapIterator& operator=(const MapIterator&) = delete;
-    MapIterator(MapIterator&& other) = delete;
-    MapIterator& operator=(MapIterator&& other) = delete;
+  MapIterator(const MapIterator&) = delete;
+  MapIterator& operator=(const MapIterator&) = delete;
+  MapIterator(MapIterator&& other) = delete;
+  MapIterator& operator=(MapIterator&& other) = delete;
 
-    MapIterator(Entry<KeyType, ValueType>* start, Entry<KeyType, ValueType>* end) 
-        : ptr(start), end(end) {}
+  MapIterator(Entry<KeyType, ValueType>* start, Entry<KeyType, ValueType>* end)
+  : ptr(start), end(end) {}
 
-    MapIterator& operator++() {
-        if (ptr != end) {
-            ++ptr;
-        }
-        return *this;
+  MapIterator& operator++() {
+    if (ptr != end) {
+      ++ptr;
     }
+    return *this;
+  }
 
-    bool operator!=(const MapIterator& other) const { return ptr != other.ptr; }
-    Entry<KeyType, ValueType>& operator*() const { return *ptr; }
-    Entry<KeyType, ValueType>* operator->() const { return ptr; }
+  bool operator!=(const MapIterator& other) const { return ptr != other.ptr; }
+  Entry<KeyType, ValueType>& operator*() const { return *ptr; }
+  Entry<KeyType, ValueType>* operator->() const { return ptr; }
 
-    KeyType& key() const { return ptr->key; }
-    ValueType& value() const { return ptr->value; }
+  KeyType& key() const { return ptr->key; }
+  ValueType& value() const { return ptr->value; }
 };
 
 template <typename KeyType, typename ValueType, int Size>
@@ -905,8 +901,8 @@ struct GenSparseSetCT {
   ArrayCT<GenId, N> sparse;
   uint32_t free_head;
 
-  void init() {
-    sparse.set_reserve(N);
+  void init() noexcept {
+    sparse.reserve_until(N);
     for (uint32_t i = 0; i < N-1; i++) {
       auto& entry = sparse[i];
       entry.set_id(i + 1);
@@ -918,7 +914,7 @@ struct GenSparseSetCT {
     free_head = 0;
   }
 
-  GenId add(const T& val) {
+  GenId add(const T& val) noexcept {
     auto& entry = sparse[free_head];
     uint32_t next_free = entry.id();
     uint32_t dense_idx = dense.add(val);
@@ -929,7 +925,7 @@ struct GenSparseSetCT {
     return entry;
   }
 
-  void remove(GenId genId) {
+  void remove(GenId genId) noexcept {
     if (genId.id() >= N) return;
 
     auto& entry = sparse[genId.id()];
@@ -941,7 +937,7 @@ struct GenSparseSetCT {
     free_head = genId.id();
   }
 
-  T* get(GenId genId) {
+  T* get(GenId genId) noexcept {
     if (genId.id() >= N) return nullptr;
     const auto& entry = sparse[genId.id()];
     if (entry.id() >= dense.size()) return nullptr;
@@ -949,15 +945,28 @@ struct GenSparseSetCT {
     return &dense[entry.id()];
   }
 
-  bool contains(GenId genId) {
+  GenId* find(const T& value) noexcept {
+    int denseIdx = dense.find(value);
+    if(denseIdx == -1) return nullptr;
+    
+    // Find the sparse entry that points to this dense index
+    for(auto& genId : sparse) {
+      if(genId.id() == denseIdx) {
+        return &genId;
+      }
+    }
+    return nullptr;
+  }
+
+  bool contains(GenId genId) noexcept {
     const auto& entry = sparse[genId.id()];
     if (entry.id() >= dense.size()) return false;
     return entry == genId;
   }
 
-  void clear() {
+  void clear() noexcept {
     dense.clear();
-    sparse.set_reserve(N);
+    sparse.reserve_until(N);
 
     // Rebuild free list while preserving generations
     for (uint32_t i = 0; i < N-1; i++) {
@@ -973,13 +982,17 @@ struct GenSparseSetCT {
     free_head = 0;
   }
 
-  size_t size() const { return dense.size(); }
+  size_t size() const noexcept { return dense.size(); }
 
-  bool empty() const { return dense.empty(); }
+  bool empty() const noexcept { return dense.empty(); }
+
+  bool is_full() const noexcept { return dense.size() == N; }
+
+  bool has_space() const noexcept { return !is_full(); }
 
   using Iterator = typename ArrayCT<T, N>::Iterator;
-  Iterator begin() { return dense.begin(); }
-  Iterator end() { return dense.end(); }
+  Iterator begin() noexcept { return dense.begin(); }
+  Iterator end() noexcept { return dense.end(); }
 };
 
 // NOTE: Arena

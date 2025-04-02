@@ -7,30 +7,30 @@ struct Entity {
   int id;
   char* name;
   
-  bool operator==(Entity other) {
+  bool operator==(const Entity& other) const {
     if(this->id == other.id && this->name == other.name) return true;
     return false;
   }
 
-  bool operator!=(Entity other) {
+  bool operator!=(const Entity& other) const {
     if(this->id == other.id && this->name == other.name) return false;
     return true;
   }
 
   bool operator<=(const Entity& other) const {
-      return id <= other.id;
+    return id <= other.id;
   }
   
   bool operator>=(const Entity& other) const {
-      return id >= other.id;
+    return id >= other.id;
   }
   
   bool operator<(const Entity& other) const {
-      return id < other.id;
+    return id < other.id;
   }
   
   bool operator>(const Entity& other) const {
-      return id > other.id;
+    return id > other.id;
   }
 };
 
