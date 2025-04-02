@@ -3,46 +3,6 @@
 #include <cstddef>
 #include <cstdio>
 
-// NOTE: Map
-bool is_string_key(const void* key, size_t size) noexcept {
-    // Handle char* and const char*
-    if (size == sizeof(char*)) {
-        const char* str = *(const char**)key;
-        return str != nullptr && (str[0] == '\0' || isprint(str[0]));
-    }
-    
-    // Handle char arrays, but verify it's actually a string
-    const char* test = static_cast<const char*>(key);
-    // Check if size is reasonable for a string and first char is valid
-    return size > 1 && size < 1024 && // reasonable size limit
-           (test[0] == '\0' || isprint(test[0])) &&
-           // Verify null termination within the size
-           memchr(test, '\0', size) != nullptr;
-}
-
-bool compare_keys(const void* a, const void* b, size_t size) noexcept {
-    if (is_string_key(a, size)) {
-        if (size == sizeof(char*)) {
-            const char* str_a = *(const char**)a;
-            const char* str_b = *(const char**)b;
-            return strcmp(str_a, str_b) == 0;
-        } else {
-            const char* str_a = static_cast<const char*>(a);
-            const char* str_b = static_cast<const char*>(b);
-            return strcmp(str_a, str_b) == 0;
-        }
-    }
-    
-    switch(size) {
-        case sizeof(uint32_t):
-            return *(const uint32_t*)a == *(const uint32_t*)b;
-        case sizeof(uint64_t):
-            return *(const uint64_t*)a == *(const uint64_t*)b;
-        default:
-            return memcmp(a, b, size) == 0;
-    }
-}
-
 // NOTE: File I/O
 long long get_timestamp(const char* filePath) noexcept {
   struct stat file_stat = {};

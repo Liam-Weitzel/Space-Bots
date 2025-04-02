@@ -331,7 +331,7 @@ void create_arena_clear_test() {
   LOG_TRACE("[ PASSED ] create_arena_clear_test")
 }
 
-void gen_sparse_set_test() {
+void gen_sparse_set_ct_test() {
   Arena& arena = Arena::create(KB(1));
   const char* failedMsg = "[ FAILED ] gen_sparse_set_test";
   
@@ -406,6 +406,10 @@ void gen_sparse_set_test() {
   }
   for(auto& id : reused_ids) {
     LOG_ASSERT(!set.contains(id), failedMsg);
+  }
+
+  // Test iterator
+  for(auto& value : set) {
   }
 
   delete &arena;
