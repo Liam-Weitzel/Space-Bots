@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cctype>
 #include <cstddef>
 #include <cstdint>
 #include <stdio.h>
@@ -219,6 +220,19 @@ struct ArrayCT {
     count--;
   }
 
+  int find(const T& value) const noexcept {
+    for (uint32_t i = 0; i < count; i++) {
+      if (elements[i] == value) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  bool contains(const T& value) const noexcept {
+    return find(value) != -1;
+  }
+
   void clear() noexcept {
     count = 0;
   }
@@ -310,6 +324,19 @@ struct ArrayRT {
   T& pop() noexcept {
     LOG_ASSERT(!empty(), "Cannot pop an empty array");
     count--;
+  }
+
+  int find(const T& value) const noexcept {
+    for (uint32_t i = 0; i < count; i++) {
+      if (elements[i] == value) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  bool contains(const T& value) const noexcept {
+    return find(value) != -1;
   }
 
   T& front() noexcept {
@@ -406,13 +433,40 @@ void quicksort(ArrayRT<T>& arr, int start, int end) {
 
 //NOTE: Map
 
-bool is_string_key(const void* key, size_t size) noexcept;
-bool compare_keys(const void* a, const void* b, size_t size) noexcept;
+template<typename K>
+struct KeyCompare {
+  static bool equals(const K& a, const K& b) noexcept {
+    // Handle char* types
+    if (sizeof(K) == sizeof(char*)) {
+      const char* str_a = (const char*)a;
+      const char* str_b = (const char*)b;
+      return str_a && str_b && strcmp(str_a, str_b) == 0;
+    }
+    // Handle char arrays
+    else if (sizeof(K) > 1 && ((const char*)&a)[0] != '\0') {
+      return strcmp((const char*)&a, (const char*)&b) == 0;
+    }
+    // Handle 32-bit types
+    else if (sizeof(K) == sizeof(uint32_t)) {
+      return a == b;
+    }
+    // Handle 64-bit types
+    else if (sizeof(K) == sizeof(uint64_t)) {
+      return a == b;
+    }
+    // Default case
+    return memcmp(&a, &b, sizeof(K)) == 0;
+  }
+};
 
 template <typename KeyType, typename ValueType>
 struct Entry {
   KeyType key;
   ValueType value;
+
+  bool operator==(const Entry& other) const noexcept {
+    return KeyCompare<KeyType>::equals(key, other.key);
+  }
 };
 
 template <typename KeyType, typename ValueType>
@@ -455,12 +509,13 @@ struct MapCT {
 
   // Linear search to find an entry by key
   int find(const KeyType& key) const {
-    for (int i = 0; i < entries.count; ++i) {
-      if (compare_keys(&entries.elements[i].key, &key, sizeof(KeyType))) {
-        return i;
-      }
-    }
-    return -1;
+    Entry<KeyType, ValueType> temp{key, ValueType{}};
+    return entries.find(temp);
+  }
+
+  bool contains(const KeyType& key) const noexcept {
+    Entry<KeyType, ValueType> temp{key, ValueType{}};
+    return entries.contains(temp);
   }
 
   ValueType& get(const KeyType key) {
@@ -505,10 +560,6 @@ struct MapCT {
     return size() == capacity();
   }
 
-  bool contains(const KeyType& key) const noexcept {
-    return find(key) != -1;
-  }
-
   void clear() noexcept {
     entries.clear();
   }
@@ -530,12 +581,13 @@ struct MapRT {
 
   // Linear search to find an entry by key
   int find(const KeyType& key) const {
-    for (int i = 0; i < entries->count; ++i) {
-      if (compare_keys(&entries->elements[i].key, &key, sizeof(KeyType))) {
-        return i;
-      }
-    }
-    return -1;
+    Entry<KeyType, ValueType> temp{key, ValueType{}};
+    return entries->find(temp);
+  }
+
+  bool contains(const KeyType& key) const noexcept {
+    Entry<KeyType, ValueType> temp{key, ValueType{}};
+    return entries->contains(temp);
   }
 
   ValueType& get(const KeyType key) {
@@ -578,10 +630,6 @@ struct MapRT {
 
   bool is_full() const noexcept {
     return size() == capacity();
-  }
-
-  bool contains(const KeyType& key) const noexcept {
-    return find(key) != -1;
   }
 
   void clear() noexcept {
@@ -631,6 +679,10 @@ struct HashEntry {
   K key;
   V value;
   EntryState state = EntryState::Empty;
+
+  bool operator==(const HashEntry& other) const noexcept {
+    return KeyCompare<K>::equals(key, other.key);
+  }
 };
 
 template<typename KeyType, typename ValueType, int Size>
@@ -655,7 +707,7 @@ struct HashMapCT {
     do {
       if (entries[idx].state == EntryState::Empty) return -1;
       if (entries[idx].state == EntryState::Occupied && 
-        compare_keys(&entries[idx].key, &key, sizeof(KeyType))) {
+        KeyCompare<KeyType>::equals(entries[idx].key, key)) {
         return idx;
       }
       idx = (idx + 1) % Size;
@@ -741,7 +793,7 @@ struct HashMapRT {
     do {
       if (entries[idx].state == EntryState::Empty) return -1;
       if (entries[idx].state == EntryState::Occupied && 
-        compare_keys(&entries[idx].key, &key, sizeof(KeyType))) {
+        KeyCompare<KeyType>::equals(entries[idx].key, key)) {
         return idx;
       }
       idx = (idx + 1) % capacity;
@@ -924,6 +976,10 @@ struct GenSparseSetCT {
   size_t size() const { return dense.size(); }
 
   bool empty() const { return dense.empty(); }
+
+  using Iterator = typename ArrayCT<T, N>::Iterator;
+  Iterator begin() { return dense.begin(); }
+  Iterator end() { return dense.end(); }
 };
 
 // NOTE: Arena
