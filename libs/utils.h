@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <cctype>
 #include <cstddef>
 #include <cstdint>
@@ -100,7 +101,7 @@ void _log(const char* prefix, const char* msg, TextColor textColor, Args... args
 }
 
 #define LOG_TRACE(msg, ...) _log("TRACE: ", msg, TEXT_COLOR_GREEN, ##__VA_ARGS__);
-// #define LOG_TRACE(msg, ...) ((void)0);
+// #define LOG_TRACE(msg, ...) ((void)0); // Uncomment this for performance testing
 #define LOG_WARN(msg, ...) _log("WARN: ", msg, TEXT_COLOR_YELLOW, ##__VA_ARGS__);
 #define LOG_ERROR(msg, ...) _log("ERROR: ", msg, TEXT_COLOR_RED, ##__VA_ARGS__);
 
@@ -158,7 +159,16 @@ struct ArrayCT {
     return elements[idx];
   }
 
+  const T& get(int idx) const noexcept {
+    LOG_ASSERT(idx >= 0 && idx < count, "Index out of bounds!");
+    return elements[idx];
+  }
+
   T& operator[](int idx) noexcept {
+    return get(idx);
+  }
+
+  const T& operator[](int idx) const noexcept {
     return get(idx);
   }
 
@@ -249,7 +259,7 @@ struct ArrayCT {
       return count;
   }
 
-  size_t max_elements() const noexcept {
+  size_t capacity() const noexcept {
     return maxElements;
   }
 
@@ -260,9 +270,9 @@ struct ArrayCT {
 
 template<typename T>
 struct ArrayRT {
-  int capacity;  // runtime capacity, set when allocated
-  int count = 0; // number of elements added so far
-  T elements[1]; // Flexible array member (allocate extra space)
+  int maxElements;  // runtime capacity, set when allocated
+  int count = 0;    // number of elements added so far
+  T elements[1];    // Flexible array member (allocate extra space)
 
   ArrayRT() = delete;
   ArrayRT(const ArrayRT&) = delete;
@@ -275,18 +285,27 @@ struct ArrayRT {
     return elements[idx];
   }
 
+  const T& get(int idx) const noexcept {
+    LOG_ASSERT(idx >= 0 && idx < count, "Index out of bounds!");
+    return elements[idx];
+  }
+
   T& operator[](int idx) noexcept {
     return get(idx);
   }
 
+  const T& operator[](int idx) const noexcept {
+    return get(idx);
+  }
+
   int add(const T& element) noexcept {
-    LOG_ASSERT(count < capacity, "Array Full!");
+    LOG_ASSERT(count < maxElements, "Array Full!");
     elements[count] = element;
     return count++;
   }
 
   int add(const T* elements_list, int num_elements) noexcept {
-    LOG_ASSERT(count + num_elements <= capacity, "Would overflow array!");
+    LOG_ASSERT(count + num_elements <= maxElements, "Would overflow array!");
     for (int i = 0; i < num_elements; ++i)
       add(elements_list[i]);
     return count;
@@ -306,7 +325,7 @@ struct ArrayRT {
   }
 
   void reserve(int amount) noexcept {
-    LOG_ASSERT(count + amount <= capacity, "Cannot reserve more than max capacity!");
+    LOG_ASSERT(count + amount <= maxElements, "Cannot reserve more than max capacity!");
     for (int i = count; i < count + amount; i++) {
         elements[i] = T{};
     }
@@ -350,7 +369,7 @@ struct ArrayRT {
   }
 
   bool is_full() const noexcept{
-    return count == capacity;
+    return count == maxElements;
   }
 
   bool empty() const noexcept {
@@ -361,8 +380,8 @@ struct ArrayRT {
       return count;
   }
 
-  size_t max_elements() const noexcept {
-    return capacity;
+  size_t capacity() const noexcept {
+    return maxElements;
   }
 
   using Iterator = ArrayIterator<T>;
@@ -549,7 +568,7 @@ struct MapCT {
   }
 
   size_t capacity() const noexcept {
-    return entries.max_elements();
+    return entries.capacity();
   }
 
   bool is_full() const noexcept {
@@ -621,7 +640,7 @@ struct MapRT {
   }
 
   size_t capacity() const noexcept {
-    return entries->max_elements();
+    return entries->capacity();
   }
 
   bool is_full() const noexcept {
@@ -685,7 +704,7 @@ template<typename KeyType, typename ValueType, int Size>
 struct HashMapCT {
   static constexpr int maxElements = Size;
   static constexpr float maxLoadFactor = 0.7f;
-  HashEntry<KeyType, ValueType> entries[Size];
+  ArrayCT<HashEntry<KeyType, ValueType>, Size> entries;
   int count = 0;
   Hash<KeyType> hasher;
 
@@ -765,12 +784,16 @@ struct HashMapCT {
     }
     count = 0;
   }
+
+  size_t capacity() const noexcept { return maxElements; }
+
+  bool is_full() const noexcept { return size() == capacity(); }
 };
 
 template<typename KeyType, typename ValueType>
 struct HashMapRT {
-  HashEntry<KeyType, ValueType>* entries;
-  int capacity;
+  ArrayRT<HashEntry<KeyType, ValueType>>* entries; // Set at runtime
+  int maxElements; // Set at runtime
   int count = 0;
   static constexpr float maxLoadFactor = 0.7f;
   Hash<KeyType> hasher;
@@ -783,16 +806,16 @@ struct HashMapRT {
 
   int find_slot(const KeyType& key) const noexcept {
     size_t hash = hasher(key);
-    size_t idx = hash % capacity;
+    size_t idx = hash % maxElements;
     size_t original = idx;
 
     do {
-      if (entries[idx].state == EntryState::Empty) return -1;
-      if (entries[idx].state == EntryState::Occupied && 
-        KeyCompare<KeyType>::equals(entries[idx].key, key)) {
+      if (entries->get(idx).state == EntryState::Empty) return -1;
+      if (entries->get(idx).state == EntryState::Occupied && 
+        KeyCompare<KeyType>::equals(entries->get(idx).key, key)) {
         return idx;
       }
-      idx = (idx + 1) % capacity;
+      idx = (idx + 1) % maxElements;
     } while (idx != original);
 
     return -1;
@@ -800,12 +823,12 @@ struct HashMapRT {
 
   int find_empty_slot(const KeyType& key) noexcept {
     size_t hash = hasher(key);
-    size_t idx = hash % capacity;
+    size_t idx = hash % maxElements;
     size_t original = idx;
 
     do {
-      if (entries[idx].state != EntryState::Occupied) return idx;
-      idx = (idx + 1) % capacity;
+      if (entries->get(idx).state != EntryState::Occupied) return idx;
+      idx = (idx + 1) % maxElements;
     } while (idx != original);
 
     LOG_ASSERT(false, "No empty slots!");
@@ -815,14 +838,14 @@ struct HashMapRT {
   ValueType& get(const KeyType& key) {
     int idx = find_slot(key);
     if (idx == -1) {
-      LOG_ASSERT(count < capacity * maxLoadFactor, "HashMap too full!");
+      LOG_ASSERT(count < maxElements * maxLoadFactor, "HashMap too full!");
       idx = find_empty_slot(key);
-      entries[idx].key = key;
-      entries[idx].value = ValueType{};
-      entries[idx].state = EntryState::Occupied;
+      entries->get(idx).key = key;
+      entries->get(idx).value = ValueType{};
+      entries->get(idx).state = EntryState::Occupied;
       count++;
     }
-    return entries[idx].value;
+    return entries->get(idx).value;
   }
 
   ValueType& operator[](const KeyType& key) {
@@ -832,7 +855,7 @@ struct HashMapRT {
   void remove(const KeyType& key) {
     int idx = find_slot(key);
     if (idx != -1) {
-      entries[idx].state = EntryState::Dead;
+      entries->get(idx).state = EntryState::Dead;
       count--;
     }
   }
@@ -846,11 +869,15 @@ struct HashMapRT {
   bool empty() const noexcept { return count == 0; }
 
   void clear() noexcept {
-    for (int i = 0; i < capacity; i++) {
-      entries[i].state = EntryState::Empty;
+    for (int i = 0; i < maxElements; i++) {
+      entries->get(i).state = EntryState::Empty;
     }
     count = 0;
   }
+
+  size_t capacity() const noexcept { return maxElements; }
+
+  bool is_full() const noexcept { return size() == capacity(); }
 };
 
 // NOTE: Generational Sparse set
@@ -1086,10 +1113,10 @@ public:
   }
 
   template<typename T>
-  ArrayRT<T>& create_array_rt(size_t capacity) {
-    size_t total_size = sizeof(ArrayRT<T>) + sizeof(T) * (capacity - 1);
+  ArrayRT<T>& create_array_rt(size_t maxElements) {
+    size_t total_size = sizeof(ArrayRT<T>) + sizeof(T) * (maxElements - 1);
     ArrayRT<T>& arr = alloc<ArrayRT<T>>(total_size);
-    arr.capacity = capacity;
+    arr.maxElements = maxElements;
     arr.clear();
     return arr;
   }
@@ -1102,9 +1129,9 @@ public:
   }
 
   template<typename KeyType, typename ValueType>
-  MapRT<KeyType, ValueType>& create_map_rt(size_t capacity) {
+  MapRT<KeyType, ValueType>& create_map_rt(size_t maxElements) {
     MapRT<KeyType, ValueType>& map = alloc<MapRT<KeyType, ValueType>>(sizeof(MapRT<KeyType, ValueType>));
-    ArrayRT<Entry<KeyType, ValueType>>& entries = create_array_rt<Entry<KeyType, ValueType>>(capacity);
+    ArrayRT<Entry<KeyType, ValueType>>& entries = create_array_rt<Entry<KeyType, ValueType>>(maxElements);
     map.entries = &entries;
     map.clear();
     return map;
@@ -1118,11 +1145,12 @@ public:
   }
 
   template<typename KeyType, typename ValueType>
-  HashMapRT<KeyType, ValueType>& create_hashmap_rt(size_t capacity) {
+  HashMapRT<KeyType, ValueType>& create_hashmap_rt(size_t maxElements) {
     HashMapRT<KeyType, ValueType>& map = alloc<HashMapRT<KeyType, ValueType>>();
-    HashEntry<KeyType, ValueType>* entries = alloc_count_raw<HashEntry<KeyType, ValueType>>(capacity);
-    map.entries = entries;
-    map.capacity = capacity;
+    ArrayRT<HashEntry<KeyType, ValueType>>& entries = create_array_rt<HashEntry<KeyType, ValueType>>(maxElements);
+    entries.reserve_until(maxElements);
+    map.entries = &entries;
+    map.maxElements = maxElements;
     map.clear();
     return map;
   }
@@ -1130,6 +1158,7 @@ public:
   template<typename KeyType, typename ValueType, int N>
   HashMapCT<KeyType, ValueType, N>& create_hashmap_ct() {
     HashMapCT<KeyType, ValueType, N>& map = alloc<HashMapCT<KeyType, ValueType, N>>();
+    map.entries.reserve_until(N);
     map.clear();
     return map;
   }
