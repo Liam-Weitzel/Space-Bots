@@ -700,6 +700,43 @@ struct HashEntry {
   }
 };
 
+template<typename K, typename V>
+struct HashMapIterator {
+  HashEntry<K,V>* ptr;
+  HashEntry<K,V>* end;
+
+  HashMapIterator(const HashMapIterator&) = delete;
+  HashMapIterator& operator=(const HashMapIterator&) = delete;
+  HashMapIterator(HashMapIterator&& other) = delete;
+  HashMapIterator& operator=(HashMapIterator&& other) = delete;
+
+  HashMapIterator(HashEntry<K,V>* start, HashEntry<K,V>* end) 
+      : ptr(start), end(end) {
+    // Find first occupied entry
+    while (ptr != end && ptr->state != EntryState::Occupied) {
+      ++ptr;
+    }
+  }
+
+  HashMapIterator& operator++() {
+    if (ptr != end) {
+      ++ptr;
+      // Skip to next occupied entry
+      while (ptr != end && ptr->state != EntryState::Occupied) {
+        ++ptr;
+      }
+    }
+    return *this;
+  }
+
+  bool operator!=(const HashMapIterator& other) const { return ptr != other.ptr; }
+  HashEntry<K,V>& operator*() const { return *ptr; }
+  HashEntry<K,V>* operator->() const { return ptr; }
+
+  K& key() const { return ptr->key; }
+  V& value() const { return ptr->value; }
+};
+
 template<typename KeyType, typename ValueType, int Size>
 struct HashMapCT {
   static constexpr int maxElements = Size;
@@ -788,6 +825,14 @@ struct HashMapCT {
   size_t capacity() const noexcept { return maxElements; }
 
   bool is_full() const noexcept { return size() == capacity(); }
+
+  using Iterator = HashMapIterator<KeyType, ValueType>;
+  Iterator begin() noexcept { 
+    return Iterator(entries.elements, entries.elements + Size); 
+  }
+  Iterator end() noexcept { 
+    return Iterator(entries.elements + Size, entries.elements + Size); 
+  }
 };
 
 template<typename KeyType, typename ValueType>
@@ -878,6 +923,14 @@ struct HashMapRT {
   size_t capacity() const noexcept { return maxElements; }
 
   bool is_full() const noexcept { return size() == capacity(); }
+
+  using Iterator = HashMapIterator<KeyType, ValueType>;
+  Iterator begin() noexcept { 
+    return Iterator(entries->elements, entries->elements + maxElements); 
+  }
+  Iterator end() noexcept { 
+    return Iterator(entries->elements + maxElements, entries->elements + maxElements); 
+  }
 };
 
 // NOTE: Generational Sparse set
@@ -972,6 +1025,10 @@ struct GenSparseSetCT {
     return &dense[entry.id()];
   }
 
+  T* operator[](GenId genId) noexcept {
+    return get(genId);
+  }
+
   GenId* find(const T& value) noexcept {
     int denseIdx = dense.find(value);
     if(denseIdx == -1) return nullptr;
@@ -986,6 +1043,7 @@ struct GenSparseSetCT {
   }
 
   bool contains(GenId genId) noexcept {
+    if (genId.id() >= sparse.size()) return false;
     const auto& entry = sparse[genId.id()];
     if (entry.id() >= dense.size()) return false;
     return entry == genId;
@@ -1013,9 +1071,9 @@ struct GenSparseSetCT {
 
   bool empty() const noexcept { return dense.empty(); }
 
-  bool is_full() const noexcept { return dense.size() == N; }
+  bool is_full() const noexcept { return dense.size() == dense.capacity(); }
 
-  bool has_space() const noexcept { return !is_full(); }
+  bool capacity() const noexcept { return dense.capacity(); }
 
   using Iterator = typename ArrayCT<T, N>::Iterator;
   Iterator begin() noexcept { return dense.begin(); }
