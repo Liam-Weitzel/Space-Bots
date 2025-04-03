@@ -155,6 +155,21 @@ void create_hashmap_in_arena_CT_test() {
   LOG_ASSERT(map.contains("test1") && map.contains("test2"), failedMsg);
   LOG_ASSERT(!map.contains("nonexistent"), failedMsg);
 
+  // Test iterator
+  int sum = 0;
+  int count = 0;
+  for (auto& entry : map) {
+    if (strcmp(entry.key, "test1") == 0) {
+      LOG_ASSERT(entry.value == 42, failedMsg);
+    }
+    if (strcmp(entry.key, "test2") == 0) {
+      LOG_ASSERT(entry.value == 84, failedMsg);
+    }
+    sum += entry.value;
+    count++;
+  }
+  LOG_ASSERT(count == 2 && sum == 126, failedMsg);
+
   // Test removal
   map.remove("test1");
   LOG_ASSERT(!map.contains("test1") && map.size() == 1, failedMsg);
@@ -201,6 +216,21 @@ void create_hashmap_in_arena_RT_test() {
   // Test contains
   LOG_ASSERT(map.contains("test1") && map.contains("test2"), failedMsg);
   LOG_ASSERT(!map.contains("nonexistent"), failedMsg);
+
+  // Test iterator
+  int sum = 0;
+  int count = 0;
+  for (auto& entry : map) {
+    if (strcmp(entry.key, "test1") == 0) {
+      LOG_ASSERT(entry.value == 42, failedMsg);
+    }
+    if (strcmp(entry.key, "test2") == 0) {
+      LOG_ASSERT(entry.value == 84, failedMsg);
+    }
+    sum += entry.value;
+    count++;
+  }
+  LOG_ASSERT(count == 2 && sum == 126, failedMsg);
 
   // Test removal
   map.remove("test1");

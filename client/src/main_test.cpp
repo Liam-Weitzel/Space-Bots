@@ -55,6 +55,7 @@ int main() {
     create_hashmap_in_arena_RT_test();
     quicksort_test();
     create_arena_clear_test();
+    gen_sparse_set_ct_test();
     file_io_test();
 
     unload_client(&client);
