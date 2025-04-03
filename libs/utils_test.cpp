@@ -31,7 +31,7 @@ void iterators_arrays_RT_test() {
   // Create RT array on heap
   size_t total_size = sizeof(ArrayRT<Entity>) + sizeof(Entity) * (3 - 1);
   ArrayRT<Entity>* array = (ArrayRT<Entity>*)malloc(total_size);
-  array->capacity = 3;
+  array->maxElements = 3;
   array->count = 0;
 
   // Create an array of entities
@@ -236,7 +236,7 @@ void quicksort_test() {
     ArrayRT<int>* arr = (ArrayRT<int>*)malloc(total_size);
     
     // Initialize members
-    arr->capacity = 5;
+    arr->maxElements = 5;
     arr->count = 0;
     
     int numbers[] = {64, 34, 25, 12, 22};
