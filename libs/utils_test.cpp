@@ -1,5 +1,6 @@
 #include "utils_test.h"
 #include "utils.h"
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 
@@ -376,6 +377,24 @@ void gen_sparse_set_ct_test() {
   LOG_ASSERT(!set.contains(invalid_id), failedMsg);
   LOG_ASSERT(set.get(invalid_id) == nullptr, failedMsg);
 
+  // Test swap-pop edge case
+  GenId id_first = set.add(Entity{1, "First"});
+  GenId id_middle = set.add(Entity{2, "Middle"});
+  GenId id_last = set.add(Entity{3, "Last"});
+  LOG_ASSERT(set.get(id_first)->id == 1, failedMsg);
+  LOG_ASSERT(set.get(id_middle)->id == 2, failedMsg);
+  LOG_ASSERT(set.get(id_last)->id == 3, failedMsg);
+  
+  // Remove middle - this should cause last element to swap into middle position
+  set.remove(id_middle);
+  
+  // Verify last element was moved correctly and is still accessible
+  LOG_ASSERT(set.get(id_last)->id == 3, failedMsg);
+  LOG_ASSERT(set.contains(id_last), failedMsg);
+  LOG_ASSERT(!set.contains(id_middle), failedMsg);
+
+  set.clear();
+
   // Add and test first entity
   GenId id1 = set.add(Entity{1, "First"});
   LOG_ASSERT(set.size() == 1, failedMsg);
@@ -403,6 +422,7 @@ void gen_sparse_set_ct_test() {
   LOG_ASSERT(set.contains(new_id), failedMsg);
   LOG_ASSERT(!set.contains(ids[2]), failedMsg);
   LOG_ASSERT(set.get(new_id)->id == 99, failedMsg);
+  LOG_ASSERT(set.size() == 8, failedMsg);
 
   // Test multiple removes and adds
   set.remove(ids[0]);
@@ -442,12 +462,38 @@ void gen_sparse_set_ct_test() {
   int count = 0;
   for(const auto& entity : set) {
     LOG_ASSERT(entity.id == 1 || (entity.id >= 100 && entity.id <= 102), failedMsg);
-    GenId* found = set.find(entity);
-    LOG_ASSERT(found != nullptr, failedMsg);
-    LOG_ASSERT(set.get(*found)->id == entity.id, failedMsg);
+    GenId found = set.find(entity);
+    LOG_ASSERT(found != GenId{UINT32_MAX}, failedMsg);
+    LOG_ASSERT(set.get(found)->id == entity.id, failedMsg);
     count++;
   }
   LOG_ASSERT(count == 1, failedMsg); // Should only have the post-clear entity
+
+  // Test generation roll-over after 255
+  {
+    GenId id = set.add(Entity{1, "Rollover"});
+    uint32_t initial_id = id.id();
+    uint8_t start_gen = id.gen();
+    
+    // Calculate how many iterations needed to reach rollover
+    int iterations_needed = 256 - start_gen;
+    
+    // Force generation to roll over
+    for (int i = 0; i < iterations_needed; i++) {
+        set.remove(id);
+        id = set.add(Entity{1, "Rollover"});
+        // Verify we're using the same slot
+        LOG_ASSERT(id.id() == initial_id, failedMsg);
+        LOG_ASSERT(id.gen() == (start_gen + i + 1) % 256, failedMsg);
+    }
+    
+    // Verify we hit rollover exactly
+    LOG_ASSERT(id.gen() == 0, failedMsg);
+    
+    // Verify the entity is still accessible after rollover
+    LOG_ASSERT(set.contains(id), failedMsg);
+    LOG_ASSERT(set.get(id)->id == 1, failedMsg);
+  }
 
   delete &arena;
   LOG_TRACE("[ PASSED ] gen_sparse_set_test");
