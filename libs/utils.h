@@ -948,7 +948,7 @@ struct GenId {
   }
 
   bool operator!=(const GenId& other) const {
-    return packed != other.packed;
+    return !(*this==other);
   }
 
   static GenId create(uint32_t id, uint8_t gen) {
@@ -979,6 +979,7 @@ template<typename T, size_t N>
 struct GenSparseSetCT {
   ArrayCT<T, N> dense;
   ArrayCT<GenId, N> sparse;
+  ArrayCT<uint32_t, N> dense_to_sparse;
   uint32_t free_head;
 
   void init() noexcept {
@@ -997,21 +998,29 @@ struct GenSparseSetCT {
   GenId add(const T& val) noexcept {
     auto& entry = sparse[free_head];
     uint32_t next_free = entry.id();
-    uint32_t dense_idx = dense.add(val);
+    uint32_t dense_idx = dense.size();
 
+    dense.add(val);
+    dense_to_sparse.add(free_head);
     entry.set_id(dense_idx);
+
+    GenId res = GenId::create(free_head, entry.gen());
     free_head = next_free;
 
-    return entry;
+    return res;
   }
 
   void remove(GenId genId) noexcept {
     if (genId.id() >= N) return;
 
     auto& entry = sparse[genId.id()];
-    if (entry != genId) return;
+    if (entry.gen() != genId.gen()) return;
+    uint32_t prev_back = dense_to_sparse.back();
 
     dense.remove(entry.id());
+    dense_to_sparse.remove(entry.id());
+    sparse[prev_back].set_id(entry.id());
+
     entry.set_id(free_head);
     entry.increment_gen();
     free_head = genId.id();
@@ -1021,7 +1030,7 @@ struct GenSparseSetCT {
     if (genId.id() >= N) return nullptr;
     const auto& entry = sparse[genId.id()];
     if (entry.id() >= dense.size()) return nullptr;
-    if (entry != genId) return nullptr;
+    if (entry.gen() != genId.gen()) return nullptr;
     return &dense[entry.id()];
   }
 
@@ -1029,39 +1038,36 @@ struct GenSparseSetCT {
     return get(genId);
   }
 
-  GenId* find(const T& value) noexcept {
-    int denseIdx = dense.find(value);
-    if(denseIdx == -1) return nullptr;
-    
-    // Find the sparse entry that points to this dense index
-    for(auto& genId : sparse) {
-      if(genId.id() == denseIdx) {
-        return &genId;
+  GenId find(const T& value) noexcept {
+    for (size_t i = 0; i < dense.size(); i++) {
+      if (dense[i] == value) {
+        uint32_t sparse_idx = dense_to_sparse[i];
+        return GenId::create(sparse_idx, sparse[sparse_idx].gen());
       }
     }
-    return nullptr;
+    return {UINT32_MAX};
   }
 
   bool contains(GenId genId) noexcept {
     if (genId.id() >= sparse.size()) return false;
     const auto& entry = sparse[genId.id()];
     if (entry.id() >= dense.size()) return false;
-    return entry == genId;
+    return entry.gen() == genId.gen();
   }
 
   void clear() noexcept {
     dense.clear();
-    sparse.reserve_until(N);
+    dense_to_sparse.clear();
 
     // Rebuild free list while preserving generations
     for (uint32_t i = 0; i < N-1; i++) {
       auto& entry = sparse[i];
-      uint8_t gen = entry.gen();  // preserve generation
-      entry.set_id(i + 1);        // rebuild free list
+      entry.increment_gen();
+      entry.set_id(i + 1);
     }
 
     auto& last = sparse[N-1];
-    uint8_t gen = last.gen();  // preserve generation
+    last.increment_gen();
     last.set_id(N);
 
     free_head = 0;
