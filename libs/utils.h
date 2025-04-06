@@ -159,12 +159,12 @@ struct ArrayCT {
   }
 
   T& get(uint32_t idx) {
-    LOG_ASSERT(idx >= 0 && idx < count, "Index out of bounds!");
+    LOG_ASSERT(idx < count, "Index out of bounds!");
     return elements[idx];
   }
 
   const T& get(uint32_t idx) const {
-    LOG_ASSERT(idx >= 0 && idx < count, "Index out of bounds!");
+    LOG_ASSERT(idx < count, "Index out of bounds!");
     return elements[idx];
   }
 
@@ -290,12 +290,12 @@ struct ArrayRT {
   }
 
   T& get(uint32_t idx) {
-    LOG_ASSERT(idx >= 0 && idx < count, "Index out of bounds!");
+    LOG_ASSERT(idx < count, "Index out of bounds!");
     return elements[idx];
   }
 
   const T& get(uint32_t idx) const {
-    LOG_ASSERT(idx >= 0 && idx < count, "Index out of bounds!");
+    LOG_ASSERT(idx < count, "Index out of bounds!");
     return elements[idx];
   }
 
@@ -443,7 +443,7 @@ void quicksort(ArrayRT<T>& arr) {
 
 template<typename T, uint32_t N>
 void quicksort(ArrayCT<T, N>& arr, uint32_t start, uint32_t end) {
-  LOG_ASSERT(start >= 0 && end < arr.count, "Index out of bounds!");
+  LOG_ASSERT(end < arr.count, "Index out of bounds!");
   if(end - start <= 0) return;
   quicksort_internal(arr.elements, start, end);
 }
@@ -690,9 +690,9 @@ struct Hash<int> {
 
 template<>
 struct Hash<const char*> {
-  uint32_t operator()(const char* key) const {
+  unsigned long long operator()(const char* key) const {
     // FNV-1a hash
-    uint32_t hash = 14695981039346656037ULL;
+    unsigned long long hash = 14695981039346656037ULL;
     for(; *key; ++key) {
       hash ^= *key;
       hash *= 1099511628211ULL;
