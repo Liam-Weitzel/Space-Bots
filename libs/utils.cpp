@@ -1,6 +1,5 @@
 #include "utils.h"
 #include <cctype>
-#include <cstddef>
 #include <cstdint>
 #include <cstdio>
 
