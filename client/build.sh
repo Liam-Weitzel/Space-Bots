@@ -54,30 +54,29 @@ COMPILER_FLAGS="\
     -Wextra \
     -pedantic \
     -Werror \
-    -Wl,-rpath,\$ORIGIN/"
-#Hot code reloading flags
-COMPILER_FLAGS+="\
-    -fno-gnu-unique \
-    -Wno-format-security \
-    -Wno-write-strings \
-    -Wno-missing-field-initializers"
-#Debug flags
-COMPILER_FLAGS+="\
+    -isystem $RAYLIB_SRC \
+    -isystem $RAYGUI_SRC \
+    -isystem $RRES_SRC \
     -Wno-unused-parameter \
     -Wno-unused-variable \
     -Wno-unused-but-set-variable \
+    -Wno-unused-result \
+    -Wno-format-security \
+    -Wno-write-strings \
+    -Wno-missing-field-initializers \
+    -fno-gnu-unique \
+    -Wl,-rpath,\$ORIGIN/"
+#Debug flags
+COMPILER_FLAGS+="\
+    -Wno-error=cpp \
     -fsanitize=undefined \
-    -fsanitize=address \
-    -fno-sanitize-recover=all \"
+    -fno-sanitize-recover=all \
     -O0 -g"
 #Release flags
-RELEASE_FLAGS="\
-    -O3 \
-    -flto \
-    -march=native \
-    -fno-gnu-unique"
-#My current mess
-COMPILER_FLAGS="-Wl,-rpath,\$ORIGIN/ -fno-gnu-unique -Wno-format-security -Wno-write-strings -O0 -g"
+# COMPILER_FLAGS+="\
+#     -O3 \
+#     -flto \
+#     -march=native \
 
 # Build raylib if not built
 if [ ! -f "$RAYLIB_SRC/libraylib.a" ]; then

@@ -2,6 +2,7 @@
 #include "utils.h"
 #include "utils_client.h"
 #include <cmath>
+#include <cstdint>
 #include <cstring>
 #include <dirent.h>
 #include <stdio.h>
@@ -683,7 +684,7 @@ ArrayCT<const char*, 100>& listFiles(const char* path, Arena& arena) {
 
       ArrayCT<const char*, 100>& subfiles = listFiles(subpath, arena);
 
-      for (int i = 0; i < subfiles.size(); i++) {
+      for (uint32_t i = 0; i < subfiles.size(); i++) {
         files.add(subfiles[i]);
       }
     }
@@ -701,25 +702,33 @@ int main(int argc, char *argv[]) {
 
   ArrayCT<const char*, 100>& models = listFiles("resources/models", arena);
 
-  for (int i = 0; i < models.size(); i++) {
+  const char* OUTPUT_DIR = "./resources/models/";
+  char out_path[256];
+
+  for (uint32_t i = 0; i < models.size(); i++) {
     const char *in = models[i];
     const char *filename = strrchr(in, '/');
     filename = filename ? filename + 1 : in;
 
-    size_t filenameLen = strlen(filename) + 1;  // +1 for null terminator
-    char filenameBin[filenameLen];  
-    snprintf(filenameBin, filenameLen, "%.*s.bin", (int)(strlen(filename) - 4), filename);
-    char out[256];
-    snprintf(out, sizeof(out), "./resources/models/%s", filenameBin);
+    // Create binary filename without .obj extension
+    char bin_filename[256];
+    snprintf(bin_filename, sizeof(bin_filename), "%.*s.bin", (int)(strlen(filename) - 4), filename);
 
-    LOG_TRACE("%s -> %s", in, out);
+    // Construct full output path
+    size_t remaining = sizeof(out_path);
+    strncpy(out_path, OUTPUT_DIR, remaining);
+    remaining -= strlen(OUTPUT_DIR);
+    strncat(out_path, bin_filename, remaining - 1);
+
+    LOG_TRACE("%s -> %s", in, out_path);
     Model model = LoadModel(in);
-    ExportModelToBinary(model, out, arena);
+    ExportModelToBinary(model, out_path, arena);
 
-    // Make a persistent copy of the string in the arena
-    char* persistentKey = arena.alloc_count_raw<char>(filenameLen);
-    strcpy(persistentKey, filenameBin);
-    modelMap.get(persistentKey) = model;
+    // Store in map with persistent key
+    size_t key_len = strlen(bin_filename) + 1;
+    char* persistent_key = arena.alloc_count_raw<char>(key_len);
+    strcpy(persistent_key, bin_filename);
+    modelMap.get(persistent_key) = model;
   }
 
   system("./libs/rrespacker/rrespacker -o resources.rres --rrp resources.rrp");

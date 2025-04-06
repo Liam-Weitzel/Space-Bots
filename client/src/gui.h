@@ -72,7 +72,6 @@ extern "C" {            // Prevents name mangling of functions
 //----------------------------------------------------------------------------------
 GuiGuiState InitGuiGui();
 void GuiGui(GUI* gui, rresCentralDir* dir);
-static void Button004(int* style);                // Button: Button004 logic
 static const char* styles[] = {
     "default",
     "ash.rgs",
@@ -122,8 +121,8 @@ GuiGuiState InitGuiGui()
     GuiGuiState state = { 0 };
 
     // Init anchors
-    state.anchor01 = (Vector2){ 24, 24 };            // ANCHOR ID:1
-    state.anchor02 = (Vector2){ 24, 24 };            // ANCHOR ID:2
+    state.anchor01 = Vector2{ 24, 24 };            // ANCHOR ID:1
+    state.anchor02 = Vector2{ 24, 24 };            // ANCHOR ID:2
     
     // Initilize controls variables
     state.WindowBox001Active = true;            // WindowBox: WindowBox001
@@ -132,11 +131,11 @@ GuiGuiState InitGuiGui()
     state.Toggle003Active = true;            // Toggle: Toggle003
 
     // Init controls rectangles
-    state.layoutRecs[0] = (Rectangle){ state.anchor02.x + 72, state.anchor02.y + 40, 160, 160 };// WindowBox: WindowBox001
-    state.layoutRecs[1] = (Rectangle){ state.anchor02.x + 80, state.anchor02.y + 72, 40, 24 };// ToggleGroup: ToggleGroup001
-    state.layoutRecs[2] = (Rectangle){ state.anchor02.x + 80, state.anchor02.y + 104, 24, 24 };// CheckBoxEx: CheckBoxEx002
-    state.layoutRecs[3] = (Rectangle){ state.anchor02.x + 80, state.anchor02.y + 136, 88, 24 };// Toggle: Toggle003
-    state.layoutRecs[4] = (Rectangle){ state.anchor02.x + 80, state.anchor02.y + 168, 120, 24 };// Button: Button004
+    state.layoutRecs[0] = Rectangle{ state.anchor02.x + 72, state.anchor02.y + 40, 160, 160 };// WindowBox: WindowBox001
+    state.layoutRecs[1] = Rectangle{ state.anchor02.x + 80, state.anchor02.y + 72, 40, 24 };// ToggleGroup: ToggleGroup001
+    state.layoutRecs[2] = Rectangle{ state.anchor02.x + 80, state.anchor02.y + 104, 24, 24 };// CheckBoxEx: CheckBoxEx002
+    state.layoutRecs[3] = Rectangle{ state.anchor02.x + 80, state.anchor02.y + 136, 88, 24 };// Toggle: Toggle003
+    state.layoutRecs[4] = Rectangle{ state.anchor02.x + 80, state.anchor02.y + 168, 120, 24 };// Button: Button004
 
     // Custom variables initialization
 

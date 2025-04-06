@@ -3,6 +3,7 @@
 #include "raymath.h"
 #include "rlgl.h"
 #include "utils_client.h"
+#include <cstdint>
 
 #define RAYGUI_IMPLEMENTATION
 #define RAYGUI_SUPPORT_ICONS
@@ -128,14 +129,14 @@ void init(GameState *state) {
 
   GuiLoadStyleDefault();
 
-  state->camera.position = (Vector3){10.0f, 10.0f, 10.0f};
+  state->camera.position = Vector3{10.0f, 10.0f, 10.0f};
   state->camera.target = Vector3Zero();
   state->camera.projection = CAMERA_PERSPECTIVE;
-  state->camera.up = (Vector3){0.0f, 1.0f, 0.0f};
+  state->camera.up = Vector3{0.0f, 1.0f, 0.0f};
   state->camera.fovy = 45.0f;
 
   state->transientStorage.shadowShader.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(state->transientStorage.shadowShader, "viewPos");
-  state->transientStorage.lightDir = Vector3Normalize((Vector3){0.35f, -1.0f, -0.35f});
+  state->transientStorage.lightDir = Vector3Normalize(Vector3{0.35f, -1.0f, -0.35f});
   Color lightColor = WHITE;
   Vector4 lightColorNormalized = ColorNormalize(lightColor);
   state->transientStorage.lightDirLoc = GetShaderLocation(state->transientStorage.shadowShader, "lightDir");
@@ -208,7 +209,7 @@ void init(GameState *state) {
   state->lightCamera.target = Vector3Zero();
   // Use an orthographic projection for directional lights
   state->lightCamera.projection = CAMERA_ORTHOGRAPHIC;
-  state->lightCamera.up = (Vector3){0.0f, 1.0f, 0.0f};
+  state->lightCamera.up = Vector3{0.0f, 1.0f, 0.0f};
   state->lightCamera.fovy = 20.0f;
 
   GuiGuiState gui_state = InitGuiGui();
@@ -255,7 +256,7 @@ void update(GameState *state) {
 
 EXPORT_FN void client_main(GameState *state) {
   init(state);
-  time_t last_write_time = get_timestamp("./libclient.so");
+  uint64_t last_write_time = get_timestamp("./libclient.so");
   while (!WindowShouldClose()) {
     if (last_write_time != get_timestamp("./libclient.so"))
       break;
