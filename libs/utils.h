@@ -521,9 +521,9 @@ struct MapIterator {
   ValueType& value() const { return ptr->value; }
 };
 
-template <typename KeyType, typename ValueType, uint32_t Size>
+template <typename KeyType, typename ValueType, uint32_t N>
 struct MapCT {
-  ArrayCT<Entry<KeyType, ValueType>, Size> entries;
+  ArrayCT<Entry<KeyType, ValueType>, N> entries;
 
   MapCT() = default;
   MapCT(const MapCT&) = delete;
@@ -755,11 +755,11 @@ struct HashMapIterator {
   V& value() const { return ptr->value; }
 };
 
-template<typename KeyType, typename ValueType, uint32_t Size>
+template<typename KeyType, typename ValueType, uint32_t N>
 struct HashMapCT {
-  static constexpr uint32_t maxElements = Size;
+  static constexpr uint32_t maxElements = N;
   static constexpr float maxLoadFactor = 0.7f;
-  ArrayCT<HashEntry<KeyType, ValueType>, Size> entries;
+  ArrayCT<HashEntry<KeyType, ValueType>, N> entries;
   uint32_t count = 0;
   Hash<KeyType> hasher;
 
@@ -770,13 +770,13 @@ struct HashMapCT {
   HashMapCT& operator=(HashMapCT&& other) = delete;
 
   void init() {
-    entries.reserve_until(Size);
+    entries.reserve_until(N);
     clear();
   }
 
   uint32_t find_slot(const KeyType& key) const {
     uint32_t hash = hasher(key);
-    uint32_t idx = hash % Size;
+    uint32_t idx = hash % N;
     uint32_t original = idx;
 
     do {
@@ -785,7 +785,7 @@ struct HashMapCT {
         KeyCompare<KeyType>::equals(entries[idx].key, key)) {
         return idx;
       }
-      idx = (idx + 1) % Size;
+      idx = (idx + 1) % N;
     } while (idx != original);
 
     return -1;
@@ -793,12 +793,12 @@ struct HashMapCT {
 
   uint32_t find_empty_slot(const KeyType& key) {
     uint32_t hash = hasher(key);
-    uint32_t idx = hash % Size;
+    uint32_t idx = hash % N;
     uint32_t original = idx;
 
     do {
       if (entries[idx].state != EntryState::Occupied) return idx;
-      idx = (idx + 1) % Size;
+      idx = (idx + 1) % N;
     } while (idx != original);
 
     LOG_ASSERT(false, "No empty slots!");
@@ -808,7 +808,7 @@ struct HashMapCT {
   ValueType& get(const KeyType& key) {
     uint32_t idx = find_slot(key);
     if (idx == -1) {
-      LOG_ASSERT(count < Size * maxLoadFactor, "HashMap too full!");
+      LOG_ASSERT(count < N * maxLoadFactor, "HashMap too full!");
       idx = find_empty_slot(key);
       entries[idx].key = key;
       entries[idx].value = ValueType{};
@@ -839,7 +839,7 @@ struct HashMapCT {
   bool empty() const { return count == 0; }
 
   void clear() {
-    for (uint32_t i = 0; i < Size; i++) {
+    for (uint32_t i = 0; i < N; i++) {
       entries[i].state = EntryState::Empty;
     }
     count = 0;
@@ -851,10 +851,10 @@ struct HashMapCT {
 
   using Iterator = HashMapIterator<KeyType, ValueType>;
   Iterator begin() { 
-    return Iterator(entries.elements, entries.elements + Size); 
+    return Iterator(entries.elements, entries.elements + N); 
   }
   Iterator end() { 
-    return Iterator(entries.elements + Size, entries.elements + Size); 
+    return Iterator(entries.elements + N, entries.elements + N); 
   }
 };
 
@@ -1116,6 +1116,123 @@ struct GenSparseSetCT {
   Iterator end() { return dense.end(); }
 };
 
+template<typename T>
+struct GenSparseSetRT {
+  uint32_t N; // Set at runtime
+  ArrayRT<T>* dense; // Set at runtime
+  ArrayRT<GenId>* sparse; // Set at runtime
+  ArrayRT<uint32_t>* dense_to_sparse; // Set at runtime
+  uint32_t free_head;
+
+  void init(uint32_t _N, ArrayRT<T>& _dense, ArrayRT<GenId>& _sparse, ArrayRT<uint32_t>& _dense_to_sparse) {
+    N = _N;
+    dense = &_dense;
+    sparse = &_sparse;
+    dense_to_sparse = &_dense_to_sparse;
+
+    sparse->reserve_until(N);
+    for (uint32_t i = 0; i < N-1; i++) {
+      auto& entry = sparse->get(i);
+      entry.set_id(i + 1);
+      entry.set_gen(0);
+    }
+    auto& last = sparse->get(N-1);
+    last.set_id(N);
+    last.set_gen(0);
+    free_head = 0;
+  }
+
+  GenId add(const T& val) {
+    auto& entry = sparse->get(free_head);
+    uint32_t next_free = entry.id();
+    uint32_t dense_idx = dense->size();
+
+    dense->add(val);
+    dense_to_sparse->add(free_head);
+    entry.set_id(dense_idx);
+
+    GenId res = GenId::create(free_head, entry.gen());
+    free_head = next_free;
+
+    return res;
+  }
+
+  void remove(GenId genId) {
+    if (genId.id() >= N) return;
+
+    auto& entry = sparse->get(genId.id());
+    if (entry.gen() != genId.gen()) return;
+    uint32_t prev_back = dense_to_sparse->back();
+
+    dense->remove(entry.id());
+    dense_to_sparse->remove(entry.id());
+    sparse->get(prev_back).set_id(entry.id());
+
+    entry.set_id(free_head);
+    entry.increment_gen();
+    free_head = genId.id();
+  }
+
+  T* get(GenId genId) {
+    if (genId.id() >= N) return nullptr;
+    const auto& entry = sparse->get(genId.id());
+    if (entry.id() >= dense->size()) return nullptr;
+    if (entry.gen() != genId.gen()) return nullptr;
+    return &dense->get(entry.id());
+  }
+
+  T* operator[](GenId genId) {
+    return get(genId);
+  }
+
+  GenId find(const T& value) {
+    for (uint32_t i = 0; i < dense->size(); i++) {
+      if (dense->get(i) == value) {
+        uint32_t sparse_idx = dense_to_sparse->get(i);
+        return GenId::create(sparse_idx, sparse->get(sparse_idx).gen());
+      }
+    }
+    return {UINT32_MAX};
+  }
+
+  bool contains(GenId genId) {
+    if (genId.id() >= sparse->size()) return false;
+    const auto& entry = sparse->get(genId.id());
+    if (entry.id() >= dense->size()) return false;
+    return entry.gen() == genId.gen();
+  }
+
+  void clear() {
+    dense->clear();
+    dense_to_sparse->clear();
+
+    // Rebuild free list while preserving generations
+    for (uint32_t i = 0; i < N-1; i++) {
+      auto& entry = sparse->get(i);
+      entry.increment_gen();
+      entry.set_id(i + 1);
+    }
+
+    auto& last = sparse->get(N-1);
+    last.increment_gen();
+    last.set_id(N);
+
+    free_head = 0;
+  }
+
+  uint32_t size() const { return dense->size(); }
+
+  bool empty() const { return dense->empty(); }
+
+  bool is_full() const { return dense->size() == dense->capacity(); }
+
+  bool capacity() const { return dense->capacity(); }
+
+  using Iterator = typename ArrayRT<T>::Iterator;
+  Iterator begin() { return dense->begin(); }
+  Iterator end() { return dense->end(); }
+};
+
 // NOTE: Arena
 class Arena {
 public:
@@ -1245,6 +1362,16 @@ public:
     HashMapCT<KeyType, ValueType, N>& map = alloc<HashMapCT<KeyType, ValueType, N>>();
     map.init();
     return map;
+  }
+
+  template<typename T>
+  GenSparseSetRT<T>& create_gen_sparse_set_rt(uint32_t maxElements) {
+    GenSparseSetRT<T>& genSparseSet = alloc<GenSparseSetRT<T>>();
+    ArrayRT<T>& dense = create_array_rt<T>(maxElements);
+    ArrayRT<GenId>& sparse = create_array_rt<GenId>(maxElements);
+    ArrayRT<uint32_t>& dense_to_sparse = create_array_rt<uint32_t>(maxElements);
+    genSparseSet.init(maxElements, dense, sparse, dense_to_sparse);
+    return genSparseSet;
   }
 
   template<typename T, uint32_t N>
