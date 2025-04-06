@@ -58,7 +58,7 @@ void iterators_arrays_RT_test() {
 
 void create_and_fetch_arena_in_different_scope_CT_test() {
   const char* failedMsg = "[ FAILED ] create_and_fetch_arena_in_different_scope_CT_test";
-  Arena& arena = Arena::create(80);
+  Arena& arena = *new Arena(80);
   MapCT<const char*, void*, 1>& arenaIndex = arena.create_map_ct<const char*, void*, 1>();
   {
     ArrayCT<Entity, 3>& entitiesArray = arena.create_array_ct<Entity, 3>();
@@ -94,7 +94,7 @@ void create_and_fetch_arena_in_different_scope_CT_test() {
 
 void create_and_fetch_arena_in_different_scope_RT_test() {
   const char* failedMsg = "[ FAILED ] create_and_fetch_arena_in_different_scope_RT_test";
-  Arena& arena = Arena::create(88); //NOTE: 8 more bytes than CT... 2x extra 32 bit int for size...
+  Arena& arena = *new Arena(88); //NOTE: 8 more bytes than CT... 2x extra 32 bit int for size...
   MapRT<const char*, void*>& arenaIndex = arena.create_map_rt<const char*, void*>(1);
   {
     ArrayRT<Entity>& entitiesArray = arena.create_array_rt<Entity>(3);
@@ -130,7 +130,7 @@ void create_and_fetch_arena_in_different_scope_RT_test() {
 
 void create_hashmap_in_arena_CT_test() {
   const char* failedMsg = "[ FAILED ] create_hashmap_in_arena_CT_test";
-  Arena& arena = create_arena(KB(4));
+  Arena& arena = *new Arena(KB(4));
   auto& arena_index = arena.create_hashmap_ct<const char*, void*, 1>();
 
   // Create hashmap and test basic operations
@@ -192,7 +192,7 @@ void create_hashmap_in_arena_CT_test() {
 
 void create_hashmap_in_arena_RT_test() {
   const char* failedMsg = "[ FAILED ] create_hashmap_in_arena_CT_test";
-  Arena& arena = create_arena(KB(4));
+  Arena& arena = *new Arena(KB(4));
   auto& arena_index = arena.create_hashmap_rt<const char*, void*>(1);
 
   // Create hashmap and test basic operations
@@ -318,7 +318,7 @@ void quicksort_test() {
 }
 
 void create_arena_clear_test() {
-  Arena& arena = Arena::create(KB(1));
+  Arena& arena = *new Arena(KB(1));
   const char* failedMsg = "[ FAILED ] create_arena_clear_test";
   {
     MapCT<const char*, void*, 1>& arenaIndex = arena.create_map_ct<const char*, void*, 1>();
@@ -363,7 +363,7 @@ void create_arena_clear_test() {
 }
 
 void gen_sparse_set_ct_test() {
-  Arena& arena = Arena::create(KB(1));
+  Arena& arena = *new Arena(KB(1));
   const char* failedMsg = "[ FAILED ] gen_sparse_set_test";
   
   auto& set = arena.create_gen_sparse_set_ct<Entity, 8>();
@@ -504,7 +504,7 @@ void file_io_test() {
   const char* failedMsg = "[ FAILED ] create_and_remove_file_test, please clean up";
   const char* filePath = "./create_and_remove_file_test";
   const char* contents = "create_and_remove_file_test";
-  Arena& arena = Arena::create(KB(1));
+  Arena& arena = *new Arena(KB(1));
 
   write_file(filePath, contents, strlen(contents));
   LOG_ASSERT(file_exists(filePath), failedMsg);

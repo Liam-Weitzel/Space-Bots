@@ -39,7 +39,7 @@
     
     #define BENCHMARK(fn, iterations) do { \
         clock_t start = clock(); \
-        for (int i = 0; i < iterations; ++i) { fn(); } \
+        for (uint32_t i = 0; i < iterations; ++i) { fn(); } \
         clock_t end = clock(); \
         double elapsed = (double)(end - start) / CLOCKS_PER_SEC * 1e6; \
         printf("%.3f µs\n", elapsed / iterations); \
@@ -153,6 +153,10 @@ struct ArrayCT {
   ArrayCT& operator=(const ArrayCT&) = delete;
   ArrayCT(ArrayCT&& other) = delete;
   ArrayCT& operator=(ArrayCT&& other) = delete;
+
+  void init() {
+    clear();
+  }
 
   T& get(uint32_t idx) {
     LOG_ASSERT(idx >= 0 && idx < count, "Index out of bounds!");
@@ -279,6 +283,11 @@ struct ArrayRT {
   ArrayRT& operator=(const ArrayRT&) = delete;
   ArrayRT(ArrayRT&& other) = delete;
   ArrayRT& operator=(ArrayRT&& other) = delete;
+
+  void init(uint32_t AmaxElements) {
+    maxElements = AmaxElements;
+    clear();
+  }
 
   T& get(uint32_t idx) {
     LOG_ASSERT(idx >= 0 && idx < count, "Index out of bounds!");
@@ -522,6 +531,10 @@ struct MapCT {
   MapCT(MapCT&& other) = delete;
   MapCT& operator=(MapCT&& other) = delete;
 
+  void init() {
+    clear();
+  }
+
   // Linear search to find an entry by key
   uint32_t find(const KeyType& key) const {
     Entry<KeyType, ValueType> temp{key, ValueType{}};
@@ -593,6 +606,11 @@ struct MapRT {
   MapRT& operator=(const MapRT&) = delete;
   MapRT(MapRT&& other) = delete;
   MapRT& operator=(MapRT&& other) = delete;
+
+  void init(ArrayRT<Entry<KeyType, ValueType>>& Aentries) {
+    entries = &Aentries;
+    clear();
+  }
 
   // Linear search to find an entry by key
   uint32_t find(const KeyType& key) const {
@@ -751,6 +769,11 @@ struct HashMapCT {
   HashMapCT(HashMapCT&& other) = delete;
   HashMapCT& operator=(HashMapCT&& other) = delete;
 
+  void init() {
+    entries.reserve_until(Size);
+    clear();
+  }
+
   uint32_t find_slot(const KeyType& key) const {
     uint32_t hash = hasher(key);
     uint32_t idx = hash % Size;
@@ -848,6 +871,13 @@ struct HashMapRT {
   HashMapRT& operator=(const HashMapRT&) = delete;
   HashMapRT(HashMapRT&& other) = delete;
   HashMapRT& operator=(HashMapRT&& other) = delete;
+
+  void init(ArrayRT<HashEntry<KeyType, ValueType>>& Aentries, uint32_t AmaxElements) {
+    Aentries.reserve_until(AmaxElements);
+    entries = &Aentries;
+    maxElements = AmaxElements;
+    clear();
+  }
 
   uint32_t find_slot(const KeyType& key) const {
     uint32_t hash = hasher(key);
@@ -1106,10 +1136,6 @@ public:
     used = 0;
   }
 
-  static Arena& create(uint32_t size) {
-    return *new Arena(size);
-  }
-
   char& get(uint32_t idx) {
     LOG_ASSERT(idx < used, "Index out of bounds!");
     return memory[idx];
@@ -1180,15 +1206,14 @@ public:
   ArrayRT<T>& create_array_rt(uint32_t maxElements) {
     uint32_t total_size = sizeof(ArrayRT<T>) + sizeof(T) * (maxElements - 1);
     ArrayRT<T>& arr = alloc<ArrayRT<T>>(total_size);
-    arr.maxElements = maxElements;
-    arr.clear();
+    arr.init(maxElements);
     return arr;
   }
 
   template<typename T, uint32_t N>
   ArrayCT<T, N>& create_array_ct() {
     ArrayCT<T, N>& arr = alloc<ArrayCT<T, N>>();
-    arr.clear();
+    arr.init();
     return arr;
   }
 
@@ -1196,15 +1221,14 @@ public:
   MapRT<KeyType, ValueType>& create_map_rt(uint32_t maxElements) {
     MapRT<KeyType, ValueType>& map = alloc<MapRT<KeyType, ValueType>>(sizeof(MapRT<KeyType, ValueType>));
     ArrayRT<Entry<KeyType, ValueType>>& entries = create_array_rt<Entry<KeyType, ValueType>>(maxElements);
-    map.entries = &entries;
-    map.clear();
+    map.init(entries);
     return map;
   }
 
   template<typename KeyType, typename ValueType, uint32_t N>
   MapCT<KeyType, ValueType, N>& create_map_ct() {
     MapCT<KeyType, ValueType, N>& map = alloc<MapCT<KeyType, ValueType, N>>();
-    map.clear();
+    map.init();
     return map;
   }
 
@@ -1212,18 +1236,14 @@ public:
   HashMapRT<KeyType, ValueType>& create_hashmap_rt(uint32_t maxElements) {
     HashMapRT<KeyType, ValueType>& map = alloc<HashMapRT<KeyType, ValueType>>();
     ArrayRT<HashEntry<KeyType, ValueType>>& entries = create_array_rt<HashEntry<KeyType, ValueType>>(maxElements);
-    entries.reserve_until(maxElements);
-    map.entries = &entries;
-    map.maxElements = maxElements;
-    map.clear();
+    map.init(entries, maxElements);
     return map;
   }
 
   template<typename KeyType, typename ValueType, uint32_t N>
   HashMapCT<KeyType, ValueType, N>& create_hashmap_ct() {
     HashMapCT<KeyType, ValueType, N>& map = alloc<HashMapCT<KeyType, ValueType, N>>();
-    map.entries.reserve_until(N);
-    map.clear();
+    map.init();
     return map;
   }
 
@@ -1255,10 +1275,6 @@ public:
     free(memory);
   }
 };
-
-inline Arena& create_arena(uint32_t size) {
-    return Arena::create(size);
-}
 
 // NOTE: Size defs
 #define KB(x) ((x) * 1024ULL)

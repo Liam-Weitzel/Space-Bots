@@ -696,7 +696,7 @@ ArrayCT<const char*, 100>& listFiles(const char* path, Arena& arena) {
 int main(int argc, char *argv[]) {
   InitWindow(800, 450, "prep models");
 
-  Arena& arena = Arena::create(MB(1));
+  Arena& arena = * new Arena(MB(1));
   MapCT<const char*, Model, 100>& modelMap = arena.create_map_ct<const char*, Model, 100>();
 
   ArrayCT<const char*, 100>& models = listFiles("resources/models", arena);
