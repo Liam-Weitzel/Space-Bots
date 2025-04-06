@@ -1,10 +1,11 @@
 #include "utils.h"
 #include <cctype>
 #include <cstddef>
+#include <cstdint>
 #include <cstdio>
 
 // NOTE: File I/O
-long long get_timestamp(const char* filePath) {
+uint64_t get_timestamp(const char* filePath) {
   struct stat file_stat = {};
   stat(filePath, &file_stat);
   return file_stat.st_mtime;
@@ -22,10 +23,10 @@ bool file_exists(const char* filePath) {
   return true;
 }
 
-size_t get_file_size(const char* filePath) {
+uint32_t get_file_size(const char* filePath) {
   LOG_ASSERT(filePath, "No filePath supplied!");
 
-  size_t fileSize = 0;
+  uint32_t fileSize = 0;
   auto file = fopen(filePath, "rb");
   if (!file) {
     LOG_ERROR("Failed opening File: %s", filePath);
@@ -42,7 +43,7 @@ size_t get_file_size(const char* filePath) {
 
 char* read_file(const char* filePath, Arena& arena) {
   LOG_ASSERT(filePath, "No filePath supplied!");
-  size_t fileSize = get_file_size(filePath);
+  uint32_t fileSize = get_file_size(filePath);
 
   char* buffer = arena.alloc_raw<char>(fileSize + 1);
   auto file = fopen(filePath, "rb");
@@ -52,7 +53,7 @@ char* read_file(const char* filePath, Arena& arena) {
   return buffer; 
 }
 
-void write_file(const char* filePath, const char* buffer, size_t size) {
+void write_file(const char* filePath, const char* buffer, uint32_t size) {
   LOG_ASSERT(filePath, "No filePath supplied!");
   LOG_ASSERT(buffer, "No buffer supplied!");
   auto file = fopen(filePath, "wb");
@@ -74,8 +75,8 @@ bool copy_file(const char* filePath, const char* outputPath, Arena& arena) {
     return false;
   }
 
-  size_t fileSize = get_file_size(filePath);
-  int result = fwrite(data, sizeof(char), fileSize, outputFile);
+  uint32_t fileSize = get_file_size(filePath);
+  uint32_t result = fwrite(data, sizeof(char), fileSize, outputFile);
   if (!result) {
     LOG_ERROR("Failed opening File: %s", outputPath);
     return false;
@@ -95,7 +96,7 @@ bool CompareFloat(float a, float b, float epsilon) {
   return fabs(a - b) <= epsilon;
 }
 
-bool CompareIntArrays(const int* a, const int* b, size_t size) {
+bool CompareIntArrays(const int* a, const int* b, uint32_t size) {
   if ((!a && b) || (a && !b))
     return false;
   if (!a && !b)
@@ -103,7 +104,7 @@ bool CompareIntArrays(const int* a, const int* b, size_t size) {
   return memcmp(a, b, size) == 0;
 }
 
-bool CompareFloatArrays(const float *a, const float *b, size_t size) {
+bool CompareFloatArrays(const float *a, const float *b, uint32_t size) {
   if ((!a && b) || (a && !b))
     return false;
   if (!a && !b)
@@ -111,7 +112,7 @@ bool CompareFloatArrays(const float *a, const float *b, size_t size) {
   return memcmp(a, b, size) == 0;
 }
 
-bool CompareUCharArrays(const unsigned char* a, const unsigned char* b, size_t size) {
+bool CompareUCharArrays(const unsigned char* a, const unsigned char* b, uint32_t size) {
   if ((!a && b) || (a && !b))
     return false;
   if (!a && !b)
@@ -119,7 +120,7 @@ bool CompareUCharArrays(const unsigned char* a, const unsigned char* b, size_t s
   return memcmp(a, b, size) == 0;
 }
 
-bool CompareUIntArrays(const unsigned int* a, const unsigned int* b, size_t size) {
+bool CompareUIntArrays(const unsigned int* a, const unsigned int* b, uint32_t size) {
   if ((!a && b) || (a && !b))
     return false;
   if (!a && !b)
@@ -127,7 +128,7 @@ bool CompareUIntArrays(const unsigned int* a, const unsigned int* b, size_t size
   return memcmp(a, b, size) == 0;
 }
 
-bool CompareUShortArrays(const unsigned short* a, const unsigned short* b, size_t size) {
+bool CompareUShortArrays(const unsigned short* a, const unsigned short* b, uint32_t size) {
   if ((!a && b) || (a && !b))
     return false;
   if (!a && !b)

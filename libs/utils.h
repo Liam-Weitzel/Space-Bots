@@ -142,10 +142,10 @@ struct ArrayIterator {
     T* operator->() const { return ptr; }
 };
 
-template<typename T, int N>
+template<typename T, uint32_t N>
 struct ArrayCT {
-  static constexpr int maxElements = N;
-  int count = 0;
+  static constexpr uint32_t maxElements = N;
+  uint32_t count = 0;
   T elements[maxElements];
 
   ArrayCT() = default;
@@ -154,46 +154,46 @@ struct ArrayCT {
   ArrayCT(ArrayCT&& other) = delete;
   ArrayCT& operator=(ArrayCT&& other) = delete;
 
-  T& get(int idx) {
+  T& get(uint32_t idx) {
     LOG_ASSERT(idx >= 0 && idx < count, "Index out of bounds!");
     return elements[idx];
   }
 
-  const T& get(int idx) const {
+  const T& get(uint32_t idx) const {
     LOG_ASSERT(idx >= 0 && idx < count, "Index out of bounds!");
     return elements[idx];
   }
 
-  T& operator[](int idx) {
+  T& operator[](uint32_t idx) {
     return get(idx);
   }
 
-  const T& operator[](int idx) const {
+  const T& operator[](uint32_t idx) const {
     return get(idx);
   }
 
-  int add(const T& element) {
+  uint32_t add(const T& element) {
     LOG_ASSERT(count + 1 <= maxElements, "Array Full!");
     elements[count] = element;
     return count++;
   }
 
-  int add(const T* elements_list, int num_elements) {
+  uint32_t add(const T* elements_list, uint32_t num_elements) {
     LOG_ASSERT(count + num_elements <= maxElements, "Would overflow array!");
-    for (int i = 0; i < num_elements; ++i) {
+    for (uint32_t i = 0; i < num_elements; ++i) {
       add(elements_list[i]);
     }
     return count;
   }
 
-  void remove(int idx) { //O(1) but doesn't keep order (swap to last index & decrement)
+  void remove(uint32_t idx) { //O(1) but doesn't keep order (swap to last index & decrement)
     LOG_ASSERT(idx < count, "idx out of bounds!");
     elements[idx] = elements[--count];
   }
 
-  void ordered_remove(int idx) {
+  void ordered_remove(uint32_t idx) {
     LOG_ASSERT(idx < count, "idx out of bounds!");
-    for (int i = idx; i < count - 1; ++i) {
+    for (uint32_t i = idx; i < count - 1; ++i) {
       elements[i] = elements[i + 1];
     }
     count--;
@@ -209,17 +209,17 @@ struct ArrayCT {
     return elements[count - 1];
   }
 
-  void reserve(int amount) {
+  void reserve(uint32_t amount) {
     LOG_ASSERT(count + amount <= maxElements, "Cannot reserve more than max capacity!");
-    for (int i = count; i < count + amount; i++) {
+    for (uint32_t i = count; i < count + amount; i++) {
         elements[i] = T{};
     }
     count += amount;
   }
 
-  void reserve_until(int amount) {
+  void reserve_until(uint32_t amount) {
     LOG_ASSERT(amount <= maxElements, "Cannot set count to more than max capacity!");
-    for (int i = count; i < amount; i++) {
+    for (uint32_t i = count; i < amount; i++) {
         elements[i] = T{};
     }
     count = amount;
@@ -230,7 +230,7 @@ struct ArrayCT {
     count--;
   }
 
-  int find(const T& value) const {
+  uint32_t find(const T& value) const {
     for (uint32_t i = 0; i < count; i++) {
       if (elements[i] == value) {
         return i;
@@ -255,11 +255,11 @@ struct ArrayCT {
       return count == 0;
   }
 
-  size_t size() const {
+  uint32_t size() const {
       return count;
   }
 
-  size_t capacity() const {
+  uint32_t capacity() const {
     return maxElements;
   }
 
@@ -270,8 +270,8 @@ struct ArrayCT {
 
 template<typename T>
 struct ArrayRT {
-  int maxElements;  // runtime capacity, set when allocated
-  int count = 0;    // number of elements added so far
+  uint32_t maxElements;  // runtime capacity, set when allocated
+  uint32_t count = 0;    // number of elements added so far
   T elements[1];    // Flexible array member (allocate extra space)
 
   ArrayRT() = delete;
@@ -280,59 +280,59 @@ struct ArrayRT {
   ArrayRT(ArrayRT&& other) = delete;
   ArrayRT& operator=(ArrayRT&& other) = delete;
 
-  T& get(int idx) {
+  T& get(uint32_t idx) {
     LOG_ASSERT(idx >= 0 && idx < count, "Index out of bounds!");
     return elements[idx];
   }
 
-  const T& get(int idx) const {
+  const T& get(uint32_t idx) const {
     LOG_ASSERT(idx >= 0 && idx < count, "Index out of bounds!");
     return elements[idx];
   }
 
-  T& operator[](int idx) {
+  T& operator[](uint32_t idx) {
     return get(idx);
   }
 
-  const T& operator[](int idx) const {
+  const T& operator[](uint32_t idx) const {
     return get(idx);
   }
 
-  int add(const T& element) {
+  uint32_t add(const T& element) {
     LOG_ASSERT(count < maxElements, "Array Full!");
     elements[count] = element;
     return count++;
   }
 
-  int add(const T* elements_list, int num_elements) {
+  uint32_t add(const T* elements_list, uint32_t num_elements) {
     LOG_ASSERT(count + num_elements <= maxElements, "Would overflow array!");
-    for (int i = 0; i < num_elements; ++i)
+    for (uint32_t i = 0; i < num_elements; ++i)
       add(elements_list[i]);
     return count;
   }
 
-  void remove(int idx) { // O(1): swap with last and decrement
+  void remove(uint32_t idx) { // O(1): swap with last and decrement
     LOG_ASSERT(idx < count, "Index out of bounds!");
     elements[idx] = elements[--count];
   }
 
-  void ordered_remove(int idx) {
+  void ordered_remove(uint32_t idx) {
     LOG_ASSERT(idx < count, "idx out of bounds!");
-    for (int i = idx; i < count - 1; ++i) {
+    for (uint32_t i = idx; i < count - 1; ++i) {
       elements[i] = elements[i + 1];
     }
     count--;
   }
 
-  void reserve(int amount) {
+  void reserve(uint32_t amount) {
     LOG_ASSERT(count + amount <= maxElements, "Cannot reserve more than max capacity!");
-    for (int i = count; i < count + amount; i++) {
+    for (uint32_t i = count; i < count + amount; i++) {
         elements[i] = T{};
     }
     count += amount;
   }
 
-  void reserve_until(int amount) {
+  void reserve_until(uint32_t amount) {
     reserve(amount - count);
   }
 
@@ -341,7 +341,7 @@ struct ArrayRT {
     count--;
   }
 
-  int find(const T& value) const {
+  uint32_t find(const T& value) const {
     for (uint32_t i = 0; i < count; i++) {
       if (elements[i] == value) {
         return i;
@@ -376,11 +376,11 @@ struct ArrayRT {
       return count == 0;
   }
 
-  size_t size() const {
+  uint32_t size() const {
       return count;
   }
 
-  size_t capacity() const {
+  uint32_t capacity() const {
     return maxElements;
   }
 
@@ -397,11 +397,11 @@ void swap(T& a, T& b) {
 }
 
 template<typename T>
-int partition(T* arr, int low, int high) {
+uint32_t partition(T* arr, uint32_t low, uint32_t high) {
   T pivot = arr[high];
-  int i = low - 1;
+  uint32_t i = low - 1;
 
-  for(int j = low; j < high; j++) {
+  for(uint32_t j = low; j < high; j++) {
     if(arr[j] <= pivot) {
       i++;
       swap(arr[i], arr[j]);
@@ -412,15 +412,15 @@ int partition(T* arr, int low, int high) {
 }
 
 template<typename T>
-void quicksort_internal(T* arr, int low, int high) {
+void quicksort_internal(T* arr, uint32_t low, uint32_t high) {
   if(low < high) {
-    int pi = partition(arr, low, high);
+    uint32_t pi = partition(arr, low, high);
     quicksort_internal(arr, low, pi - 1);
     quicksort_internal(arr, pi + 1, high);
   }
 }
 
-template<typename T, int N>
+template<typename T, uint32_t N>
 void quicksort(ArrayCT<T, N>& arr) {
   if(arr.count <= 1) return;
   quicksort_internal(arr.elements, 0, arr.count - 1);
@@ -432,15 +432,15 @@ void quicksort(ArrayRT<T>& arr) {
   quicksort_internal(arr.elements, 0, arr.count - 1);
 }
 
-template<typename T, int N>
-void quicksort(ArrayCT<T, N>& arr, int start, int end) {
+template<typename T, uint32_t N>
+void quicksort(ArrayCT<T, N>& arr, uint32_t start, uint32_t end) {
   LOG_ASSERT(start >= 0 && end < arr.count, "Index out of bounds!");
   if(end - start <= 0) return;
   quicksort_internal(arr.elements, start, end);
 }
 
 template<typename T>
-void quicksort(ArrayRT<T>& arr, int start, int end) {
+void quicksort(ArrayRT<T>& arr, uint32_t start, uint32_t end) {
   LOG_ASSERT(start >= 0 && end < arr.count, "Index out of bounds!");
   if(end - start <= 0) return;
   quicksort_internal(arr.elements, start, end);
@@ -512,7 +512,7 @@ struct MapIterator {
   ValueType& value() const { return ptr->value; }
 };
 
-template <typename KeyType, typename ValueType, int Size>
+template <typename KeyType, typename ValueType, uint32_t Size>
 struct MapCT {
   ArrayCT<Entry<KeyType, ValueType>, Size> entries;
 
@@ -523,7 +523,7 @@ struct MapCT {
   MapCT& operator=(MapCT&& other) = delete;
 
   // Linear search to find an entry by key
-  int find(const KeyType& key) const {
+  uint32_t find(const KeyType& key) const {
     Entry<KeyType, ValueType> temp{key, ValueType{}};
     return entries.find(temp);
   }
@@ -534,7 +534,7 @@ struct MapCT {
   }
 
   ValueType& get(const KeyType key) {
-    int idx = find(key);
+    uint32_t idx = find(key);
     if (idx == -1) {
       idx = entries.add(Entry<KeyType, ValueType>{key, ValueType{}});
     }
@@ -546,14 +546,14 @@ struct MapCT {
   }
 
   void remove(const KeyType& key) {
-    int idx = find(key);
+    uint32_t idx = find(key);
     if (idx != -1) {
       entries.remove(idx);
     }
   }
 
   void ordered_remove(const KeyType& key) {
-    int idx = find(key);
+    uint32_t idx = find(key);
     if (idx != -1) {
       entries.ordered_remove(idx);
     }
@@ -563,11 +563,11 @@ struct MapCT {
     return entries.empty();
   }
 
-  size_t size() const {
+  uint32_t size() const {
     return entries.size();
   }
 
-  size_t capacity() const {
+  uint32_t capacity() const {
     return entries.capacity();
   }
 
@@ -595,7 +595,7 @@ struct MapRT {
   MapRT& operator=(MapRT&& other) = delete;
 
   // Linear search to find an entry by key
-  int find(const KeyType& key) const {
+  uint32_t find(const KeyType& key) const {
     Entry<KeyType, ValueType> temp{key, ValueType{}};
     return entries->find(temp);
   }
@@ -606,7 +606,7 @@ struct MapRT {
   }
 
   ValueType& get(const KeyType key) {
-    int idx = find(key);
+    uint32_t idx = find(key);
     if (idx == -1) {
       idx = entries->add(Entry<KeyType, ValueType>{key, ValueType{}});
     }
@@ -618,14 +618,14 @@ struct MapRT {
   }
 
   void remove(const KeyType& key) {
-    int idx = find(key);
+    uint32_t idx = find(key);
     if (idx != -1) {
       entries->remove(idx);
     }
   }
 
   void ordered_remove(const KeyType& key) {
-    int idx = find(key);
+    uint32_t idx = find(key);
     if (idx != -1) {
       entries->ordered_remove(idx);
     }
@@ -635,11 +635,11 @@ struct MapRT {
     return entries->empty();
   }
 
-  size_t size() const {
+  uint32_t size() const {
     return entries->size();
   }
 
-  size_t capacity() const {
+  uint32_t capacity() const {
     return entries->capacity();
   }
 
@@ -660,21 +660,21 @@ struct MapRT {
 
 template<typename T>
 struct Hash {
-  size_t operator()(const T& key) const = delete;
+  uint32_t operator()(const T& key) const = delete;
 };
 
 template<>
 struct Hash<int> {
-  size_t operator()(const int& key) const {
+  uint32_t operator()(const int& key) const {
     return key * 2654435761u;
   }
 };
 
 template<>
 struct Hash<const char*> {
-  size_t operator()(const char* key) const {
+  uint32_t operator()(const char* key) const {
     // FNV-1a hash
-    size_t hash = 14695981039346656037ULL;
+    uint32_t hash = 14695981039346656037ULL;
     for(; *key; ++key) {
       hash ^= *key;
       hash *= 1099511628211ULL;
@@ -737,12 +737,12 @@ struct HashMapIterator {
   V& value() const { return ptr->value; }
 };
 
-template<typename KeyType, typename ValueType, int Size>
+template<typename KeyType, typename ValueType, uint32_t Size>
 struct HashMapCT {
-  static constexpr int maxElements = Size;
+  static constexpr uint32_t maxElements = Size;
   static constexpr float maxLoadFactor = 0.7f;
   ArrayCT<HashEntry<KeyType, ValueType>, Size> entries;
-  int count = 0;
+  uint32_t count = 0;
   Hash<KeyType> hasher;
 
   HashMapCT() = default;
@@ -751,10 +751,10 @@ struct HashMapCT {
   HashMapCT(HashMapCT&& other) = delete;
   HashMapCT& operator=(HashMapCT&& other) = delete;
 
-  int find_slot(const KeyType& key) const {
-    size_t hash = hasher(key);
-    size_t idx = hash % Size;
-    size_t original = idx;
+  uint32_t find_slot(const KeyType& key) const {
+    uint32_t hash = hasher(key);
+    uint32_t idx = hash % Size;
+    uint32_t original = idx;
 
     do {
       if (entries[idx].state == EntryState::Empty) return -1;
@@ -768,10 +768,10 @@ struct HashMapCT {
     return -1;
   }
 
-  int find_empty_slot(const KeyType& key) {
-    size_t hash = hasher(key);
-    size_t idx = hash % Size;
-    size_t original = idx;
+  uint32_t find_empty_slot(const KeyType& key) {
+    uint32_t hash = hasher(key);
+    uint32_t idx = hash % Size;
+    uint32_t original = idx;
 
     do {
       if (entries[idx].state != EntryState::Occupied) return idx;
@@ -783,7 +783,7 @@ struct HashMapCT {
   }
 
   ValueType& get(const KeyType& key) {
-    int idx = find_slot(key);
+    uint32_t idx = find_slot(key);
     if (idx == -1) {
       LOG_ASSERT(count < Size * maxLoadFactor, "HashMap too full!");
       idx = find_empty_slot(key);
@@ -800,7 +800,7 @@ struct HashMapCT {
   }
 
   void remove(const KeyType& key) {
-    int idx = find_slot(key);
+    uint32_t idx = find_slot(key);
     if (idx != -1) {
       entries[idx].state = EntryState::Dead;
       count--;
@@ -811,18 +811,18 @@ struct HashMapCT {
     return find_slot(key) != -1;
   }
 
-  size_t size() const { return count; }
+  uint32_t size() const { return count; }
 
   bool empty() const { return count == 0; }
 
   void clear() {
-    for (int i = 0; i < Size; i++) {
+    for (uint32_t i = 0; i < Size; i++) {
       entries[i].state = EntryState::Empty;
     }
     count = 0;
   }
 
-  size_t capacity() const { return maxElements; }
+  uint32_t capacity() const { return maxElements; }
 
   bool is_full() const { return size() == capacity(); }
 
@@ -838,8 +838,8 @@ struct HashMapCT {
 template<typename KeyType, typename ValueType>
 struct HashMapRT {
   ArrayRT<HashEntry<KeyType, ValueType>>* entries; // Set at runtime
-  int maxElements; // Set at runtime
-  int count = 0;
+  uint32_t maxElements; // Set at runtime
+  uint32_t count = 0;
   static constexpr float maxLoadFactor = 0.7f;
   Hash<KeyType> hasher;
 
@@ -849,10 +849,10 @@ struct HashMapRT {
   HashMapRT(HashMapRT&& other) = delete;
   HashMapRT& operator=(HashMapRT&& other) = delete;
 
-  int find_slot(const KeyType& key) const {
-    size_t hash = hasher(key);
-    size_t idx = hash % maxElements;
-    size_t original = idx;
+  uint32_t find_slot(const KeyType& key) const {
+    uint32_t hash = hasher(key);
+    uint32_t idx = hash % maxElements;
+    uint32_t original = idx;
 
     do {
       if (entries->get(idx).state == EntryState::Empty) return -1;
@@ -866,10 +866,10 @@ struct HashMapRT {
     return -1;
   }
 
-  int find_empty_slot(const KeyType& key) {
-    size_t hash = hasher(key);
-    size_t idx = hash % maxElements;
-    size_t original = idx;
+  uint32_t find_empty_slot(const KeyType& key) {
+    uint32_t hash = hasher(key);
+    uint32_t idx = hash % maxElements;
+    uint32_t original = idx;
 
     do {
       if (entries->get(idx).state != EntryState::Occupied) return idx;
@@ -881,7 +881,7 @@ struct HashMapRT {
   }
 
   ValueType& get(const KeyType& key) {
-    int idx = find_slot(key);
+    uint32_t idx = find_slot(key);
     if (idx == -1) {
       LOG_ASSERT(count < maxElements * maxLoadFactor, "HashMap too full!");
       idx = find_empty_slot(key);
@@ -898,7 +898,7 @@ struct HashMapRT {
   }
 
   void remove(const KeyType& key) {
-    int idx = find_slot(key);
+    uint32_t idx = find_slot(key);
     if (idx != -1) {
       entries->get(idx).state = EntryState::Dead;
       count--;
@@ -909,18 +909,18 @@ struct HashMapRT {
     return find_slot(key) != -1;
   }
 
-  size_t size() const { return count; }
+  uint32_t size() const { return count; }
 
   bool empty() const { return count == 0; }
 
   void clear() {
-    for (int i = 0; i < maxElements; i++) {
+    for (uint32_t i = 0; i < maxElements; i++) {
       entries->get(i).state = EntryState::Empty;
     }
     count = 0;
   }
 
-  size_t capacity() const { return maxElements; }
+  uint32_t capacity() const { return maxElements; }
 
   bool is_full() const { return size() == capacity(); }
 
@@ -975,7 +975,7 @@ struct GenId {
   uint8_t gen() const { return (packed >> ID_BITS) & ((1u << GEN_BITS) - 1); }
 };
 
-template<typename T, size_t N>
+template<typename T, uint32_t N>
 struct GenSparseSetCT {
   ArrayCT<T, N> dense;
   ArrayCT<GenId, N> sparse;
@@ -1039,7 +1039,7 @@ struct GenSparseSetCT {
   }
 
   GenId find(const T& value) {
-    for (size_t i = 0; i < dense.size(); i++) {
+    for (uint32_t i = 0; i < dense.size(); i++) {
       if (dense[i] == value) {
         uint32_t sparse_idx = dense_to_sparse[i];
         return GenId::create(sparse_idx, sparse[sparse_idx].gen());
@@ -1073,7 +1073,7 @@ struct GenSparseSetCT {
     free_head = 0;
   }
 
-  size_t size() const { return dense.size(); }
+  uint32_t size() const { return dense.size(); }
 
   bool empty() const { return dense.empty(); }
 
@@ -1089,8 +1089,8 @@ struct GenSparseSetCT {
 // NOTE: Arena
 class Arena {
 public:
-  size_t capacity;
-  size_t used;
+  uint32_t capacity;
+  uint32_t used;
   char* memory;
 
   Arena(const Arena&) = delete;
@@ -1098,7 +1098,7 @@ public:
   Arena(Arena&& other) = delete;
   Arena& operator=(Arena&& other) = delete;
 
-  explicit Arena(size_t size) {
+  explicit Arena(uint32_t size) {
     memory = (char*)malloc(size);
     if (!memory) LOG_ASSERT(false, "Failed to allocate memory!");
     memset(memory, 0, size);
@@ -1106,16 +1106,16 @@ public:
     used = 0;
   }
 
-  static Arena& create(size_t size) {
+  static Arena& create(uint32_t size) {
     return *new Arena(size);
   }
 
-  char& get(size_t idx) {
+  char& get(uint32_t idx) {
     LOG_ASSERT(idx < used, "Index out of bounds!");
     return memory[idx];
   }
 
-  char& operator[](size_t idx) {
+  char& operator[](uint32_t idx) {
     return get(idx);
   }
 
@@ -1127,8 +1127,8 @@ public:
 
   template<typename T>
   T* alloc_raw() { // Guaranteed to return valid memory or assert
-    size_t size = sizeof(T);
-    size_t aligned_size = (size + 7) & ~7;  // 8-byte alignment
+    uint32_t size = sizeof(T);
+    uint32_t aligned_size = (size + 7) & ~7;  // 8-byte alignment
     if (used + aligned_size > capacity) LOG_ASSERT(false, "Arena is full");
     T* result = (T*)(memory + used);
     used += aligned_size;
@@ -1141,8 +1141,8 @@ public:
   }
 
   template<typename T>
-  T* alloc_raw(size_t size) { // Guaranteed to return valid memory or assert
-    size_t aligned_size = (size + 7) & ~7;  // 8-byte alignment
+  T* alloc_raw(uint32_t size) { // Guaranteed to return valid memory or assert
+    uint32_t aligned_size = (size + 7) & ~7;  // 8-byte alignment
     if (used + aligned_size > capacity) LOG_ASSERT(false, "Arena is full");
     T* result = (T*)(memory + used);
     used += aligned_size;
@@ -1150,14 +1150,14 @@ public:
   }
 
   template<typename T>
-  T& alloc(size_t size) {
+  T& alloc(uint32_t size) {
     return *alloc_raw<T>(size);
   }
 
   template<typename T>
-  T* alloc_count_raw(size_t count) { // Guaranteed to return valid memory or assert
-    size_t total_size = sizeof(T) * count;
-    size_t aligned_size = (total_size + 7) & ~7;  // 8-byte alignment
+  T* alloc_count_raw(uint32_t count) { // Guaranteed to return valid memory or assert
+    uint32_t total_size = sizeof(T) * count;
+    uint32_t aligned_size = (total_size + 7) & ~7;  // 8-byte alignment
     if (used + aligned_size > capacity) LOG_ASSERT(false, "Arena is full");
     T* result = reinterpret_cast<T*>(memory + used);
     used += aligned_size;
@@ -1165,7 +1165,7 @@ public:
   }
 
   template<typename T>
-  T& alloc_count(size_t count) {
+  T& alloc_count(uint32_t count) {
     return *alloc_count_raw<T>(count);
   }
 
@@ -1177,15 +1177,15 @@ public:
   }
 
   template<typename T>
-  ArrayRT<T>& create_array_rt(size_t maxElements) {
-    size_t total_size = sizeof(ArrayRT<T>) + sizeof(T) * (maxElements - 1);
+  ArrayRT<T>& create_array_rt(uint32_t maxElements) {
+    uint32_t total_size = sizeof(ArrayRT<T>) + sizeof(T) * (maxElements - 1);
     ArrayRT<T>& arr = alloc<ArrayRT<T>>(total_size);
     arr.maxElements = maxElements;
     arr.clear();
     return arr;
   }
 
-  template<typename T, int N>
+  template<typename T, uint32_t N>
   ArrayCT<T, N>& create_array_ct() {
     ArrayCT<T, N>& arr = alloc<ArrayCT<T, N>>();
     arr.clear();
@@ -1193,7 +1193,7 @@ public:
   }
 
   template<typename KeyType, typename ValueType>
-  MapRT<KeyType, ValueType>& create_map_rt(size_t maxElements) {
+  MapRT<KeyType, ValueType>& create_map_rt(uint32_t maxElements) {
     MapRT<KeyType, ValueType>& map = alloc<MapRT<KeyType, ValueType>>(sizeof(MapRT<KeyType, ValueType>));
     ArrayRT<Entry<KeyType, ValueType>>& entries = create_array_rt<Entry<KeyType, ValueType>>(maxElements);
     map.entries = &entries;
@@ -1201,7 +1201,7 @@ public:
     return map;
   }
 
-  template<typename KeyType, typename ValueType, int N>
+  template<typename KeyType, typename ValueType, uint32_t N>
   MapCT<KeyType, ValueType, N>& create_map_ct() {
     MapCT<KeyType, ValueType, N>& map = alloc<MapCT<KeyType, ValueType, N>>();
     map.clear();
@@ -1209,7 +1209,7 @@ public:
   }
 
   template<typename KeyType, typename ValueType>
-  HashMapRT<KeyType, ValueType>& create_hashmap_rt(size_t maxElements) {
+  HashMapRT<KeyType, ValueType>& create_hashmap_rt(uint32_t maxElements) {
     HashMapRT<KeyType, ValueType>& map = alloc<HashMapRT<KeyType, ValueType>>();
     ArrayRT<HashEntry<KeyType, ValueType>>& entries = create_array_rt<HashEntry<KeyType, ValueType>>(maxElements);
     entries.reserve_until(maxElements);
@@ -1219,7 +1219,7 @@ public:
     return map;
   }
 
-  template<typename KeyType, typename ValueType, int N>
+  template<typename KeyType, typename ValueType, uint32_t N>
   HashMapCT<KeyType, ValueType, N>& create_hashmap_ct() {
     HashMapCT<KeyType, ValueType, N>& map = alloc<HashMapCT<KeyType, ValueType, N>>();
     map.entries.reserve_until(N);
@@ -1227,7 +1227,7 @@ public:
     return map;
   }
 
-  template<typename T, size_t N>
+  template<typename T, uint32_t N>
   GenSparseSetCT<T, N>& create_gen_sparse_set_ct() {
     GenSparseSetCT<T, N>& genSparseSet = alloc<GenSparseSetCT<T, N>>();
     genSparseSet.init();
@@ -1239,11 +1239,11 @@ public:
     memset(memory, 0, capacity); // Sets the memory to 0
   }
 
-  size_t size() const {
+  uint32_t size() const {
     return used;
   }
 
-  size_t available() const {
+  uint32_t available() const {
     return capacity - used;
   }
 
@@ -1256,7 +1256,7 @@ public:
   }
 };
 
-inline Arena& create_arena(size_t size) {
+inline Arena& create_arena(uint32_t size) {
     return Arena::create(size);
 }
 
@@ -1266,18 +1266,18 @@ inline Arena& create_arena(size_t size) {
 #define GB(x) ((x) * 1024ULL * 1024ULL * 1024ULL)
 
 // NOTE: File I/O
-long long get_timestamp(const char* file);
+uint64_t get_timestamp(const char* file);
 bool file_exists(const char* filePath);
-size_t get_file_size(const char* filePath);
+uint32_t get_file_size(const char* filePath);
 char* read_file(const char* filePath, Arena& arena);
-void write_file(const char* filePath, const char* buffer, size_t size);
+void write_file(const char* filePath, const char* buffer, uint32_t size);
 bool copy_file(const char* fileName, const char* outputName, Arena& arena);
 void remove_file(const char* fileName);
 
 //NOTE: Testing
 bool CompareFloat(float a, float b, float epsilon = 0.0001f);
-bool CompareIntArrays(const int *a, const int *b, size_t size);
-bool CompareFloatArrays(const float *a, const float *b, size_t size);
-bool CompareUCharArrays(const unsigned char *a, const unsigned char *b, size_t size);
-bool CompareUIntArrays(const unsigned int *a, const unsigned int *b, size_t size);
-bool CompareUShortArrays(const unsigned short *a, const unsigned short *b, size_t size);
+bool CompareIntArrays(const int *a, const int *b, uint32_t size);
+bool CompareFloatArrays(const float *a, const float *b, uint32_t size);
+bool CompareUCharArrays(const unsigned char *a, const unsigned char *b, uint32_t size);
+bool CompareUIntArrays(const unsigned int *a, const unsigned int *b, uint32_t size);
+bool CompareUShortArrays(const unsigned short *a, const unsigned short *b, uint32_t size);

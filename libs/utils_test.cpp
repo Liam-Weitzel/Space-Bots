@@ -521,7 +521,7 @@ void file_io_test() {
   read_contents = read_file(filePathCopy, arena);
   LOG_ASSERT(strcmp(read_contents, contents) == 0, failedMsg);
 
-  long long timestamp = get_timestamp(filePath);
+  uint64_t timestamp = get_timestamp(filePath);
   LOG_ASSERT(timestamp > 0, failedMsg);
   timestamp = get_timestamp(filePathCopy);
   LOG_ASSERT(timestamp > 0, failedMsg);
