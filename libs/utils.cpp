@@ -4,13 +4,13 @@
 #include <cstdio>
 
 // NOTE: File I/O
-long long get_timestamp(const char* filePath) noexcept {
+long long get_timestamp(const char* filePath) {
   struct stat file_stat = {};
   stat(filePath, &file_stat);
   return file_stat.st_mtime;
 }
 
-bool file_exists(const char* filePath) noexcept {
+bool file_exists(const char* filePath) {
   LOG_ASSERT(filePath, "No filePath supplied!");
 
   auto file = fopen(filePath, "rb");
@@ -22,7 +22,7 @@ bool file_exists(const char* filePath) noexcept {
   return true;
 }
 
-size_t get_file_size(const char* filePath) noexcept {
+size_t get_file_size(const char* filePath) {
   LOG_ASSERT(filePath, "No filePath supplied!");
 
   size_t fileSize = 0;
@@ -40,7 +40,7 @@ size_t get_file_size(const char* filePath) noexcept {
   return fileSize;
 }
 
-char* read_file(const char* filePath, Arena& arena) noexcept {
+char* read_file(const char* filePath, Arena& arena) {
   LOG_ASSERT(filePath, "No filePath supplied!");
   size_t fileSize = get_file_size(filePath);
 
@@ -52,7 +52,7 @@ char* read_file(const char* filePath, Arena& arena) noexcept {
   return buffer; 
 }
 
-void write_file(const char* filePath, const char* buffer, size_t size) noexcept {
+void write_file(const char* filePath, const char* buffer, size_t size) {
   LOG_ASSERT(filePath, "No filePath supplied!");
   LOG_ASSERT(buffer, "No buffer supplied!");
   auto file = fopen(filePath, "wb");
@@ -65,7 +65,7 @@ void write_file(const char* filePath, const char* buffer, size_t size) noexcept 
   fclose(file);
 }
 
-bool copy_file(const char* filePath, const char* outputPath, Arena& arena) noexcept {
+bool copy_file(const char* filePath, const char* outputPath, Arena& arena) {
   char* data = read_file(filePath, arena);
 
   auto outputFile = fopen(outputPath, "wb");
@@ -86,16 +86,16 @@ bool copy_file(const char* filePath, const char* outputPath, Arena& arena) noexc
 }
 
 // Wrapper around remove() for consistent naming
-void remove_file(const char* filePath) noexcept {
+void remove_file(const char* filePath) {
   remove(filePath);
 }
 
 // NOTE: Testing
-bool CompareFloat(float a, float b, float epsilon) noexcept {
+bool CompareFloat(float a, float b, float epsilon) {
   return fabs(a - b) <= epsilon;
 }
 
-bool CompareIntArrays(const int* a, const int* b, size_t size) noexcept {
+bool CompareIntArrays(const int* a, const int* b, size_t size) {
   if ((!a && b) || (a && !b))
     return false;
   if (!a && !b)
@@ -103,7 +103,7 @@ bool CompareIntArrays(const int* a, const int* b, size_t size) noexcept {
   return memcmp(a, b, size) == 0;
 }
 
-bool CompareFloatArrays(const float *a, const float *b, size_t size) noexcept {
+bool CompareFloatArrays(const float *a, const float *b, size_t size) {
   if ((!a && b) || (a && !b))
     return false;
   if (!a && !b)
@@ -111,7 +111,7 @@ bool CompareFloatArrays(const float *a, const float *b, size_t size) noexcept {
   return memcmp(a, b, size) == 0;
 }
 
-bool CompareUCharArrays(const unsigned char* a, const unsigned char* b, size_t size) noexcept {
+bool CompareUCharArrays(const unsigned char* a, const unsigned char* b, size_t size) {
   if ((!a && b) || (a && !b))
     return false;
   if (!a && !b)
@@ -119,7 +119,7 @@ bool CompareUCharArrays(const unsigned char* a, const unsigned char* b, size_t s
   return memcmp(a, b, size) == 0;
 }
 
-bool CompareUIntArrays(const unsigned int* a, const unsigned int* b, size_t size) noexcept {
+bool CompareUIntArrays(const unsigned int* a, const unsigned int* b, size_t size) {
   if ((!a && b) || (a && !b))
     return false;
   if (!a && !b)
@@ -127,7 +127,7 @@ bool CompareUIntArrays(const unsigned int* a, const unsigned int* b, size_t size
   return memcmp(a, b, size) == 0;
 }
 
-bool CompareUShortArrays(const unsigned short* a, const unsigned short* b, size_t size) noexcept {
+bool CompareUShortArrays(const unsigned short* a, const unsigned short* b, size_t size) {
   if ((!a && b) || (a && !b))
     return false;
   if (!a && !b)

@@ -154,31 +154,31 @@ struct ArrayCT {
   ArrayCT(ArrayCT&& other) = delete;
   ArrayCT& operator=(ArrayCT&& other) = delete;
 
-  T& get(int idx) noexcept {
+  T& get(int idx) {
     LOG_ASSERT(idx >= 0 && idx < count, "Index out of bounds!");
     return elements[idx];
   }
 
-  const T& get(int idx) const noexcept {
+  const T& get(int idx) const {
     LOG_ASSERT(idx >= 0 && idx < count, "Index out of bounds!");
     return elements[idx];
   }
 
-  T& operator[](int idx) noexcept {
+  T& operator[](int idx) {
     return get(idx);
   }
 
-  const T& operator[](int idx) const noexcept {
+  const T& operator[](int idx) const {
     return get(idx);
   }
 
-  int add(const T& element) noexcept {
+  int add(const T& element) {
     LOG_ASSERT(count + 1 <= maxElements, "Array Full!");
     elements[count] = element;
     return count++;
   }
 
-  int add(const T* elements_list, int num_elements) noexcept {
+  int add(const T* elements_list, int num_elements) {
     LOG_ASSERT(count + num_elements <= maxElements, "Would overflow array!");
     for (int i = 0; i < num_elements; ++i) {
       add(elements_list[i]);
@@ -186,12 +186,12 @@ struct ArrayCT {
     return count;
   }
 
-  void remove(int idx) noexcept { //O(1) but doesn't keep order (swap to last index & decrement)
+  void remove(int idx) { //O(1) but doesn't keep order (swap to last index & decrement)
     LOG_ASSERT(idx < count, "idx out of bounds!");
     elements[idx] = elements[--count];
   }
 
-  void ordered_remove(int idx) noexcept {
+  void ordered_remove(int idx) {
     LOG_ASSERT(idx < count, "idx out of bounds!");
     for (int i = idx; i < count - 1; ++i) {
       elements[i] = elements[i + 1];
@@ -199,17 +199,17 @@ struct ArrayCT {
     count--;
   }
 
-  T& front() noexcept {
+  T& front() {
     LOG_ASSERT(count > 0, "Array is empty!");
     return elements[0];
   }
 
-  T& back() noexcept {
+  T& back() {
     LOG_ASSERT(count > 0, "Array is empty!");
     return elements[count - 1];
   }
 
-  void reserve(int amount) noexcept {
+  void reserve(int amount) {
     LOG_ASSERT(count + amount <= maxElements, "Cannot reserve more than max capacity!");
     for (int i = count; i < count + amount; i++) {
         elements[i] = T{};
@@ -217,7 +217,7 @@ struct ArrayCT {
     count += amount;
   }
 
-  void reserve_until(int amount) noexcept {
+  void reserve_until(int amount) {
     LOG_ASSERT(amount <= maxElements, "Cannot set count to more than max capacity!");
     for (int i = count; i < amount; i++) {
         elements[i] = T{};
@@ -225,12 +225,12 @@ struct ArrayCT {
     count = amount;
   }
 
-  void pop() noexcept {
+  void pop() {
     LOG_ASSERT(!empty(), "Cannot pop an empty array");
     count--;
   }
 
-  int find(const T& value) const noexcept {
+  int find(const T& value) const {
     for (uint32_t i = 0; i < count; i++) {
       if (elements[i] == value) {
         return i;
@@ -239,33 +239,33 @@ struct ArrayCT {
     return -1;
   }
 
-  bool contains(const T& value) const noexcept {
+  bool contains(const T& value) const {
     return find(value) != -1;
   }
 
-  void clear() noexcept {
+  void clear() {
     count = 0;
   }
 
-  bool is_full() const noexcept {
+  bool is_full() const {
     return count == N;
   }
 
-  bool empty() const noexcept {
+  bool empty() const {
       return count == 0;
   }
 
-  size_t size() const noexcept {
+  size_t size() const {
       return count;
   }
 
-  size_t capacity() const noexcept {
+  size_t capacity() const {
     return maxElements;
   }
 
   using Iterator = ArrayIterator<T>;
-  Iterator begin() noexcept { return Iterator(elements, elements + count); }
-  Iterator end() noexcept { return Iterator(elements + count, elements + count); }
+  Iterator begin() { return Iterator(elements, elements + count); }
+  Iterator end() { return Iterator(elements + count, elements + count); }
 };
 
 template<typename T>
@@ -280,43 +280,43 @@ struct ArrayRT {
   ArrayRT(ArrayRT&& other) = delete;
   ArrayRT& operator=(ArrayRT&& other) = delete;
 
-  T& get(int idx) noexcept {
+  T& get(int idx) {
     LOG_ASSERT(idx >= 0 && idx < count, "Index out of bounds!");
     return elements[idx];
   }
 
-  const T& get(int idx) const noexcept {
+  const T& get(int idx) const {
     LOG_ASSERT(idx >= 0 && idx < count, "Index out of bounds!");
     return elements[idx];
   }
 
-  T& operator[](int idx) noexcept {
+  T& operator[](int idx) {
     return get(idx);
   }
 
-  const T& operator[](int idx) const noexcept {
+  const T& operator[](int idx) const {
     return get(idx);
   }
 
-  int add(const T& element) noexcept {
+  int add(const T& element) {
     LOG_ASSERT(count < maxElements, "Array Full!");
     elements[count] = element;
     return count++;
   }
 
-  int add(const T* elements_list, int num_elements) noexcept {
+  int add(const T* elements_list, int num_elements) {
     LOG_ASSERT(count + num_elements <= maxElements, "Would overflow array!");
     for (int i = 0; i < num_elements; ++i)
       add(elements_list[i]);
     return count;
   }
 
-  void remove(int idx) noexcept { // O(1): swap with last and decrement
+  void remove(int idx) { // O(1): swap with last and decrement
     LOG_ASSERT(idx < count, "Index out of bounds!");
     elements[idx] = elements[--count];
   }
 
-  void ordered_remove(int idx) noexcept {
+  void ordered_remove(int idx) {
     LOG_ASSERT(idx < count, "idx out of bounds!");
     for (int i = idx; i < count - 1; ++i) {
       elements[i] = elements[i + 1];
@@ -324,7 +324,7 @@ struct ArrayRT {
     count--;
   }
 
-  void reserve(int amount) noexcept {
+  void reserve(int amount) {
     LOG_ASSERT(count + amount <= maxElements, "Cannot reserve more than max capacity!");
     for (int i = count; i < count + amount; i++) {
         elements[i] = T{};
@@ -332,16 +332,16 @@ struct ArrayRT {
     count += amount;
   }
 
-  void reserve_until(int amount) noexcept {
+  void reserve_until(int amount) {
     reserve(amount - count);
   }
 
-  void pop() noexcept {
+  void pop() {
     LOG_ASSERT(!empty(), "Cannot pop an empty array");
     count--;
   }
 
-  int find(const T& value) const noexcept {
+  int find(const T& value) const {
     for (uint32_t i = 0; i < count; i++) {
       if (elements[i] == value) {
         return i;
@@ -350,43 +350,43 @@ struct ArrayRT {
     return -1;
   }
 
-  bool contains(const T& value) const noexcept {
+  bool contains(const T& value) const {
     return find(value) != -1;
   }
 
-  T& front() noexcept {
+  T& front() {
     LOG_ASSERT(count > 0, "Array is empty!");
     return elements[0];
   }
 
-  T& back() noexcept {
+  T& back() {
     LOG_ASSERT(count > 0, "Array is empty!");
     return elements[count - 1];
   }
 
-  void clear() noexcept {
+  void clear() {
     count = 0;
   }
 
-  bool is_full() const noexcept{
+  bool is_full() const {
     return count == maxElements;
   }
 
-  bool empty() const noexcept {
+  bool empty() const {
       return count == 0;
   }
 
-  size_t size() const noexcept {
+  size_t size() const {
       return count;
   }
 
-  size_t capacity() const noexcept {
+  size_t capacity() const {
     return maxElements;
   }
 
   using Iterator = ArrayIterator<T>;
-  Iterator begin() noexcept { return Iterator(elements, elements + count); }
-  Iterator end() noexcept { return Iterator(elements + count, elements + count); }
+  Iterator begin() { return Iterator(elements, elements + count); }
+  Iterator end() { return Iterator(elements + count, elements + count); }
 };
 
 template<typename T>
@@ -450,7 +450,7 @@ void quicksort(ArrayRT<T>& arr, int start, int end) {
 
 template<typename K>
 struct KeyCompare {
-  static bool equals(const K& a, const K& b) noexcept {
+  static bool equals(const K& a, const K& b) {
     // Handle char* types
     if (sizeof(K) == sizeof(char*)) {
       const char* str_a = (const char*)a;
@@ -479,7 +479,7 @@ struct Entry {
   KeyType key;
   ValueType value;
 
-  bool operator==(const Entry& other) const noexcept {
+  bool operator==(const Entry& other) const {
     return KeyCompare<KeyType>::equals(key, other.key);
   }
 };
@@ -528,7 +528,7 @@ struct MapCT {
     return entries.find(temp);
   }
 
-  bool contains(const KeyType& key) const noexcept {
+  bool contains(const KeyType& key) const {
     Entry<KeyType, ValueType> temp{key, ValueType{}};
     return entries.contains(temp);
   }
@@ -559,29 +559,29 @@ struct MapCT {
     }
   }
 
-  bool empty() const noexcept {
+  bool empty() const {
     return entries.empty();
   }
 
-  size_t size() const noexcept {
+  size_t size() const {
     return entries.size();
   }
 
-  size_t capacity() const noexcept {
+  size_t capacity() const {
     return entries.capacity();
   }
 
-  bool is_full() const noexcept {
+  bool is_full() const {
     return size() == capacity();
   }
 
-  void clear() noexcept {
+  void clear() {
     entries.clear();
   }
 
   using Iterator = MapIterator<KeyType, ValueType>;
-  Iterator begin() noexcept { return Iterator(entries.elements, entries.elements + entries.count); }
-  Iterator end() noexcept { return Iterator(entries.elements + entries.count, entries.elements + entries.count); }
+  Iterator begin() { return Iterator(entries.elements, entries.elements + entries.count); }
+  Iterator end() { return Iterator(entries.elements + entries.count, entries.elements + entries.count); }
 };
 
 template <typename KeyType, typename ValueType>
@@ -600,7 +600,7 @@ struct MapRT {
     return entries->find(temp);
   }
 
-  bool contains(const KeyType& key) const noexcept {
+  bool contains(const KeyType& key) const {
     Entry<KeyType, ValueType> temp{key, ValueType{}};
     return entries->contains(temp);
   }
@@ -631,29 +631,29 @@ struct MapRT {
     }
   }
 
-  bool empty() const noexcept {
+  bool empty() const {
     return entries->empty();
   }
 
-  size_t size() const noexcept {
+  size_t size() const {
     return entries->size();
   }
 
-  size_t capacity() const noexcept {
+  size_t capacity() const {
     return entries->capacity();
   }
 
-  bool is_full() const noexcept {
+  bool is_full() const {
     return size() == capacity();
   }
 
-  void clear() noexcept {
+  void clear() {
     entries->clear();
   }
 
   using Iterator = MapIterator<KeyType, ValueType>;
-  Iterator begin() noexcept { return Iterator(entries->elements, entries->elements + entries->count); }
-  Iterator end() noexcept { return Iterator(entries->elements + entries->count, entries->elements + entries->count); }
+  Iterator begin() { return Iterator(entries->elements, entries->elements + entries->count); }
+  Iterator end() { return Iterator(entries->elements + entries->count, entries->elements + entries->count); }
 };
 
 // NOTE: Hashmap
@@ -665,14 +665,14 @@ struct Hash {
 
 template<>
 struct Hash<int> {
-  size_t operator()(const int& key) const noexcept {
+  size_t operator()(const int& key) const {
     return key * 2654435761u;
   }
 };
 
 template<>
 struct Hash<const char*> {
-  size_t operator()(const char* key) const noexcept {
+  size_t operator()(const char* key) const {
     // FNV-1a hash
     size_t hash = 14695981039346656037ULL;
     for(; *key; ++key) {
@@ -695,7 +695,7 @@ struct HashEntry {
   V value;
   EntryState state = EntryState::Empty;
 
-  bool operator==(const HashEntry& other) const noexcept {
+  bool operator==(const HashEntry& other) const {
     return KeyCompare<K>::equals(key, other.key);
   }
 };
@@ -751,7 +751,7 @@ struct HashMapCT {
   HashMapCT(HashMapCT&& other) = delete;
   HashMapCT& operator=(HashMapCT&& other) = delete;
 
-  int find_slot(const KeyType& key) const noexcept {
+  int find_slot(const KeyType& key) const {
     size_t hash = hasher(key);
     size_t idx = hash % Size;
     size_t original = idx;
@@ -768,7 +768,7 @@ struct HashMapCT {
     return -1;
   }
 
-  int find_empty_slot(const KeyType& key) noexcept {
+  int find_empty_slot(const KeyType& key) {
     size_t hash = hasher(key);
     size_t idx = hash % Size;
     size_t original = idx;
@@ -807,30 +807,30 @@ struct HashMapCT {
     }
   }
 
-  bool contains(const KeyType& key) const noexcept {
+  bool contains(const KeyType& key) const {
     return find_slot(key) != -1;
   }
 
-  size_t size() const noexcept { return count; }
+  size_t size() const { return count; }
 
-  bool empty() const noexcept { return count == 0; }
+  bool empty() const { return count == 0; }
 
-  void clear() noexcept {
+  void clear() {
     for (int i = 0; i < Size; i++) {
       entries[i].state = EntryState::Empty;
     }
     count = 0;
   }
 
-  size_t capacity() const noexcept { return maxElements; }
+  size_t capacity() const { return maxElements; }
 
-  bool is_full() const noexcept { return size() == capacity(); }
+  bool is_full() const { return size() == capacity(); }
 
   using Iterator = HashMapIterator<KeyType, ValueType>;
-  Iterator begin() noexcept { 
+  Iterator begin() { 
     return Iterator(entries.elements, entries.elements + Size); 
   }
-  Iterator end() noexcept { 
+  Iterator end() { 
     return Iterator(entries.elements + Size, entries.elements + Size); 
   }
 };
@@ -849,7 +849,7 @@ struct HashMapRT {
   HashMapRT(HashMapRT&& other) = delete;
   HashMapRT& operator=(HashMapRT&& other) = delete;
 
-  int find_slot(const KeyType& key) const noexcept {
+  int find_slot(const KeyType& key) const {
     size_t hash = hasher(key);
     size_t idx = hash % maxElements;
     size_t original = idx;
@@ -866,7 +866,7 @@ struct HashMapRT {
     return -1;
   }
 
-  int find_empty_slot(const KeyType& key) noexcept {
+  int find_empty_slot(const KeyType& key) {
     size_t hash = hasher(key);
     size_t idx = hash % maxElements;
     size_t original = idx;
@@ -905,30 +905,30 @@ struct HashMapRT {
     }
   }
 
-  bool contains(const KeyType& key) const noexcept {
+  bool contains(const KeyType& key) const {
     return find_slot(key) != -1;
   }
 
-  size_t size() const noexcept { return count; }
+  size_t size() const { return count; }
 
-  bool empty() const noexcept { return count == 0; }
+  bool empty() const { return count == 0; }
 
-  void clear() noexcept {
+  void clear() {
     for (int i = 0; i < maxElements; i++) {
       entries->get(i).state = EntryState::Empty;
     }
     count = 0;
   }
 
-  size_t capacity() const noexcept { return maxElements; }
+  size_t capacity() const { return maxElements; }
 
-  bool is_full() const noexcept { return size() == capacity(); }
+  bool is_full() const { return size() == capacity(); }
 
   using Iterator = HashMapIterator<KeyType, ValueType>;
-  Iterator begin() noexcept { 
+  Iterator begin() { 
     return Iterator(entries->elements, entries->elements + maxElements); 
   }
-  Iterator end() noexcept { 
+  Iterator end() { 
     return Iterator(entries->elements + maxElements, entries->elements + maxElements); 
   }
 };
@@ -982,7 +982,7 @@ struct GenSparseSetCT {
   ArrayCT<uint32_t, N> dense_to_sparse;
   uint32_t free_head;
 
-  void init() noexcept {
+  void init() {
     sparse.reserve_until(N);
     for (uint32_t i = 0; i < N-1; i++) {
       auto& entry = sparse[i];
@@ -995,7 +995,7 @@ struct GenSparseSetCT {
     free_head = 0;
   }
 
-  GenId add(const T& val) noexcept {
+  GenId add(const T& val) {
     auto& entry = sparse[free_head];
     uint32_t next_free = entry.id();
     uint32_t dense_idx = dense.size();
@@ -1010,7 +1010,7 @@ struct GenSparseSetCT {
     return res;
   }
 
-  void remove(GenId genId) noexcept {
+  void remove(GenId genId) {
     if (genId.id() >= N) return;
 
     auto& entry = sparse[genId.id()];
@@ -1026,7 +1026,7 @@ struct GenSparseSetCT {
     free_head = genId.id();
   }
 
-  T* get(GenId genId) noexcept {
+  T* get(GenId genId) {
     if (genId.id() >= N) return nullptr;
     const auto& entry = sparse[genId.id()];
     if (entry.id() >= dense.size()) return nullptr;
@@ -1034,11 +1034,11 @@ struct GenSparseSetCT {
     return &dense[entry.id()];
   }
 
-  T* operator[](GenId genId) noexcept {
+  T* operator[](GenId genId) {
     return get(genId);
   }
 
-  GenId find(const T& value) noexcept {
+  GenId find(const T& value) {
     for (size_t i = 0; i < dense.size(); i++) {
       if (dense[i] == value) {
         uint32_t sparse_idx = dense_to_sparse[i];
@@ -1048,14 +1048,14 @@ struct GenSparseSetCT {
     return {UINT32_MAX};
   }
 
-  bool contains(GenId genId) noexcept {
+  bool contains(GenId genId) {
     if (genId.id() >= sparse.size()) return false;
     const auto& entry = sparse[genId.id()];
     if (entry.id() >= dense.size()) return false;
     return entry.gen() == genId.gen();
   }
 
-  void clear() noexcept {
+  void clear() {
     dense.clear();
     dense_to_sparse.clear();
 
@@ -1073,17 +1073,17 @@ struct GenSparseSetCT {
     free_head = 0;
   }
 
-  size_t size() const noexcept { return dense.size(); }
+  size_t size() const { return dense.size(); }
 
-  bool empty() const noexcept { return dense.empty(); }
+  bool empty() const { return dense.empty(); }
 
-  bool is_full() const noexcept { return dense.size() == dense.capacity(); }
+  bool is_full() const { return dense.size() == dense.capacity(); }
 
-  bool capacity() const noexcept { return dense.capacity(); }
+  bool capacity() const { return dense.capacity(); }
 
   using Iterator = typename ArrayCT<T, N>::Iterator;
-  Iterator begin() noexcept { return dense.begin(); }
-  Iterator end() noexcept { return dense.end(); }
+  Iterator begin() { return dense.begin(); }
+  Iterator end() { return dense.end(); }
 };
 
 // NOTE: Arena
@@ -1110,23 +1110,23 @@ public:
     return *new Arena(size);
   }
 
-  char& get(size_t idx) noexcept {
+  char& get(size_t idx) {
     LOG_ASSERT(idx < used, "Index out of bounds!");
     return memory[idx];
   }
 
-  char& operator[](size_t idx) noexcept {
+  char& operator[](size_t idx) {
     return get(idx);
   }
 
   template<typename T, typename Arg>
-  T& create(Arg& arg) noexcept {
+  T& create(Arg& arg) {
     T* ptr = alloc_raw<T>();
     return *(new (ptr) T(arg));
   }
 
   template<typename T>
-  T* alloc_raw() noexcept { // Guaranteed to return valid memory or assert
+  T* alloc_raw() { // Guaranteed to return valid memory or assert
     size_t size = sizeof(T);
     size_t aligned_size = (size + 7) & ~7;  // 8-byte alignment
     if (used + aligned_size > capacity) LOG_ASSERT(false, "Arena is full");
@@ -1136,12 +1136,12 @@ public:
   }
 
   template<typename T>
-  T& alloc() noexcept {
+  T& alloc() {
     return *alloc_raw<T>();
   }
 
   template<typename T>
-  T* alloc_raw(size_t size) noexcept { // Guaranteed to return valid memory or assert
+  T* alloc_raw(size_t size) { // Guaranteed to return valid memory or assert
     size_t aligned_size = (size + 7) & ~7;  // 8-byte alignment
     if (used + aligned_size > capacity) LOG_ASSERT(false, "Arena is full");
     T* result = (T*)(memory + used);
@@ -1150,12 +1150,12 @@ public:
   }
 
   template<typename T>
-  T& alloc(size_t size) noexcept {
+  T& alloc(size_t size) {
     return *alloc_raw<T>(size);
   }
 
   template<typename T>
-  T* alloc_count_raw(size_t count) noexcept { // Guaranteed to return valid memory or assert
+  T* alloc_count_raw(size_t count) { // Guaranteed to return valid memory or assert
     size_t total_size = sizeof(T) * count;
     size_t aligned_size = (total_size + 7) & ~7;  // 8-byte alignment
     if (used + aligned_size > capacity) LOG_ASSERT(false, "Arena is full");
@@ -1165,7 +1165,7 @@ public:
   }
 
   template<typename T>
-  T& alloc_count(size_t count) noexcept {
+  T& alloc_count(size_t count) {
     return *alloc_count_raw<T>(count);
   }
 
@@ -1234,20 +1234,20 @@ public:
     return genSparseSet;
   }
 
-  void clear() noexcept {
+  void clear() {
     used = 0;
     memset(memory, 0, capacity); // Sets the memory to 0
   }
 
-  size_t size() const noexcept {
+  size_t size() const {
     return used;
   }
 
-  size_t available() const noexcept {
+  size_t available() const {
     return capacity - used;
   }
 
-  bool is_empty() const noexcept {
+  bool is_empty() const {
     return used == 0;
   }
 
@@ -1266,18 +1266,18 @@ inline Arena& create_arena(size_t size) {
 #define GB(x) ((x) * 1024ULL * 1024ULL * 1024ULL)
 
 // NOTE: File I/O
-long long get_timestamp(const char* file) noexcept;
-bool file_exists(const char* filePath) noexcept;
-size_t get_file_size(const char* filePath) noexcept;
-char* read_file(const char* filePath, Arena& arena) noexcept;
-void write_file(const char* filePath, const char* buffer, size_t size) noexcept;
-bool copy_file(const char* fileName, const char* outputName, Arena& arena) noexcept;
-void remove_file(const char* fileName) noexcept;
+long long get_timestamp(const char* file);
+bool file_exists(const char* filePath);
+size_t get_file_size(const char* filePath);
+char* read_file(const char* filePath, Arena& arena);
+void write_file(const char* filePath, const char* buffer, size_t size);
+bool copy_file(const char* fileName, const char* outputName, Arena& arena);
+void remove_file(const char* fileName);
 
 //NOTE: Testing
-bool CompareFloat(float a, float b, float epsilon = 0.0001f) noexcept;
-bool CompareIntArrays(const int *a, const int *b, size_t size) noexcept;
-bool CompareFloatArrays(const float *a, const float *b, size_t size) noexcept;
-bool CompareUCharArrays(const unsigned char *a, const unsigned char *b, size_t size) noexcept;
-bool CompareUIntArrays(const unsigned int *a, const unsigned int *b, size_t size) noexcept;
-bool CompareUShortArrays(const unsigned short *a, const unsigned short *b, size_t size) noexcept;
+bool CompareFloat(float a, float b, float epsilon = 0.0001f);
+bool CompareIntArrays(const int *a, const int *b, size_t size);
+bool CompareFloatArrays(const float *a, const float *b, size_t size);
+bool CompareUCharArrays(const unsigned char *a, const unsigned char *b, size_t size);
+bool CompareUIntArrays(const unsigned int *a, const unsigned int *b, size_t size);
+bool CompareUShortArrays(const unsigned short *a, const unsigned short *b, size_t size);
