@@ -240,11 +240,11 @@ struct ArrayCT {
         return i;
       }
     }
-    return -1;
+    return UINT32_MAX;
   }
 
   bool contains(const T& value) const {
-    return find(value) != -1;
+    return find(value) != UINT32_MAX;
   }
 
   void clear() {
@@ -356,11 +356,11 @@ struct ArrayRT {
         return i;
       }
     }
-    return -1;
+    return UINT32_MAX;
   }
 
   bool contains(const T& value) const {
-    return find(value) != -1;
+    return find(value) != UINT32_MAX;
   }
 
   T& front() {
@@ -548,7 +548,7 @@ struct MapCT {
 
   ValueType& get(const KeyType key) {
     uint32_t idx = find(key);
-    if (idx == -1) {
+    if (idx == UINT32_MAX) {
       idx = entries.add(Entry<KeyType, ValueType>{key, ValueType{}});
     }
     return entries[idx].value;
@@ -560,14 +560,14 @@ struct MapCT {
 
   void remove(const KeyType& key) {
     uint32_t idx = find(key);
-    if (idx != -1) {
+    if (idx != UINT32_MAX) {
       entries.remove(idx);
     }
   }
 
   void ordered_remove(const KeyType& key) {
     uint32_t idx = find(key);
-    if (idx != -1) {
+    if (idx != UINT32_MAX) {
       entries.ordered_remove(idx);
     }
   }
@@ -625,7 +625,7 @@ struct MapRT {
 
   ValueType& get(const KeyType key) {
     uint32_t idx = find(key);
-    if (idx == -1) {
+    if (idx == UINT32_MAX) {
       idx = entries->add(Entry<KeyType, ValueType>{key, ValueType{}});
     }
     return entries->get(idx).value;
@@ -637,14 +637,14 @@ struct MapRT {
 
   void remove(const KeyType& key) {
     uint32_t idx = find(key);
-    if (idx != -1) {
+    if (idx != UINT32_MAX) {
       entries->remove(idx);
     }
   }
 
   void ordered_remove(const KeyType& key) {
     uint32_t idx = find(key);
-    if (idx != -1) {
+    if (idx != UINT32_MAX) {
       entries->ordered_remove(idx);
     }
   }
@@ -780,7 +780,7 @@ struct HashMapCT {
     uint32_t original = idx;
 
     do {
-      if (entries[idx].state == EntryState::Empty) return -1;
+      if (entries[idx].state == EntryState::Empty) return UINT32_MAX;
       if (entries[idx].state == EntryState::Occupied && 
         KeyCompare<KeyType>::equals(entries[idx].key, key)) {
         return idx;
@@ -788,7 +788,7 @@ struct HashMapCT {
       idx = (idx + 1) % N;
     } while (idx != original);
 
-    return -1;
+    return UINT32_MAX;
   }
 
   uint32_t find_empty_slot(const KeyType& key) {
@@ -802,12 +802,12 @@ struct HashMapCT {
     } while (idx != original);
 
     LOG_ASSERT(false, "No empty slots!");
-    return -1;
+    return UINT32_MAX;
   }
 
   ValueType& get(const KeyType& key) {
     uint32_t idx = find_slot(key);
-    if (idx == -1) {
+    if (idx == UINT32_MAX) {
       LOG_ASSERT(count < N * maxLoadFactor, "HashMap too full!");
       idx = find_empty_slot(key);
       entries[idx].key = key;
@@ -824,14 +824,14 @@ struct HashMapCT {
 
   void remove(const KeyType& key) {
     uint32_t idx = find_slot(key);
-    if (idx != -1) {
+    if (idx != UINT32_MAX) {
       entries[idx].state = EntryState::Dead;
       count--;
     }
   }
 
   bool contains(const KeyType& key) const {
-    return find_slot(key) != -1;
+    return find_slot(key) != UINT32_MAX;
   }
 
   uint32_t size() const { return count; }
@@ -885,7 +885,7 @@ struct HashMapRT {
     uint32_t original = idx;
 
     do {
-      if (entries->get(idx).state == EntryState::Empty) return -1;
+      if (entries->get(idx).state == EntryState::Empty) return UINT32_MAX;
       if (entries->get(idx).state == EntryState::Occupied && 
         KeyCompare<KeyType>::equals(entries->get(idx).key, key)) {
         return idx;
@@ -893,7 +893,7 @@ struct HashMapRT {
       idx = (idx + 1) % maxElements;
     } while (idx != original);
 
-    return -1;
+    return UINT32_MAX;
   }
 
   uint32_t find_empty_slot(const KeyType& key) {
@@ -907,12 +907,12 @@ struct HashMapRT {
     } while (idx != original);
 
     LOG_ASSERT(false, "No empty slots!");
-    return -1;
+    return UINT32_MAX;
   }
 
   ValueType& get(const KeyType& key) {
     uint32_t idx = find_slot(key);
-    if (idx == -1) {
+    if (idx == UINT32_MAX) {
       LOG_ASSERT(count < maxElements * maxLoadFactor, "HashMap too full!");
       idx = find_empty_slot(key);
       entries->get(idx).key = key;
@@ -929,14 +929,14 @@ struct HashMapRT {
 
   void remove(const KeyType& key) {
     uint32_t idx = find_slot(key);
-    if (idx != -1) {
+    if (idx != UINT32_MAX) {
       entries->get(idx).state = EntryState::Dead;
       count--;
     }
   }
 
   bool contains(const KeyType& key) const {
-    return find_slot(key) != -1;
+    return find_slot(key) != UINT32_MAX;
   }
 
   uint32_t size() const { return count; }
