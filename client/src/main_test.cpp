@@ -56,6 +56,7 @@ int main() {
     quicksort_test();
     create_arena_clear_test();
     gen_sparse_set_ct_test();
+    gen_sparse_set_rt_test();
     file_io_test();
 
     unload_client(&client);
