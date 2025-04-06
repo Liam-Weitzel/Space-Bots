@@ -48,6 +48,35 @@ INCLUDES="-I $COMMON_LIBS_DIR -I $LIBS_DIR -I $RAYLIB_SRC -I $RAYLIB_RLIGHTS -I 
 RAYLIB_LIBS="-L $RAYLIB_SRC -L $RAYLIB_SRC/rtext -lraylib"
 STEAM_LIBS=" -l steam_api -L $STEAM_LIB_DIR"
 SYSTEM_LIBS="-lGL -lm -lpthread -ldl -lrt -lX11"
+#Common flags
+COMPILER_FLAGS="\
+    -Wall \
+    -Wextra \
+    -pedantic \
+    -Werror \
+    -Wl,-rpath,\$ORIGIN/"
+#Hot code reloading flags
+COMPILER_FLAGS+="\
+    -fno-gnu-unique \
+    -Wno-format-security \
+    -Wno-write-strings \
+    -Wno-missing-field-initializers"
+#Debug flags
+COMPILER_FLAGS+="\
+    -Wno-unused-parameter \
+    -Wno-unused-variable \
+    -Wno-unused-but-set-variable \
+    -fsanitize=undefined \
+    -fsanitize=address \
+    -fno-sanitize-recover=all \"
+    -O0 -g"
+#Release flags
+RELEASE_FLAGS="\
+    -O3 \
+    -flto \
+    -march=native \
+    -fno-gnu-unique"
+#My current mess
 COMPILER_FLAGS="-Wl,-rpath,\$ORIGIN/ -fno-gnu-unique -Wno-format-security -Wno-write-strings -O0 -g"
 
 # Build raylib if not built
