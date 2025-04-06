@@ -276,7 +276,7 @@ template<typename T>
 struct ArrayRT {
   uint32_t maxElements;  // runtime capacity, set when allocated
   uint32_t count = 0;    // number of elements added so far
-  T elements[1];    // Flexible array member (allocate extra space)
+  T elements[1];         // Flexible array member (allocate extra space)
 
   ArrayRT() = delete;
   ArrayRT(const ArrayRT&) = delete;

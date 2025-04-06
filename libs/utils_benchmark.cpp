@@ -133,6 +133,24 @@ void run_arena_tests(CacheClearMethod method) {
   };
   printf("  Arena RT Hashmap Test: ");
   BENCHMARK(run_rt_hashmap, ITERATIONS);
+
+  auto run_ct_sparse_set = [method]() {
+    if (method == CacheClearMethod::Thorough) clear_cache_thorough();
+    else if (method == CacheClearMethod::Stride) clear_cache_stride();
+    else if (method == CacheClearMethod::Random) clear_cache_random();
+    gen_sparse_set_ct_test();
+  };
+  printf("  Arena CT Sparse Set Test: ");
+  BENCHMARK(run_ct_sparse_set, ITERATIONS);
+
+  auto run_rt_sparse_set = [method]() {
+    if (method == CacheClearMethod::Thorough) clear_cache_thorough();
+    else if (method == CacheClearMethod::Stride) clear_cache_stride();
+    else if (method == CacheClearMethod::Random) clear_cache_random();
+    gen_sparse_set_rt_test();
+  };
+  printf("  Arena RT Sparse Set Test: ");
+  BENCHMARK(run_rt_sparse_set, ITERATIONS);
 }
 
 void run_sort_tests(CacheClearMethod method) {
