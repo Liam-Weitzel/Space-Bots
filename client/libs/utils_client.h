@@ -3,6 +3,7 @@
 #include "raylib.h"
 #include "rlgl.h"
 #include "utils.h"
+#include "game_state.h"
 #include "rres.h"
 #include <cmath>
 #include <cstring>
@@ -12,6 +13,8 @@
 
 // NOTE: Load model from chunk for use with rres
 Model& LoadModelFromChunk(const rresResourceChunk &chunk, Arena &arena);
+// NOTE: Clean the shader code of padded bytes for use with rres
+char* cleanShaderCode(const rresResourceChunk& chunk);
 
 // NOTE: Comparisons
 bool CompareVector3(const Vector3 &a, const Vector3 &b, float epsilon = 0.0001f);
@@ -20,3 +23,6 @@ bool CompareBones(const BoneInfo *a, const BoneInfo *b, size_t size);
 bool CompareMatrices(const Matrix *a, const Matrix *b, size_t count);
 bool CompareColor(const Color &a, const Color &b);
 bool CompareTexture(const Texture &a, const Texture &b);
+
+// NOTE: Commonly used types
+using ArenaIndex = MapCT<const char*, void*, 100>;

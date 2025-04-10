@@ -43,7 +43,7 @@ int main() {
         return 1;
     }
 
-    GameState state = {};
+    GameState state{};
 
     while(1) {
         client.main(&state);

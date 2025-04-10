@@ -1068,7 +1068,7 @@ struct GenSparseSetCT {
     return get(genId);
   }
 
-  GenId find(const T& value) {
+  GenId find(const T& value) const {
     for (uint32_t i = 0; i < dense.size(); i++) {
       if (dense[i] == value) {
         uint32_t sparse_idx = dense_to_sparse[i];
@@ -1078,7 +1078,7 @@ struct GenSparseSetCT {
     return {UINT32_MAX};
   }
 
-  bool contains(GenId genId) {
+  bool contains(GenId genId) const {
     if (genId.id() >= sparse.size()) return false;
     const auto& entry = sparse[genId.id()];
     if (entry.id() >= dense.size()) return false;
@@ -1185,7 +1185,7 @@ struct GenSparseSetRT {
     return get(genId);
   }
 
-  GenId find(const T& value) {
+  GenId find(const T& value) const {
     for (uint32_t i = 0; i < dense->size(); i++) {
       if (dense->get(i) == value) {
         uint32_t sparse_idx = dense_to_sparse->get(i);
@@ -1195,7 +1195,7 @@ struct GenSparseSetRT {
     return {UINT32_MAX};
   }
 
-  bool contains(GenId genId) {
+  bool contains(GenId genId) const {
     if (genId.id() >= sparse->size()) return false;
     const auto& entry = sparse->get(genId.id());
     if (entry.id() >= dense->size()) return false;
@@ -1262,10 +1262,10 @@ public:
     return get(idx);
   }
 
-  template<typename T, typename Arg>
-  T& create(Arg& arg) {
-    T* ptr = alloc_raw<T>();
-    return *(new (ptr) T(arg));
+  template<typename T, typename... Args>
+  T& create(Args... args) {
+      T* ptr = alloc_raw<T>();
+      return *(new (ptr) T(args...));
   }
 
   template<typename T>

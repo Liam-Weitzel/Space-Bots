@@ -1,20 +1,20 @@
-f /home/liam-w/Space-Bots/client/resources/icons.rgi@icons.rgi,0,0,0x00000000,0,0
+f /home/liam-w/Space-Bots/client/resources/icons.rgi@icons.rgi,0,0,0,0,0
 
-f /home/liam-w/Space-Bots/client/resources/styles/ash.rgs@ash.rgs,0,0,0x00000000,0,0
-f /home/liam-w/Space-Bots/client/resources/styles/bluish.rgs@bluish.rgs,0,0,0x00000000,0,0
-f /home/liam-w/Space-Bots/client/resources/styles/candy.rgs@candy.rgs,0,0,0x00000000,0,0
-f /home/liam-w/Space-Bots/client/resources/styles/cherry.rgs@cherry.rgs,0,0,0x00000000,0,0
-f /home/liam-w/Space-Bots/client/resources/styles/cyber.rgs@cyber.rgs,0,0,0x00000000,0,0
-f /home/liam-w/Space-Bots/client/resources/styles/dark.rgs@dark.rgs,0,0,0x00000000,0,0
-f /home/liam-w/Space-Bots/client/resources/styles/enefete.rgs@enefete.rgs,0,0,0x00000000,0,0
-f /home/liam-w/Space-Bots/client/resources/styles/jungle.rgs@jungle.rgs,0,0,0x00000000,0,0
-f /home/liam-w/Space-Bots/client/resources/styles/lavanda.rgs@lavanda.rgs,0,0,0x00000000,0,0
-f /home/liam-w/Space-Bots/client/resources/styles/sunny.rgs@sunny.rgs,0,0,0x00000000,0,0
-f /home/liam-w/Space-Bots/client/resources/styles/terminal.rgs@terminal.rgs,0,0,0x00000000,0,0
+f /home/liam-w/Space-Bots/client/resources/styles/ash.rgs@ash.rgs,0,0,0,0,0
+f /home/liam-w/Space-Bots/client/resources/styles/bluish.rgs@bluish.rgs,0,0,0,0,0
+f /home/liam-w/Space-Bots/client/resources/styles/candy.rgs@candy.rgs,0,0,0,0,0
+f /home/liam-w/Space-Bots/client/resources/styles/cherry.rgs@cherry.rgs,0,0,0,0,0
+f /home/liam-w/Space-Bots/client/resources/styles/cyber.rgs@cyber.rgs,0,0,0,0,0
+f /home/liam-w/Space-Bots/client/resources/styles/dark.rgs@dark.rgs,0,0,0,0,0
+f /home/liam-w/Space-Bots/client/resources/styles/enefete.rgs@enefete.rgs,0,0,0,0,0
+f /home/liam-w/Space-Bots/client/resources/styles/jungle.rgs@jungle.rgs,0,0,0,0,0
+f /home/liam-w/Space-Bots/client/resources/styles/lavanda.rgs@lavanda.rgs,0,0,0,0,0
+f /home/liam-w/Space-Bots/client/resources/styles/sunny.rgs@sunny.rgs,0,0,0,0,0
+f /home/liam-w/Space-Bots/client/resources/styles/terminal.rgs@terminal.rgs,0,0,0,0,0
 
-f /home/liam-w/Space-Bots/client/resources/models/rover_body.bin@rover_body.bin,0,0,0x00000000,0,0
-f /home/liam-w/Space-Bots/client/resources/models/rover_scan.bin@rover_scan.bin,0,0,0x00000000,0,0
-f /home/liam-w/Space-Bots/client/resources/models/rover_wheel.bin@rover_wheel.bin,0,0,0x00000000,0,0
+f /home/liam-w/Space-Bots/client/resources/models/rover_body.bin@rover_body.bin,0,0,0,0,0
+f /home/liam-w/Space-Bots/client/resources/models/rover_scan.bin@rover_scan.bin,0,0,0,0,0
+f /home/liam-w/Space-Bots/client/resources/models/rover_wheel.bin@rover_wheel.bin,0,0,0,0,0
 
-f /home/liam-w/Space-Bots/client/resources/shaders/shadowmap.fs@shadowmap.fs,0,0,0x00000000,0,0
-f /home/liam-w/Space-Bots/client/resources/shaders/shadowmap.vs@shadowmap.vs,0,0,0x00000000,0,0
+f /home/liam-w/Space-Bots/client/resources/shaders/shadowmap.fs@shadowmap.fs,0,0,0,0,0
+f /home/liam-w/Space-Bots/client/resources/shaders/shadowmap.vs@shadowmap.vs,0,0,0,0,0
