@@ -728,7 +728,7 @@ int main(int argc, char *argv[]) {
     size_t key_len = strlen(bin_filename) + 1;
     char* persistent_key = arena.alloc_count_raw<char>(key_len);
     strcpy(persistent_key, bin_filename);
-    modelMap.get(persistent_key) = model;
+    modelMap[persistent_key] = model;
   }
 
   system("./libs/rrespacker/rrespacker -o resources.rres --rrp resources.rrp");

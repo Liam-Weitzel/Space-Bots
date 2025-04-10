@@ -83,33 +83,41 @@ void cleanup(GameState *state) {
   CloseWindow();
 }
 
-void init(GameState *state) {
+void init(GameState& state) {
   SetConfigFlags(FLAG_MSAA_4X_HINT);
   InitWindow(800, 450, "video game");
-  SetTargetFPS(120);
+  SetTargetFPS(1000);
 
-  Arena& arena = *new Arena(KB(32));
-  state->dir = rresLoadCentralDirectory("resources.rres");
+  MapCT& reloadArenaIndex = state.reloadArena.create_map_ct<const char*, void*, 100>();
+  rresCentralDir& dir = state.reloadArena.alloc<rresCentralDir>();
+  dir = rresLoadCentralDirectory("resources.rres");
+  reloadArenaIndex["dir"] = &dir;
 
-  int idRoverBody = rresGetResourceId(state->dir, "rover_body.bin");
+  ResourceManager& resourceManager = state.reloadArena.alloc<ResourceManager>();
+  reloadArenaIndex["resourceManager"] = &resourceManager;
+
+  int idRoverBody = rresGetResourceId(dir, "rover_body.bin");
   rresResourceChunk chunkRoverBody = rresLoadResourceChunk("resources.rres", idRoverBody);
-  state->transientStorage.resourceManager.roverAssets.body = &LoadModelFromChunk(chunkRoverBody, arena);
+  resourceManager.roverAssets.body = &LoadModelFromChunk(chunkRoverBody, state.reloadArena);
 
-  int idRoverScan = rresGetResourceId(state->dir, "rover_scan.bin");
+  int idRoverScan = rresGetResourceId(dir, "rover_scan.bin");
   rresResourceChunk chunkRoverScan = rresLoadResourceChunk("resources.rres", idRoverScan);
-  state->transientStorage.resourceManager.roverAssets.scan = &LoadModelFromChunk(chunkRoverScan, arena);
+  resourceManager.roverAssets.scan = &LoadModelFromChunk(chunkRoverScan, state.reloadArena);
 
-  int idRoverWheel = rresGetResourceId(state->dir, "rover_wheel.bin");
+  int idRoverWheel = rresGetResourceId(dir, "rover_wheel.bin");
   rresResourceChunk chunkRoverWheel = rresLoadResourceChunk("resources.rres", idRoverWheel);
-  state->transientStorage.resourceManager.roverAssets.wheel = &LoadModelFromChunk(chunkRoverWheel, arena);
+  resourceManager.roverAssets.wheel = &LoadModelFromChunk(chunkRoverWheel, state.reloadArena);
 
-  int shadowVsId = rresGetResourceId(state->dir, "shadowmap.vs");
-  int shadowFsId = rresGetResourceId(state->dir, "shadowmap.fs");
+  Shaders& shaders = state.reloadArena.alloc<Shaders>();
+  reloadArenaIndex["shaders"] = &shaders;
+
+  int shadowVsId = rresGetResourceId(dir, "shadowmap.vs");
+  int shadowFsId = rresGetResourceId(dir, "shadowmap.fs");
   rresResourceChunk shadowVsChunk =
       rresLoadResourceChunk("resources.rres", shadowVsId);
   rresResourceChunk shadowFsChunk =
       rresLoadResourceChunk("resources.rres", shadowFsId);
-  state->transientStorage.shadowShader = LoadShaderFromMemory(
+  shaders.shadowShader = LoadShaderFromMemory(
       (const char *)shadowVsChunk.data.raw, // vertex shader code
       (const char *)shadowFsChunk.data.raw  // fragment shader code
   );
@@ -120,7 +128,7 @@ void init(GameState *state) {
   rresUnloadResourceChunk(shadowVsChunk);
   rresUnloadResourceChunk(shadowFsChunk);
 
-  int idIcons = rresGetResourceId(state->dir, "icons.rgi");
+  int idIcons = rresGetResourceId(dir, "icons.rgi");
   rresResourceChunk chunkIcons =
       rresLoadResourceChunk("resources.rres", idIcons);
   GuiLoadIconsFromMemory((const unsigned char *)chunkIcons.data.raw,
@@ -129,67 +137,67 @@ void init(GameState *state) {
 
   GuiLoadStyleDefault();
 
-  state->camera.position = Vector3{10.0f, 10.0f, 10.0f};
-  state->camera.target = Vector3Zero();
-  state->camera.projection = CAMERA_PERSPECTIVE;
-  state->camera.up = Vector3{0.0f, 1.0f, 0.0f};
-  state->camera.fovy = 45.0f;
+  Cameras& cameras = state.reloadArena.alloc<Cameras>(); // TODO: This should actually go in permanent
+  reloadArenaIndex["cameras"] = &cameras;
+  cameras.camera.position = Vector3{10.0f, 10.0f, 10.0f};
+  cameras.camera.target = Vector3Zero();
+  cameras.camera.projection = CAMERA_PERSPECTIVE;
+  cameras.camera.up = Vector3{0.0f, 1.0f, 0.0f};
+  cameras.camera.fovy = 45.0f;
 
-  state->transientStorage.shadowShader.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(state->transientStorage.shadowShader, "viewPos");
-  state->transientStorage.lightDir = Vector3Normalize(Vector3{0.35f, -1.0f, -0.35f});
+  shaders.shadowShader.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(state->transientStorage.shadowShader, "viewPos");
+  shaders.lightDir = Vector3Normalize(Vector3{0.35f, -1.0f, -0.35f});
   Color lightColor = WHITE;
   Vector4 lightColorNormalized = ColorNormalize(lightColor);
-  state->transientStorage.lightDirLoc = GetShaderLocation(state->transientStorage.shadowShader, "lightDir");
-  int lightColLoc = GetShaderLocation(state->transientStorage.shadowShader, "lightColor");
-  SetShaderValue(state->transientStorage.shadowShader,
-                 state->transientStorage.lightDirLoc,
-                 &state->transientStorage.lightDir, SHADER_UNIFORM_VEC3);
-  SetShaderValue(state->transientStorage.shadowShader, lightColLoc,
+  shaders.lightDirLoc = GetShaderLocation(shaders.shadowShader, "lightDir");
+  int lightColLoc = GetShaderLocation(shaders.shadowShader, "lightColor");
+  SetShaderValue(shaders.shadowShader,
+                 shaders.lightDirLoc,
+                 &shaders.lightDir, SHADER_UNIFORM_VEC3);
+  SetShaderValue(shaders.shadowShader, lightColLoc,
                  &lightColorNormalized, SHADER_UNIFORM_VEC4);
   int ambientLoc =
-      GetShaderLocation(state->transientStorage.shadowShader, "ambient");
+      GetShaderLocation(shaders.shadowShader, "ambient");
   float ambient[4] = {0.1f, 0.1f, 0.1f, 1.0f};
-  SetShaderValue(state->transientStorage.shadowShader, ambientLoc, ambient,
+  SetShaderValue(shaders.shadowShader, ambientLoc, ambient,
                  SHADER_UNIFORM_VEC4);
-  state->transientStorage.lightVPLoc =
-      GetShaderLocation(state->transientStorage.shadowShader, "lightVP");
-  state->transientStorage.shadowMapLoc =
-      GetShaderLocation(state->transientStorage.shadowShader, "shadowMap");
+  shaders.lightVPLoc =
+      GetShaderLocation(shaders.shadowShader, "lightVP");
+  shaders.shadowMapLoc =
+      GetShaderLocation(shaders.shadowShader, "shadowMap");
   int shadowMapResolution = SHADOWMAP_RESOLUTION;
-  SetShaderValue(state->transientStorage.shadowShader,
-                 GetShaderLocation(state->transientStorage.shadowShader,
+  SetShaderValue(shaders.shadowShader,
+                 GetShaderLocation(shaders.shadowShader,
                                    "shadowMapResolution"),
                  &shadowMapResolution, SHADER_UNIFORM_INT);
 
-  for (int i = 0; i < state->transientStorage.resourceManager.roverAssets.body->materialCount; i++) {
-    state->transientStorage.resourceManager.roverAssets.body->materials[i].shader =
-        state->transientStorage.shadowShader;
+  for (int i = 0; i < resourceManager.roverAssets.body->materialCount; i++) {
+    resourceManager.roverAssets.body->materials[i].shader =
+        shaders.shadowShader;
   }
 
-  for (int i = 0; i < state->transientStorage.resourceManager.roverAssets.wheel->materialCount; i++) {
-    state->transientStorage.resourceManager.roverAssets.wheel->materials[i].shader =
-        state->transientStorage.shadowShader;
+  for (int i = 0; i < resourceManager.roverAssets.wheel->materialCount; i++) {
+    resourceManager.roverAssets.wheel->materials[i].shader =
+        shaders.shadowShader;
   }
 
-  state->transientStorage.shadowMap.id = rlLoadFramebuffer(); // Load an empty framebuffer
-  state->transientStorage.shadowMap.texture.width = SHADOWMAP_RESOLUTION;
-  state->transientStorage.shadowMap.texture.height = SHADOWMAP_RESOLUTION;
+  shaders.shadowMap.id = rlLoadFramebuffer(); // Load an empty framebuffer
+  shaders.shadowMap.texture.width = SHADOWMAP_RESOLUTION;
+  shaders.shadowMap.texture.height = SHADOWMAP_RESOLUTION;
 
-  if (state->transientStorage.shadowMap.id > 0) {
-    rlEnableFramebuffer(state->transientStorage.shadowMap.id);
+  if (shaders.shadowMap.id > 0) {
+    rlEnableFramebuffer(shaders.shadowMap.id);
 
     // Create depth texture
     // We don't need a color texture for the shadowmap
-    state->transientStorage.shadowMap.depth.id =
-        rlLoadTextureDepth(SHADOWMAP_RESOLUTION, SHADOWMAP_RESOLUTION, false);
-    state->transientStorage.shadowMap.depth.width = SHADOWMAP_RESOLUTION;
-    state->transientStorage.shadowMap.depth.height = SHADOWMAP_RESOLUTION;
-    state->transientStorage.shadowMap.depth.format =
-        19; // DEPTH_COMPONENT_24BIT?
-    state->transientStorage.shadowMap.depth.mipmaps = 1;
+    shaders.shadowMap.depth.id = rlLoadTextureDepth(SHADOWMAP_RESOLUTION, SHADOWMAP_RESOLUTION, false);
+    shaders.shadowMap.depth.width = SHADOWMAP_RESOLUTION;
+    shaders.shadowMap.depth.height = SHADOWMAP_RESOLUTION;
+    shaders.shadowMap.depth.format = 19; // DEPTH_COMPONENT_24BIT?
+    shaders.shadowMap.depth.mipmaps = 1;
 
     // Attach depth texture to FBO
-    rlFramebufferAttach(state->transientStorage.shadowMap.id,
+    rlFramebufferAttach(shaders.shadowMap.id,
                         state->transientStorage.shadowMap.depth.id,
                         RL_ATTACHMENT_DEPTH, RL_ATTACHMENT_TEXTURE2D, 0);
 

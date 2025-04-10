@@ -3,10 +3,12 @@
 #include "raygui.h"
 #include "gui.h"
 #include "rlights.h"
+#include "utils.h"
+#include <cstdint>
 
 struct GUI {
     GuiGuiState gui_state;
-    int style;
+    uint8_t style;
 };
 
 struct RoverAssets {
@@ -24,44 +26,40 @@ struct RoverAssets {
     Model* scan;
     Vector3 scanOffset = {0.0f, 0.5f, 0.0f};
     Vector3 scanRotationAxis = {0.0f, 1.0f, 0.0f};
+    Vector3 scale = {1.0f, 1.0f, 1.0f};
+    Color tint = WHITE;
 };
 
 struct ResourceManager {
     RoverAssets roverAssets;
 };
 
-struct TransientStorage {
+struct Shaders {
     Shader shadowShader;
     RenderTexture2D shadowMap;
     Vector3 lightDir;
     int lightDirLoc;
     int lightVPLoc;
     int shadowMapLoc;
-    ResourceManager resourceManager;
+};
+
+struct Cameras {
+    Camera3D camera;
+    Camera3D lightCamera;
 };
 
 struct GameState {
-    Camera3D camera;
-    Camera3D lightCamera;
-    rresCentralDir dir;
-    GUI gui;
-    int frameCount;
+    uint32_t frameCount;
     float deltaTime;
-    TransientStorage transientStorage;
+    Arena& frameArena = *new Arena(KB(5));        // Clears every frame
+    Arena& matchArena = *new Arena(MB(5));        // Clears every match
+    Arena& reloadArena = *new Arena(MB(50));      // Clears on hot-reload
+    Arena& permanentArena = *new Arena(MB(100));  // Doesn't clear on hot-reload
 };
 
-//*********************
-//  ECS COMPONENTS
-//*********************
-
-struct _Position {
+struct Rover {
     Vector3 position;
     Quaternion rotation;
-};
-
-struct _Rover {
     float wheelRotations[4] = {0.0f}; // [backLeft, backRight, frontLeft, frontRight]
     bool isScanning = false;
-    Vector3 scale = {1.0f, 1.0f, 1.0f};
-    Color tint = WHITE;
-};
+}; // Stored in generational sparse set in match arena
