@@ -1262,10 +1262,10 @@ public:
     return get(idx);
   }
 
-  template<typename T, typename Arg>
-  T& create(Arg& arg) {
-    T* ptr = alloc_raw<T>();
-    return *(new (ptr) T(arg));
+  template<typename T, typename... Args>
+  T& create(Args... args) {
+      T* ptr = alloc_raw<T>();
+      return *(new (ptr) T(args...));
   }
 
   template<typename T>

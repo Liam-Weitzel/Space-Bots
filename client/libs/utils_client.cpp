@@ -317,6 +317,30 @@ Model& LoadModelFromChunk(const rresResourceChunk &chunk, Arena& arena) {
   return model;
 }
 
+// NOTE: Clean the shader code of padded bytes for use with rres
+char* cleanShaderCode(const rresResourceChunk& chunk) {
+  const char* rawCode = (const char*)chunk.data.raw;
+  
+  // Find the last closing brace and add space for null terminator
+  int lastBrace = -1;
+  for (size_t i = 0; i < chunk.info.baseSize; i++) {
+    if (rawCode[i] == '}') lastBrace = i;
+  }
+  
+  if (lastBrace == -1) {
+    printf("ERROR: No closing brace found in shader!\n");
+    return nullptr;
+  }
+  
+  // Copy up to the brace plus newline and null terminator
+  size_t actualSize = lastBrace + 2;  // '}\n'
+  char* cleanCode = new char[actualSize + 1];
+  memcpy(cleanCode, rawCode, actualSize);
+  cleanCode[actualSize] = '\0';
+  
+  return cleanCode;
+}
+
 // NOTE: Comparisons
 bool CompareVector3(const Vector3 &a, const Vector3 &b, float epsilon) {
   return CompareFloat(a.x, b.x, epsilon) && CompareFloat(a.y, b.y, epsilon) &&

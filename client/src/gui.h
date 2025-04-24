@@ -142,7 +142,7 @@ GuiGuiState InitGuiGui()
     return state;
 }
 
-static void Button004(int& style) {
+static void Button004(uint8_t& style) {
     style = (style + 1) % 12;
 }
 
