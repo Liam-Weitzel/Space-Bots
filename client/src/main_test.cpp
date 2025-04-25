@@ -12,7 +12,7 @@ struct Client {
 
 Client load_client() {
     LOG_TRACE("Loading client code...");
-    Client client = {};
+    Client client{};
     const char* LIB_PATH = "./libclient.so";
 
     client.library = dlopen(LIB_PATH, RTLD_NOW | RTLD_DEEPBIND | RTLD_LOCAL);
@@ -44,7 +44,7 @@ int main() {
         return 1;
     }
 
-    // GameState state = {};
+    // GameState state{};
     // client.main(&state);
 
     iterators_arrays_CT_test();

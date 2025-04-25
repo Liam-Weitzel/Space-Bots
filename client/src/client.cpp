@@ -4,6 +4,7 @@
 #include "rlgl.h"
 #include "utils.h"
 #include "utils_client.h"
+#include <cstddef>
 #include <cstdint>
 
 #define RAYGUI_IMPLEMENTATION
@@ -23,12 +24,14 @@
 #include "rlights.h"
 
 #define GLSL_VERSION 330
-#define SHADOWMAP_RESOLUTION 1024
+#define SHADOWMAP_RESOLUTION 2048
 
 void init(GameState& state) {
   SetConfigFlags(FLAG_MSAA_4X_HINT);
   InitWindow(800, 450, "video game");
   SetTargetFPS(1000);
+
+  bool isReload = state.permanentArena.size() > 1700; // is our current load a hot code reload?
 
   rresCentralDir& dir = state.reloadArena.create<rresCentralDir>();
   dir = rresLoadCentralDirectory("resources.rres");
@@ -70,24 +73,6 @@ void init(GameState& state) {
   rresUnloadResourceChunk(chunkRoverWheel);
   rresUnloadResourceChunk(shadowVsChunk);
   rresUnloadResourceChunk(shadowFsChunk);
-
-  int idIcons = rresGetResourceId(dir, "icons.rgi");
-  rresResourceChunk chunkIcons =
-      rresLoadResourceChunk("resources.rres", idIcons);
-  GuiLoadIconsFromMemory((const unsigned char *)chunkIcons.data.raw,
-                         chunkIcons.info.baseSize, "icons");
-  rresUnloadResourceChunk(chunkIcons);
-
-  GuiLoadStyleDefault();
-
-  Cameras& cameras = state.permanentArena.create<Cameras>();
-  state.renderResources.cameras = &cameras;
-
-  cameras.camera.position = Vector3{10.0f, 10.0f, 10.0f};
-  cameras.camera.target = Vector3Zero();
-  cameras.camera.projection = CAMERA_PERSPECTIVE;
-  cameras.camera.up = Vector3{0.0f, 1.0f, 0.0f};
-  cameras.camera.fovy = 45.0f;
 
   shaders.shadowShader.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(shaders.shadowShader, "viewPos");
   shaders.lightDir = Vector3Normalize(Vector3{0.35f, -1.0f, -0.35f});
@@ -154,20 +139,40 @@ void init(GameState& state) {
   } else
     TRACELOG(LOG_WARNING, "FBO: Framebuffer object can not be created");
 
-  // For the shadowmapping algorithm, we will be rendering everything from the
-  // light's point of view
-  cameras.lightCamera.position =
-      Vector3Scale(shaders.lightDir, -15.0f);
-  cameras.lightCamera.target = Vector3Zero();
-  // Use an orthographic projection for directional lights
-  cameras.lightCamera.projection = CAMERA_ORTHOGRAPHIC;
-  cameras.lightCamera.up = Vector3{0.0f, 1.0f, 0.0f};
-  cameras.lightCamera.fovy = 20.0f;
+  int idIcons = rresGetResourceId(dir, "icons.rgi");
+  rresResourceChunk chunkIcons =
+      rresLoadResourceChunk("resources.rres", idIcons);
+  GuiLoadIconsFromMemory((const unsigned char *)chunkIcons.data.raw,
+                         chunkIcons.info.baseSize, "icons");
+  rresUnloadResourceChunk(chunkIcons);
 
-  GUI& gui = state.permanentArena.create<GUI>();
-  state.renderResources.gui = &gui;
-  GuiGuiState gui_state = InitGuiGui();
-  gui.gui_state = gui_state;
+
+  if(!isReload) {
+    Cameras& cameras = state.permanentArena.create<Cameras>();
+    state.renderResources.cameras = &cameras;
+
+    cameras.camera.position = Vector3{10.0f, 10.0f, 10.0f};
+    cameras.camera.target = Vector3Zero();
+    cameras.camera.projection = CAMERA_PERSPECTIVE;
+    cameras.camera.up = Vector3{0.0f, 1.0f, 0.0f};
+    cameras.camera.fovy = 45.0f;
+
+    // For the shadowmapping algorithm, we will be rendering everything from the
+    // light's point of view
+    cameras.lightCamera.position =
+        Vector3Scale(shaders.lightDir, -15.0f);
+    cameras.lightCamera.target = Vector3Zero();
+    // Use an orthographic projection for directional lights
+    cameras.lightCamera.projection = CAMERA_ORTHOGRAPHIC;
+    cameras.lightCamera.up = Vector3{0.0f, 1.0f, 0.0f};
+    cameras.lightCamera.fovy = 20.0f;
+
+    GuiLoadStyleDefault();
+    GUI& gui = state.permanentArena.create<GUI>();
+    state.renderResources.gui = &gui;
+    GuiGuiState gui_state = InitGuiGui();
+    gui.gui_state = gui_state;
+  }
 }
 
 void render(GameState& state) {
@@ -217,7 +222,7 @@ void render(GameState& state) {
 
   DrawFPS(10, 10);
 
-  DrawText("Use key [Y] to toggle lights", 10, 40, 20,
+  DrawText("Use the arrow keys to move the light", 10, 40, 20,
            GetColor(GuiGetStyle(DEFAULT, LINE_COLOR)));
 
   GUI& gui = *state.renderResources.gui;
@@ -265,8 +270,9 @@ void update(GameState& state) {
                  &shaders.lightDir, SHADER_UNIFORM_VEC3);
 }
 
-void cleanup(GameState& state) {
-  state.renderResources.cleanup();
+void reload(GameState& state) {
+  state.renderResources.reload();
+  state.reloadArena.clear();
   CloseWindow();
 }
 
@@ -280,6 +286,7 @@ EXPORT_FN void client_main(GameState& state) {
     state.deltaTime = GetFrameTime();
     update(state);
     render(state);
+    state.frameArena.clear();
   }
-  cleanup(state);
+  reload(state);
 }
