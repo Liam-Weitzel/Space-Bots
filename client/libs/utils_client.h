@@ -3,9 +3,9 @@
 #include "raylib.h"
 #include "rlgl.h"
 #include "utils.h"
-#include "game_state.h"
 #include "rres.h"
 #include <cmath>
+#include <cstdint>
 #include <cstring>
 
 #define MAX_MATERIAL_MAPS 12
@@ -25,4 +25,5 @@ bool CompareColor(const Color &a, const Color &b);
 bool CompareTexture(const Texture &a, const Texture &b);
 
 // NOTE: Commonly used types
-using ArenaIndex = MapCT<const char*, void*, 100>;
+static constexpr uint32_t ArenaIndexSize = 100;
+using ArenaIndex = MapCT<const char*, void*, ArenaIndexSize>;
