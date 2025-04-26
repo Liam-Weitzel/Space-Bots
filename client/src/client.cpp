@@ -20,7 +20,9 @@
 
 void init(GameState& state) {
   SetConfigFlags(FLAG_MSAA_4X_HINT);
-  InitWindow(800, 450, "video game");
+  SetConfigFlags(FLAG_WINDOW_RESIZABLE);
+  InitWindow(800, 450, "Space-Bots");
+  // ToggleFullscreen();
   SetTargetFPS(120);
 
   // FIX: find a better way to find out if we are hot code reloading
