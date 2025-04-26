@@ -40,11 +40,12 @@ STEAM_LIB_DIR="$COMMON_LIBS_DIR/steam/redistributable_bin/linux64"
 STEAM_LIB_FILE="$STEAM_LIB_DIR/libsteam_api.so"
 RRES_SRC="$LIBS_DIR/rres/src"
 SRC_DIR="./src"
+GUIS_DIR="$SRC_DIR/guis"
 
-CPP_FILES="$SRC_DIR/client.cpp $LIBS_DIR/utils_client.cpp $COMMON_LIBS_DIR/utils.cpp $COMMON_LIBS_DIR/utils_test.cpp $SRC_DIR/main_menu.cpp"
+CPP_FILES="$SRC_DIR/client.cpp $LIBS_DIR/utils_client.cpp $COMMON_LIBS_DIR/utils.cpp $COMMON_LIBS_DIR/utils_test.cpp $GUIS_DIR/main_menu.cpp $GUIS_DIR/settings.cpp"
 
 # Common flags
-INCLUDES="-I $COMMON_LIBS_DIR -I $LIBS_DIR -I $RAYLIB_SRC -I $RAYLIB_RLIGHTS -I $RAYLIB_REASINGS -I $RAYGUI_SRC -I $RRES_SRC -I $SRC_DIR -I $STEAM_DIR"
+INCLUDES="-I $COMMON_LIBS_DIR -I $LIBS_DIR -I $RAYLIB_SRC -I $RAYLIB_RLIGHTS -I $RAYLIB_REASINGS -I $RAYGUI_SRC -I $RRES_SRC -I $SRC_DIR -I $GUIS_DIR -I $STEAM_DIR"
 RAYLIB_LIBS="-L $RAYLIB_SRC -L $RAYLIB_SRC/rtext -lraylib"
 STEAM_LIBS=" -l steam_api -L $STEAM_LIB_DIR"
 SYSTEM_LIBS="-lGL -lm -lpthread -ldl -lrt -lX11"

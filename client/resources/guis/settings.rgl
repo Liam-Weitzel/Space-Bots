@@ -1,0 +1,20 @@
+#
+# rgl layout text file (v4.0) - raygui layout file generated using rGuiLayout
+#
+# Number of controls:     9
+#
+# Ref. window:    r <x> <y> <width> <height>
+# Anchor info:    a <id> <name> <posx> <posy> <enabled>
+# Control info:   c <id> <type> <name> <rectangle> <anchor_id> <text>
+#
+r 0 0 -1 -1
+a 001 anchor01 392 376 1
+c 000 1 settingsGroupBox -96 -88 192 184 1 Settings
+c 001 15 uiStyleSpinner -24 40 80 24 1 UI Style
+c 002 17 musicSliderBar -24 -80 112 16 1 Music
+c 003 17 sfxSliderBar -24 -56 112 16 1 SFX
+c 004 14 fpsValueBox -24 -24 72 24 1 FPS
+c 005 2 Line -96 -40 192 16 1 
+c 006 16 uiScaleSlider -24 72 112 16 1 UI Scale
+c 007 11 screenDropdownBox -24 8 96 24 1 Windowed; Fullscreen
+c 008 4 screenLabel -72 8 56 24 1 Screen
