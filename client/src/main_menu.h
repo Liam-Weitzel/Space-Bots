@@ -22,3 +22,4 @@ void PartyKickButton3();                // Button: partyKickButton3 logic
 void PartyKickButton4();                // Button: partyKickButton4 logic
 void PartyLeaveButton();                // Button: partyLeaveButton logic
 void PartyInviteButton();                // Button: partyInviteButton logic
+void ExitButton();                      // Button: exitButton logic

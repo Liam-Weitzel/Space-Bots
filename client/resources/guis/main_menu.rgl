@@ -18,7 +18,7 @@ c 002 5 sandboxButton 0 168 144 48 2 Sandbox
 c 003 5 customGameButton 0 112 144 48 2 Custom game
 c 004 5 settingsButton 0 -344 144 48 1 Settings
 c 005 20 chatScrollWindow 0 -288 576 288 1 
-c 006 3 musicSelectorPanel -136 -288 136 288 3 
+c 006 1 musicSelectorPanel -136 -288 136 288 3 Music
 c 007 21 songsListView -128 -248 120 240 3 ONE;TWO;THREE
 c 008 15 albumSpinner -128 -280 120 24 3 
 c 009 1 partyGroupBox -192 80 192 208 4 Party
@@ -39,3 +39,4 @@ c 023 5 partyKickButton3 -232 200 32 16 4 Kick
 c 024 5 partyKickButton4 -232 248 32 16 4 Kick
 c 025 5 partyLeaveButton -184 296 80 24 4 Leave
 c 026 5 partyInviteButton -96 296 80 24 4 Invite
+c 027 5 exitButton 152 -344 144 48 1 Exit

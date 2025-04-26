@@ -1,11 +1,14 @@
 #include "main_menu.h"
 #include "raygui.h"
+#include "raylib.h"
+#include <cmath>
 
 const char *realtimeButtonText = "Realtime (1885)";    // BUTTON: realtimeButton
 const char *arenaButtonText = "Arena (1756)";    // BUTTON: arenaButton
 const char *sandboxButtonText = "Sandbox";    // BUTTON: sandboxButton
 const char *customGameButtonText = "Custom game";    // BUTTON: customGameButton
 const char *settingsButtonText = "Settings";    // BUTTON: settingsButton
+const char *exitButtonText = "Exit";    // BUTTON: exitButton
 const char *songsListViewText = "ONE;TWO;THREE";    // LISTVIEW: songsListView
 const char *partyGroupBoxText = "Party";    // GROUPBOX: partyGroupBox
 const char *profileGroupBoxText = "Profile";    // GROUPBOX: profileGroupBox
@@ -25,15 +28,9 @@ const char *partyKickButton3Text = "Kick";    // BUTTON: partyKickButton3
 const char *partyKickButton4Text = "Kick";    // BUTTON: partyKickButton4
 const char *partyLeaveButtonText = "Leave";    // BUTTON: partyLeaveButton
 const char *partyInviteButtonText = "Invite";    // BUTTON: partyInviteButton
-const char *musicSelectorPanelText = "";    // PANEL: musicSelectorPanel
+const char *musicSelectorGroupBoxText = "Music";    // GROUPBOX: musicSelectorGroupBox
 const char *albumSpinnerText = "";  // SPINNER: albumSpinner
 const char *chatScrollWindowText = ""; // SCROLLWINDOW: chatScrollWindow
-
-// Define anchors
-Vector2 anchor01 = { 24, 936 };            // ANCHOR ID:1
-Vector2 anchor02 = { 24, 24 };            // ANCHOR ID:2
-Vector2 anchor03 = { 1648, 936 };            // ANCHOR ID:3
-Vector2 anchor04 = { 1648, 24 };            // ANCHOR ID:4
 
 // Define controls variables
 Rectangle chatScrollWindowScrollView = { 0, 0, 0, 0 };
@@ -44,38 +41,83 @@ int songsListViewActive = 0;            // ListView: songsListView
 bool albumSpinnerEditMode = false;
 int albumSpinnerValue = 0;            // Spinner: albumSpinner
 
+struct UIScale {
+    float baseWidth = 1920.0f;
+    float baseHeight = 1080.0f;
+    float scaleX;
+    float scaleY;
+    float uniformScale;
+    float userScaleMultiplier = 1.5f;  // User can modify this through settings (e.g. 0.8 to 1.5)
+};
+
+UIScale CalculateUIScale() {
+    UIScale scale;
+    float width = GetScreenWidth();
+    float height = GetScreenHeight();
+    
+    scale.scaleX = width / scale.baseWidth;
+    scale.scaleY = height / scale.baseHeight;
+
+    // Use the smaller scale to maintain proportions
+    scale.uniformScale = (scale.scaleX < scale.scaleY) ? scale.scaleX : scale.scaleY;
+
+    // Apply user's preference to the final scale
+    scale.uniformScale *= scale.userScaleMultiplier;
+
+    return scale;
+}
+
+float ScaleSize(float baseSize, float scaleFactor) {
+    return roundf(baseSize * scaleFactor);
+}
+
 void DrawMainMenu() {
     // TODO: re-calculate where anchor points should be & the size of each box should be & the font size
-    GuiSetStyle(DEFAULT, TEXT_SIZE, 20);
 
-    Rectangle layoutRecs[27] = {
-        {anchor02.x + 0, anchor02.y + 0, 144, 48},    // Button: realtimeButton
-        {anchor02.x + 0, anchor02.y + 56, 144, 48},    // Button: arenaButton
-        {anchor02.x + 0, anchor02.y + 168, 144, 48},    // Button: sandboxButton
-        {anchor02.x + 0, anchor02.y + 112, 144, 48},    // Button: customGameButton
-        {anchor01.x + 0, anchor01.y - 344, 144, 48},    // Button: settingsButton
-        {anchor01.x + 0, anchor01.y - 288, 576, 288},    // ScrollPanel: chatScrollWindow
-        {anchor03.x - 136, anchor03.y - 288, 136, 288},    // Panel: musicSelectorPanel
-        {anchor03.x - 128, anchor03.y - 248, 120, 240},    // ListView: songsListView
-        {anchor03.x - 128, anchor03.y - 280, 120, 24},    // Spinner: albumSpinner
-        {anchor04.x - 192, anchor04.y + 80, 192, 208},    // GroupBox: partyGroupBox
-        {anchor04.x - 192, anchor04.y + 8, 192, 64},    // GroupBox: profileGroupBox
-        {anchor04.x - 184, anchor04.y + 240, 112, 32},    // Button: partyUsernameButton4
-        {anchor04.x - 184, anchor04.y + 192, 112, 32},    // Button: partyUsernameButton3
-        {anchor04.x - 184, anchor04.y + 144, 112, 32},    // Button: partyUsernameButton2
-        {anchor04.x - 184, anchor04.y + 96, 112, 32},    // Button: partyUsernameButton1
-        {anchor04.x - 184, anchor04.y + 24, 112, 32},    // Button: profileUsernameButton
-        {anchor04.x - 64, anchor04.y + 16, 56, 48},    // Button: profileIconButton
-        {anchor04.x - 64, anchor04.y + 88, 56, 48},    // Button: partyIconButton1
-        {anchor04.x - 64, anchor04.y + 136, 56, 48},    // Button: partyIconButton2
-        {anchor04.x - 64, anchor04.y + 184, 56, 48},    // Button: partyIconButton3
-        {anchor04.x - 64, anchor04.y + 232, 56, 48},    // Button: partyIconButton4
-        {anchor04.x - 232, anchor04.y + 104, 32, 16},    // Button: partyKickButton1
-        {anchor04.x - 232, anchor04.y + 152, 32, 16},    // Button: partyKickButton2
-        {anchor04.x - 232, anchor04.y + 200, 32, 16},    // Button: partyKickButton3
-        {anchor04.x - 232, anchor04.y + 248, 32, 16},    // Button: partyKickButton4
-        {anchor04.x - 184, anchor04.y + 296, 80, 24},    // Button: partyLeaveButton
-        {anchor04.x - 96, anchor04.y + 296, 80, 24}     // Button: partyInviteButton
+    float width = GetScreenWidth();
+    float height = GetScreenHeight();
+    
+    UIScale scale = CalculateUIScale();
+
+    // Scale the base font size (12) with the UI
+    int scaledFontSize = (int)ScaleSize(12.0f, scale.uniformScale);
+    GuiSetStyle(DEFAULT, TEXT_SIZE, scaledFontSize);
+    
+    // Define anchors
+    Vector2 anchor01 = { 24 * scale.scaleX, height - 24 * scale.scaleY };
+    Vector2 anchor02 = { 24 * scale.scaleX, 24 * scale.scaleY };
+    Vector2 anchor03 = { width - 24 * scale.scaleX, height - 24 * scale.scaleY };
+    Vector2 anchor04 = { width - 24 * scale.scaleX, 24 * scale.scaleY };
+
+    Rectangle layoutRecs[28] = {
+        {anchor02.x, anchor02.y, ScaleSize(144, scale.uniformScale), ScaleSize(48, scale.uniformScale)},    // Button: realtimeButton
+        {anchor02.x, anchor02.y + ScaleSize(56, scale.uniformScale), ScaleSize(144, scale.uniformScale), ScaleSize(48, scale.uniformScale)},    // Button: arenaButton
+        {anchor02.x, anchor02.y + ScaleSize(168, scale.uniformScale), ScaleSize(144, scale.uniformScale), ScaleSize(48, scale.uniformScale)},    // Button: sandboxButton
+        {anchor02.x, anchor02.y + ScaleSize(112, scale.uniformScale), ScaleSize(144, scale.uniformScale), ScaleSize(48, scale.uniformScale)},    // Button: customGameButton
+        {anchor01.x, anchor01.y - ScaleSize(344, scale.uniformScale), ScaleSize(144, scale.uniformScale), ScaleSize(48, scale.uniformScale)},    // Button: settingsButton
+        {anchor01.x, anchor01.y - ScaleSize(288, scale.uniformScale), ScaleSize(576, scale.uniformScale), ScaleSize(288, scale.uniformScale)},    // ScrollPanel: chatScrollWindow
+        {anchor03.x - ScaleSize(136, scale.uniformScale), anchor03.y - ScaleSize(288, scale.uniformScale), ScaleSize(136, scale.uniformScale), ScaleSize(288, scale.uniformScale)},    // GroupBox: musicSelectorGroupBox
+        {anchor03.x - ScaleSize(128, scale.uniformScale), anchor03.y - ScaleSize(248, scale.uniformScale), ScaleSize(120, scale.uniformScale), ScaleSize(240, scale.uniformScale)},    // ListView: songsListView
+        {anchor03.x - ScaleSize(128, scale.uniformScale), anchor03.y - ScaleSize(280, scale.uniformScale), ScaleSize(120, scale.uniformScale), ScaleSize(24, scale.uniformScale)},    // Spinner: albumSpinner
+        {anchor04.x - ScaleSize(192, scale.uniformScale), anchor04.y + ScaleSize(80, scale.uniformScale), ScaleSize(192, scale.uniformScale), ScaleSize(208, scale.uniformScale)},    // GroupBox: partyGroupBox
+        {anchor04.x - ScaleSize(192, scale.uniformScale), anchor04.y + ScaleSize(8, scale.uniformScale), ScaleSize(192, scale.uniformScale), ScaleSize(64, scale.uniformScale)},    // GroupBox: profileGroupBox
+        {anchor04.x - ScaleSize(184, scale.uniformScale), anchor04.y + ScaleSize(240, scale.uniformScale), ScaleSize(112, scale.uniformScale), ScaleSize(32, scale.uniformScale)},    // Button: partyUsernameButton4
+        {anchor04.x - ScaleSize(184, scale.uniformScale), anchor04.y + ScaleSize(192, scale.uniformScale), ScaleSize(112, scale.uniformScale), ScaleSize(32, scale.uniformScale)},    // Button: partyUsernameButton3
+        {anchor04.x - ScaleSize(184, scale.uniformScale), anchor04.y + ScaleSize(144, scale.uniformScale), ScaleSize(112, scale.uniformScale), ScaleSize(32, scale.uniformScale)},    // Button: partyUsernameButton2
+        {anchor04.x - ScaleSize(184, scale.uniformScale), anchor04.y + ScaleSize(96, scale.uniformScale), ScaleSize(112, scale.uniformScale), ScaleSize(32, scale.uniformScale)},    // Button: partyUsernameButton1
+        {anchor04.x - ScaleSize(184, scale.uniformScale), anchor04.y + ScaleSize(24, scale.uniformScale), ScaleSize(112, scale.uniformScale), ScaleSize(32, scale.uniformScale)},    // Button: profileUsernameButton
+        {anchor04.x - ScaleSize(64, scale.uniformScale), anchor04.y + ScaleSize(16, scale.uniformScale), ScaleSize(56, scale.uniformScale), ScaleSize(48, scale.uniformScale)},    // Button: profileIconButton
+        {anchor04.x - ScaleSize(64, scale.uniformScale), anchor04.y + ScaleSize(88, scale.uniformScale), ScaleSize(56, scale.uniformScale), ScaleSize(48, scale.uniformScale)},    // Button: partyIconButton1
+        {anchor04.x - ScaleSize(64, scale.uniformScale), anchor04.y + ScaleSize(136, scale.uniformScale), ScaleSize(56, scale.uniformScale), ScaleSize(48, scale.uniformScale)},    // Button: partyIconButton2
+        {anchor04.x - ScaleSize(64, scale.uniformScale), anchor04.y + ScaleSize(184, scale.uniformScale), ScaleSize(56, scale.uniformScale), ScaleSize(48, scale.uniformScale)},    // Button: partyIconButton3
+        {anchor04.x - ScaleSize(64, scale.uniformScale), anchor04.y + ScaleSize(232, scale.uniformScale), ScaleSize(56, scale.uniformScale), ScaleSize(48, scale.uniformScale)},    // Button: partyIconButton4
+        {anchor04.x - ScaleSize(232, scale.uniformScale), anchor04.y + ScaleSize(104, scale.uniformScale), ScaleSize(32, scale.uniformScale), ScaleSize(16, scale.uniformScale)},    // Button: partyKickButton1
+        {anchor04.x - ScaleSize(232, scale.uniformScale), anchor04.y + ScaleSize(152, scale.uniformScale), ScaleSize(32, scale.uniformScale), ScaleSize(16, scale.uniformScale)},    // Button: partyKickButton2
+        {anchor04.x - ScaleSize(232, scale.uniformScale), anchor04.y + ScaleSize(200, scale.uniformScale), ScaleSize(32, scale.uniformScale), ScaleSize(16, scale.uniformScale)},    // Button: partyKickButton3
+        {anchor04.x - ScaleSize(232, scale.uniformScale), anchor04.y + ScaleSize(248, scale.uniformScale), ScaleSize(32, scale.uniformScale), ScaleSize(16, scale.uniformScale)},    // Button: partyKickButton4
+        {anchor04.x - ScaleSize(184, scale.uniformScale), anchor04.y + ScaleSize(296, scale.uniformScale), ScaleSize(80, scale.uniformScale), ScaleSize(24, scale.uniformScale)},    // Button: partyLeaveButton
+        {anchor04.x - ScaleSize(96, scale.uniformScale), anchor04.y + ScaleSize(296, scale.uniformScale), ScaleSize(80, scale.uniformScale), ScaleSize(24, scale.uniformScale)},     // Button: partyInviteButton
+        {anchor01.x + ScaleSize(152, scale.uniformScale), anchor01.y - ScaleSize(344, scale.uniformScale), ScaleSize(144, scale.uniformScale), ScaleSize(48, scale.uniformScale)}    // Button: exitButton
     };
 
     if (GuiButton(layoutRecs[0], realtimeButtonText)) RealtimeButton(); 
@@ -92,7 +134,7 @@ void DrawMainMenu() {
         &chatScrollWindowScrollOffset,
         &chatScrollWindowScrollView
     );
-    GuiPanel(layoutRecs[6], musicSelectorPanelText);
+    GuiGroupBox(layoutRecs[6], musicSelectorGroupBoxText);
     GuiListView(layoutRecs[7], songsListViewText, &songsListViewScrollIndex, &songsListViewActive);
     if (GuiSpinner(layoutRecs[8], albumSpinnerText, &albumSpinnerValue, 0, 100, albumSpinnerEditMode)) albumSpinnerEditMode = !albumSpinnerEditMode;
     GuiGroupBox(layoutRecs[9], partyGroupBoxText);
@@ -113,6 +155,7 @@ void DrawMainMenu() {
     if (GuiButton(layoutRecs[24], partyKickButton4Text)) PartyKickButton4(); 
     if (GuiButton(layoutRecs[25], partyLeaveButtonText)) PartyLeaveButton(); 
     if (GuiButton(layoutRecs[26], partyInviteButtonText)) PartyInviteButton(); 
+    if (GuiButton(layoutRecs[27], exitButtonText)) ExitButton(); 
 }
 
 void RealtimeButton() {
@@ -196,5 +239,9 @@ void PartyLeaveButton() {
 }
 
 void PartyInviteButton() {
+    // TODO: Implement control logic
+}
+
+void ExitButton() {
     // TODO: Implement control logic
 }
