@@ -15,7 +15,7 @@ build_shared_lib() {
     FINAL_NAME="libclient.so"
     
     # Build to a temporary file first
-    g++ -shared -fPIC $SRC_DIR/client.cpp $CPP_FILES \
+    g++ -shared -fPIC $CPP_FILES \
         $INCLUDES \
         $RAYLIB_LIBS \
         $STEAM_LIBS \
@@ -41,7 +41,7 @@ STEAM_LIB_FILE="$STEAM_LIB_DIR/libsteam_api.so"
 RRES_SRC="$LIBS_DIR/rres/src"
 SRC_DIR="./src"
 
-CPP_FILES="$LIBS_DIR/utils_client.cpp $COMMON_LIBS_DIR/utils.cpp $COMMON_LIBS_DIR/utils_test.cpp"
+CPP_FILES="$SRC_DIR/client.cpp $LIBS_DIR/utils_client.cpp $COMMON_LIBS_DIR/utils.cpp $COMMON_LIBS_DIR/utils_test.cpp $SRC_DIR/main_menu.cpp"
 
 # Common flags
 INCLUDES="-I $COMMON_LIBS_DIR -I $LIBS_DIR -I $RAYLIB_SRC -I $RAYLIB_RLIGHTS -I $RAYLIB_REASINGS -I $RAYGUI_SRC -I $RRES_SRC -I $SRC_DIR -I $STEAM_DIR"
@@ -121,7 +121,7 @@ if [ "$1" = "hot" ]; then
 fi
 
 print_status "Building main executable..."
-g++ $SRC_DIR/main.cpp $SRC_DIR/client.cpp $CPP_FILES \
+g++ $SRC_DIR/main.cpp $CPP_FILES \
     $INCLUDES \
     $RAYLIB_LIBS \
     $STEAM_LIBS \
@@ -132,7 +132,7 @@ g++ $SRC_DIR/main.cpp $SRC_DIR/client.cpp $CPP_FILES \
 # Generate compilation database only if it doesn't exist
 if [ ! -f "compile_commands.json" ]; then
     print_status "Generating compilation database..."
-    bear -- g++ -shared -fPIC $SRC_DIR/client.cpp $CPP_FILES \
+    bear -- g++ -shared -fPIC $CPP_FILES \
         $INCLUDES \
         $RAYLIB_LIBS \
         $STEAM_LIBS \

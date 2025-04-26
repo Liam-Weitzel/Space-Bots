@@ -1,15 +1,8 @@
 #pragma once
-#include "raylib.h"
-#include "raygui.h"
-#include "gui.h"
-#include "rlights.h"
-#include "rlgl.h"
 #include "utils.h"
 #include "utils_client.h"
-#include <cstdint>
 
 struct GUI { // Permanent
-  GuiGuiState gui_state;
   uint8_t style;
 };
 
@@ -78,9 +71,16 @@ struct RenderResources {
   }
 };
 
+enum class GameMode {
+  MENU,
+  REALTIME,
+  AUTOBATTLE
+};
+
 struct GameState {
-  uint32_t frameCount;
-  float deltaTime;
+  uint32_t frameCount = 0;
+  float deltaTime = 0;
+  GameMode gameMode = GameMode::MENU;
 
   // Direct pointers to static arena-managed resources
   RenderResources renderResources;

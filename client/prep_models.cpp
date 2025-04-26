@@ -7,12 +7,7 @@
 #include <dirent.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-#define RRES_IMPLEMENTATION
 #include "rres.h"
-
-#define RRES_RAYLIB_IMPLEMENTATION
-#include "rres-raylib.h"
 
 // g++ prep_models.cpp -o prep_models -I ./libs -I ../libs -I ./src/ -I ./libs/raylib/src/ -I ./libs/rres/src/ -L ./libs/raylib/src/ -lraylib -lGL -lm -lpthread -ldl -lrt -lX11 -Wl,-rpath,\$ORIGIN/ -fno-gnu-unique -Wno-format-security -g -O0
 
