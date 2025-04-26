@@ -184,7 +184,7 @@ void render(GameState& state) {
 
       Shaders& shaders = *state.renderResources.shaders;
       BeginTextureMode(shaders.shadowMap);
-      ClearBackground(WHITE);
+      ClearBackground(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
       Cameras& cameras = *state.renderResources.cameras;
       BeginMode3D(cameras.lightCamera);
         lightView = rlGetMatrixModelview();

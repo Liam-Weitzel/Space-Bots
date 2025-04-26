@@ -1,6 +1,8 @@
 #include "main_menu.h"
+#include "guis/settings.h"
 #include "raygui.h"
 #include "raylib.h"
+#include "utils_client.h"
 #include <cmath>
 
 const char *realtimeButtonText = "Realtime (1885)";    // BUTTON: realtimeButton
@@ -40,40 +42,9 @@ int songsListViewScrollIndex = 0;
 int songsListViewActive = 0;            // ListView: songsListView
 bool albumSpinnerEditMode = false;
 int albumSpinnerValue = 0;            // Spinner: albumSpinner
-
-struct UIScale {
-    float baseWidth = 1920.0f;
-    float baseHeight = 1080.0f;
-    float scaleX;
-    float scaleY;
-    float uniformScale;
-    float userScaleMultiplier = 1.5f;  // User can modify this through settings (e.g. 0.8 to 1.5)
-};
-
-UIScale CalculateUIScale() {
-    UIScale scale;
-    float width = GetScreenWidth();
-    float height = GetScreenHeight();
-    
-    scale.scaleX = width / scale.baseWidth;
-    scale.scaleY = height / scale.baseHeight;
-
-    // Use the smaller scale to maintain proportions
-    scale.uniformScale = (scale.scaleX < scale.scaleY) ? scale.scaleX : scale.scaleY;
-
-    // Apply user's preference to the final scale
-    scale.uniformScale *= scale.userScaleMultiplier;
-
-    return scale;
-}
-
-float ScaleSize(float baseSize, float scaleFactor) {
-    return roundf(baseSize * scaleFactor);
-}
+bool settingsActive = false;
 
 void DrawMainMenu() {
-    // TODO: re-calculate where anchor points should be & the size of each box should be & the font size
-
     float width = GetScreenWidth();
     float height = GetScreenHeight();
     
@@ -156,6 +127,8 @@ void DrawMainMenu() {
     if (GuiButton(layoutRecs[25], partyLeaveButtonText)) PartyLeaveButton(); 
     if (GuiButton(layoutRecs[26], partyInviteButtonText)) PartyInviteButton(); 
     if (GuiButton(layoutRecs[27], exitButtonText)) ExitButton(); 
+
+    if(settingsActive) DrawSettings();
 }
 
 void RealtimeButton() {
@@ -175,7 +148,7 @@ void CustomGameButton() {
 }
 
 void SettingsButton() {
-    // TODO: Implement control logic
+    settingsActive = !settingsActive;
 }
 
 void PartyUsernameButton4() {
