@@ -1,0 +1,41 @@
+#
+# rgl layout text file (v4.0) - raygui layout file generated using rGuiLayout
+#
+# Number of controls:     27
+#
+# Ref. window:    r <x> <y> <width> <height>
+# Anchor info:    a <id> <name> <posx> <posy> <enabled>
+# Control info:   c <id> <type> <name> <rectangle> <anchor_id> <text>
+#
+r 0 40 -1 -1
+a 001 anchor01 24 936 1
+a 002 anchor02 24 24 1
+a 003 anchor03 1648 936 1
+a 004 anchor04 1648 24 1
+c 000 5 realtimeButton 0 0 144 48 2 Realtime (1885)
+c 001 5 arenaButton 0 56 144 48 2 Arena (1756)
+c 002 5 sandboxButton 0 168 144 48 2 Sandbox
+c 003 5 customGameButton 0 112 144 48 2 Custom game
+c 004 5 settingsButton 0 -344 144 48 1 Settings
+c 005 20 chatScrollWindow 0 -288 576 288 1 
+c 006 3 musicSelectorPanel -136 -288 136 288 3 
+c 007 21 songsListView -128 -248 120 240 3 ONE;TWO;THREE
+c 008 15 albumSpinner -128 -280 120 24 3 
+c 009 1 partyGroupBox -192 80 192 208 4 Party
+c 010 1 profileGroupBox -192 8 192 64 4 Profile
+c 011 5 partyUsernameButton4 -184 240 112 32 4 USERNAME
+c 012 5 partyUsernameButton3 -184 192 112 32 4 USERNAME
+c 013 5 partyUsernameButton2 -184 144 112 32 4 USERNAME
+c 014 5 partyUsernameButton1 -184 96 112 32 4 USERNAME
+c 015 5 profileUsernameButton -184 24 112 32 4 USERNAME
+c 016 5 profileIconButton -64 16 56 48 4 
+c 017 5 partyIconButton1 -64 88 56 48 4 
+c 018 5 partyIconButton2 -64 136 56 48 4 
+c 019 5 partyIconButton3 -64 184 56 48 4 
+c 020 5 partyIconButton4 -64 232 56 48 4 
+c 021 5 partyKickButton1 -232 104 32 16 4 Kick
+c 022 5 partyKickButton2 -232 152 32 16 4 Kick
+c 023 5 partyKickButton3 -232 200 32 16 4 Kick
+c 024 5 partyKickButton4 -232 248 32 16 4 Kick
+c 025 5 partyLeaveButton -184 296 80 24 4 Leave
+c 026 5 partyInviteButton -96 296 80 24 4 Invite
