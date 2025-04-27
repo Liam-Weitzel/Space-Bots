@@ -16,12 +16,20 @@
 #define RRES_RAYLIB_IMPLEMENTATION
 #include "rres-raylib.h"
 
+#define RINI_IMPLEMENTATION
+#include "rini.h"
+
 #define GLSL_VERSION 330
 #define SHADOWMAP_RESOLUTION 2048
 
 void init(GameState& state) {
   SetConfigFlags(FLAG_MSAA_4X_HINT);
   SetConfigFlags(FLAG_WINDOW_RESIZABLE);
+  // SetConfigFlags(FLAG_WINDOW_TOPMOST | FLAG_WINDOW_UNDECORATED);
+
+  rini_config config = rini_load_config("settings.ini");
+  // TODO: Parse out settings and load back into state if not hot code reload
+
   InitWindow(800, 450, "Space-Bots");
   // ToggleFullscreen();
   SetTargetFPS(120);
@@ -165,6 +173,10 @@ void init(GameState& state) {
         cameras.lightCamera.fovy = 20.0f;
 
         GUI& gui = state.permanentArena.create<GUI>();
+        gui.settingsMenu.anchor01 = {
+          static_cast<float>(GetScreenWidth()) / 2.0f,
+          static_cast<float>(GetScreenHeight()) / 2.0f
+        };
         state.renderResources.gui = &gui;
       }
     } break;

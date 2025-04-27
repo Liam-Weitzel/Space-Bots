@@ -1416,6 +1416,7 @@ char* read_file(const char* filePath, Arena& arena);
 void write_file(const char* filePath, const char* buffer, uint32_t size);
 bool copy_file(const char* fileName, const char* outputName, Arena& arena);
 void remove_file(const char* fileName);
+void rename_file(const char *__old, const char *__new);
 
 //NOTE: Testing
 bool CompareFloat(float a, float b, float epsilon = 0.0001f);

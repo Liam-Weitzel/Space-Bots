@@ -79,7 +79,7 @@ struct MainMenu {
 };
 
 struct SettingsMenu {
-  char settingsGroupBoxText[32];
+  char settingsWindowBoxText[32];
   char musicSliderBarText[32];
   char sfxSliderBarText[32];
   char uiScaleSliderText[32];
@@ -88,31 +88,37 @@ struct SettingsMenu {
   char LineText[32];
   char fpsValueBoxText[32];
   char uiStyleSpinnerText[32];
+  char Line2Text[32];
+  char cancelButtonText[32];
+  char applyButtonText[32];
 
-  Rectangle layoutRecs[9];
-  Vector2 anchor01;
+  Rectangle layoutRecs[12];
+  Vector2 anchor01 = {0, 0};
   bool uiStyleSpinnerEditMode = false;
   int uiStyleSpinnerValue = 0;
-  float musicSliderBarValue = 0.0f;
-  float sfxSliderBarValue = 0.0f;
+  float musicSliderBarValue = 50.0f;
+  float sfxSliderBarValue = 50.0f;
   bool fpsValueBoxEditMode = false;
-  int fpsValueBoxValue = 0;
-  float uiScaleSliderValue = 0.0f;
+  int fpsValueBoxValue = 120;
+  float uiScaleSliderValue = 1.0f;
   bool screenDropdownBoxEditMode = false;
   int screenDropdownBoxActive = 0;
   bool dirty = true;
   bool active = false;
 
   SettingsMenu() {
-    strncpy(settingsGroupBoxText, "Settings", sizeof(settingsGroupBoxText)-1);
+    strncpy(settingsWindowBoxText, "Settings", sizeof(settingsWindowBoxText)-1);
     strncpy(musicSliderBarText, "Music", sizeof(musicSliderBarText)-1);
     strncpy(sfxSliderBarText, "SFX", sizeof(sfxSliderBarText)-1);
     strncpy(uiScaleSliderText, "UI Scale", sizeof(uiScaleSliderText)-1);
-    strncpy(screenDropdownBoxText, "Windowed; Fullscreen", sizeof(screenDropdownBoxText)-1);
+    strncpy(screenDropdownBoxText, "Window; Borderless; Fullscreen", sizeof(screenDropdownBoxText)-1);
     strncpy(screenLabelText, "Screen", sizeof(screenLabelText)-1);
     strncpy(LineText, "", sizeof(LineText)-1);
-    strncpy(fpsValueBoxText, "FPS", sizeof(fpsValueBoxText)-1);
-    strncpy(uiStyleSpinnerText, "UI Style", sizeof(uiStyleSpinnerText)-1);
+    strncpy(fpsValueBoxText, "FPS ", sizeof(fpsValueBoxText)-1);
+    strncpy(uiStyleSpinnerText, "UI Style ", sizeof(uiStyleSpinnerText)-1);
+    strncpy(Line2Text, "", sizeof(Line2Text)-1);
+    strncpy(cancelButtonText, "Cancel", sizeof(cancelButtonText)-1);
+    strncpy(applyButtonText, "Apply", sizeof(applyButtonText)-1);
   }
 };
 
