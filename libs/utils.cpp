@@ -90,6 +90,11 @@ void remove_file(const char* filePath) {
   remove(filePath);
 }
 
+// Wrapper around rename() for consistent naming
+void rename_file(const char *__old, const char *__new) {
+  rename(__old, __new);
+}
+
 // NOTE: Testing
 bool CompareFloat(float a, float b, float epsilon) {
   return fabs(a - b) <= epsilon;
