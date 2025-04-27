@@ -42,7 +42,7 @@ RRES_SRC="$LIBS_DIR/rres/src"
 SRC_DIR="./src"
 GUIS_DIR="$SRC_DIR/guis"
 
-CPP_FILES="$SRC_DIR/client.cpp $LIBS_DIR/utils_client.cpp $COMMON_LIBS_DIR/utils.cpp $COMMON_LIBS_DIR/utils_test.cpp $GUIS_DIR/main_menu.cpp $GUIS_DIR/settings.cpp"
+CPP_FILES="$SRC_DIR/client.cpp $LIBS_DIR/utils_client.cpp $COMMON_LIBS_DIR/utils.cpp $COMMON_LIBS_DIR/utils_test.cpp $GUIS_DIR/main_menu.cpp $GUIS_DIR/settings_menu.cpp"
 
 # Common flags
 INCLUDES="-I $COMMON_LIBS_DIR -I $LIBS_DIR -I $RAYLIB_SRC -I $RAYLIB_RLIGHTS -I $RAYLIB_REASINGS -I $RAYGUI_SRC -I $RRES_SRC -I $SRC_DIR -I $GUIS_DIR -I $STEAM_DIR"

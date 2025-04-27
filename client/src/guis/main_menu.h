@@ -1,11 +1,13 @@
 #pragma once
 
-void DrawMainMenu();
+#include "game_state.h"
+
+void DrawMainMenu(GUI& state);
 void RealtimeButton();                // Button: realtimeButton logic
 void ArenaButton();                // Button: arenaButton logic
 void SandboxButton();                // Button: sandboxButton logic
 void CustomGameButton();                // Button: customGameButton logic
-void SettingsButton();                // Button: settingsButton logic
+void SettingsButton(GUI& state);                // Button: settingsButton logic
 void PartyUsernameButton4();                // Button: partyUsernameButton4 logic
 void PartyUsernameButton3();                // Button: partyUsernameButton3 logic
 void PartyUsernameButton2();                // Button: partyUsernameButton2 logic

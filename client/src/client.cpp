@@ -1,9 +1,10 @@
 #include "game_state.h"
+#include "guis/main_menu.h"
+#include "guis/settings_menu.h"
 #include "raylib.h"
 #include "raymath.h"
 #include "utils.h"
 #include "utils_client.h"
-#include "main_menu.h"
 
 #define RAYGUI_IMPLEMENTATION
 #define RAYGUI_SUPPORT_ICONS
@@ -226,7 +227,8 @@ void render(GameState& state) {
       DrawText("Use the arrow keys to move the light", 10, 40, 20,
                GetColor(GuiGetStyle(DEFAULT, LINE_COLOR)));
 
-      DrawMainMenu();
+      DrawMainMenu(*state.renderResources.gui);
+      DrawSettingsMenu(*state.renderResources.gui);
       EndDrawing();
     } break;
     case GameMode::REALTIME: {
