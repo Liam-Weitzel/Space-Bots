@@ -240,7 +240,7 @@ void render(GameState& state) {
                GetColor(GuiGetStyle(DEFAULT, LINE_COLOR)));
 
       DrawMainMenu(*state.renderResources.gui);
-      DrawSettingsMenu(*state.renderResources.gui);
+      DrawSettingsMenu(state.renderResources.gui->settingsMenu);
       EndDrawing();
     } break;
     case GameMode::REALTIME: {
@@ -290,6 +290,9 @@ void update(GameState& state) {
       SetShaderValue(shaders.shadowShader,
                      shaders.lightDirLoc,
                      &shaders.lightDir, SHADER_UNIFORM_VEC3);
+
+      UpdateSettingsMenu(state.renderResources.gui->settingsMenu);
+      UpdateMainMenu(state.renderResources.gui->mainMenu);
     } break;
     case GameMode::REALTIME: {
     } break;

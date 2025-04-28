@@ -103,6 +103,8 @@ struct SettingsMenu {
   float uiScaleSliderValue = 1.0f;
   bool screenDropdownBoxEditMode = false;
   int screenDropdownBoxActive = 0;
+  bool isDragging = false;
+  Vector2 dragOffset = {0, 0};
   bool dirty = true;
   bool active = false;
 

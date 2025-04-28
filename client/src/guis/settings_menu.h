@@ -2,6 +2,7 @@
 
 #include "game_state.h"
 
-void DrawSettingsMenu(GUI& state);
-void CancelButton(GUI& state);                // Button: cancelButton logic
-void ApplyButton(GUI& state);                 // Button: applyButton logic
+void UpdateSettingsMenu(SettingsMenu& state);
+void DrawSettingsMenu(SettingsMenu& state);
+void CancelButton(SettingsMenu& state);                // Button: cancelButton logic
+void ApplyButton(SettingsMenu& state);                 // Button: applyButton logic

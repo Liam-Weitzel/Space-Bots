@@ -139,3 +139,10 @@ bool CompareUShortArrays(const unsigned short* a, const unsigned short* b, uint3
     return true;
   return memcmp(a, b, size) == 0;
 }
+
+// NOTE: Direct std:: replacements
+float Clamp(float value, float min, float max) {
+    if (value < min) return min;
+    if (value > max) return max;
+    return value;
+}
