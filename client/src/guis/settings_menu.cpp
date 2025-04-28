@@ -3,6 +3,7 @@
 #include "raygui.h"
 #include "raylib.h"
 #include "utils_client.h"
+#include "rini.h"
 #include <cmath>
 
 void ClampSettingsMenuPosition(SettingsMenu& state, float screenWidth, float screenHeight) {
@@ -25,7 +26,7 @@ void UpdateSettingsMenu(SettingsMenu& s) {
     s.layoutRecs[0].x,
     s.layoutRecs[0].y,
     s.layoutRecs[0].width,
-    40  // Height of drag area
+    25  // Height of drag area
   };
 
   // Start dragging
@@ -85,12 +86,12 @@ void DrawSettingsMenu(SettingsMenu& s) {
   if (s.screenDropdownBoxEditMode) GuiLock();
 
   s.active = !GuiWindowBox(s.layoutRecs[0], s.settingsWindowBoxText);
-  if (GuiSpinner(s.layoutRecs[1], s.uiStyleSpinnerText, &s.uiStyleSpinnerValue, 0, 100, s.uiStyleSpinnerEditMode)) s.uiStyleSpinnerEditMode = !s.uiStyleSpinnerEditMode;
+  if (GuiSpinner(s.layoutRecs[1], s.uiStyleSpinnerText, &s.uiStyleSpinnerValue, 0, 10, s.uiStyleSpinnerEditMode)) s.uiStyleSpinnerEditMode = !s.uiStyleSpinnerEditMode;
   GuiSliderBar(s.layoutRecs[2], s.musicSliderBarText, NULL, &s.musicSliderBarValue, 0, 100);
   GuiSliderBar(s.layoutRecs[3], s.sfxSliderBarText, NULL, &s.sfxSliderBarValue, 0, 100);
-  if (GuiValueBox(s.layoutRecs[4], s.fpsValueBoxText, &s.fpsValueBoxValue, 20, 300, s.fpsValueBoxEditMode)) s.fpsValueBoxEditMode = !s.fpsValueBoxEditMode;
+  if (GuiValueBox(s.layoutRecs[4], s.fpsValueBoxText, &s.fpsValueBoxValue, 10, 1000, s.fpsValueBoxEditMode)) s.fpsValueBoxEditMode = !s.fpsValueBoxEditMode;
   GuiLine(s.layoutRecs[5], s.LineText);
-  GuiSlider(s.layoutRecs[6], s.uiScaleSliderText, NULL, &s.uiScaleSliderValue, 0.25, 4);
+  GuiSlider(s.layoutRecs[6], s.uiScaleSliderText, NULL, &s.uiScaleSliderValue, 0, 100);
   GuiLabel(s.layoutRecs[8], s.screenLabelText);
   if (GuiDropdownBox(s.layoutRecs[7], s.screenDropdownBoxText, &s.screenDropdownBoxActive, s.screenDropdownBoxEditMode)) s.screenDropdownBoxEditMode = !s.screenDropdownBoxEditMode;
   GuiLine(s.layoutRecs[9], s.Line2Text);
@@ -102,12 +103,39 @@ void DrawSettingsMenu(SettingsMenu& s) {
 
 void CancelButton(SettingsMenu& state)
 {
-  // TODO: Implement control logic
+  rini_config config = rini_load_config("settings.ini");
+
+  state.musicSliderBarValue = rini_get_config_value(config, "MUSIC_VOLUME");
+  state.sfxSliderBarValue = rini_get_config_value(config, "SFX_VOLUME");
+  state.screenDropdownBoxActive = rini_get_config_value(config, "SCREEN");
+  state.fpsValueBoxValue = rini_get_config_value(config, "FPS_LIMIT");
+  state.uiStyleSpinnerValue = rini_get_config_value(config, "UI_STYLE");
+  state.uiScaleSliderValue = rini_get_config_value(config, "UI_SCALE");
+
+  rini_unload_config(&config);
   state.active = false;
 }
 
 void ApplyButton(SettingsMenu& state)
 {
-  // TODO: Implement control logic
+  rini_config config = rini_load_config(NULL);
+
+  rini_set_config_comment_line(&config, NULL);
+  rini_set_config_comment_line(&config, "Settings");
+  rini_set_config_comment_line(&config, NULL);
+  rini_set_config_comment_line(&config, "NOTE: This file is loaded at application startup,");
+  rini_set_config_comment_line(&config, "if file is not found, default values are applied");
+  rini_set_config_comment_line(&config, NULL);
+
+  rini_set_config_value(&config, "MUSIC_VOLUME", state.musicSliderBarValue, "Music volume");
+  rini_set_config_value(&config, "SFX_VOLUME", state.sfxSliderBarValue, "Sound effects volumes");
+  rini_set_config_value(&config, "SCREEN", state.screenDropdownBoxActive, "Borderless; Windowed; Fullscreen");
+  rini_set_config_value(&config, "FPS_LIMIT", state.fpsValueBoxValue, "The fps that the game should not exceed");
+  rini_set_config_value(&config, "UI_STYLE", state.uiStyleSpinnerValue, "UI visual style selected");
+  rini_set_config_value(&config, "UI_SCALE", state.uiScaleSliderValue, "UI scale multiplier");
+
+  rini_save_config(config, "settings.ini");
+
+  rini_unload_config(&config);
   state.active = false;
 }
