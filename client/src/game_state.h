@@ -100,7 +100,7 @@ struct SettingsMenu {
   float sfxSliderBarValue = 50.0f;
   bool fpsValueBoxEditMode = false;
   int fpsValueBoxValue = 120;
-  float uiScaleSliderValue = 1.0f;
+  float uiScaleSliderValue = 50.0f;
   bool screenDropdownBoxEditMode = false;
   int screenDropdownBoxActive = 0;
   bool isDragging = false;
