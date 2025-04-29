@@ -8,6 +8,7 @@ resources.rres
 prep_models
 resources/models/*.bin
 settings.ini
+build/
 
 # Dependencies
 .cache/

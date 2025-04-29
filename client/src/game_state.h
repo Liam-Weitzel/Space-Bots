@@ -83,8 +83,8 @@ struct SettingsMenu {
   char musicSliderBarText[32];
   char sfxSliderBarText[32];
   char uiScaleSliderText[32];
-  char screenDropdownBoxText[64];
-  char screenLabelText[32];
+  char displayDropdownBoxText[64];
+  char displayLabelText[32];
   char LineText[32];
   char fpsValueBoxText[32];
   char uiStyleSpinnerText[32];
@@ -101,8 +101,8 @@ struct SettingsMenu {
   bool fpsValueBoxEditMode = false;
   int fpsValueBoxValue = 120;
   float uiScaleSliderValue = 50.0f;
-  bool screenDropdownBoxEditMode = false;
-  int screenDropdownBoxActive = 0;
+  bool displayDropdownBoxEditMode = false;
+  int displayDropdownBoxActive = 0;
   bool isDragging = false;
   Vector2 dragOffset = {0, 0};
   bool dirty = true;
@@ -113,8 +113,8 @@ struct SettingsMenu {
     strncpy(musicSliderBarText, "Music", sizeof(musicSliderBarText)-1);
     strncpy(sfxSliderBarText, "SFX", sizeof(sfxSliderBarText)-1);
     strncpy(uiScaleSliderText, "UI Scale", sizeof(uiScaleSliderText)-1);
-    strncpy(screenDropdownBoxText, "Window; Borderless; Fullscreen", sizeof(screenDropdownBoxText)-1);
-    strncpy(screenLabelText, "Screen", sizeof(screenLabelText)-1);
+    strncpy(displayDropdownBoxText, "Windowed; Borderless; Fullscreen", sizeof(displayDropdownBoxText)-1);
+    strncpy(displayLabelText, "Display", sizeof(displayLabelText)-1);
     strncpy(LineText, "", sizeof(LineText)-1);
     strncpy(fpsValueBoxText, "FPS ", sizeof(fpsValueBoxText)-1);
     strncpy(uiStyleSpinnerText, "UI Style ", sizeof(uiStyleSpinnerText)-1);
@@ -127,6 +127,39 @@ struct SettingsMenu {
 struct GUI { // Permanent
   MainMenu mainMenu;
   SettingsMenu settingsMenu;
+  char styles[12][32];
+  int loaded_style = 0;
+
+  GUI() {
+    const char* tmp_styles[12] = {
+      "default",
+      "ash.rgs",
+      "bluish.rgs",
+      "candy.rgs",
+      "cherry.rgs",
+      "cyber.rgs",
+      "dark.rgs",
+      "enefete.rgs",
+      "jungle.rgs",
+      "lavanda.rgs",
+      "sunny.rgs",
+      "terminal.rgs"
+    };
+
+    for (int i = 0; i < 12; ++i) {
+      strncpy(styles[i], tmp_styles[i], sizeof(styles[i]) - 1);
+      styles[i][sizeof(styles[i]) - 1] = '\0';
+    }
+  }
+};
+
+struct Settings { // Permanent
+  float musicVolume = 50.0f;
+  float sfxVolume = 50.0f;
+  int displayMode = 0;
+  int fpsLimit = 120;
+  int uiStyle = 0;
+  float uiScale = 50.0f;
 };
 
 struct RoverAssets { // Reload
@@ -204,6 +237,7 @@ struct GameState {
   uint32_t frameCount = 0;
   float deltaTime = 0;
   GameMode gameMode = GameMode::MENU;
+  Settings settings{};
 
   // Direct pointers to static arena-managed resources
   RenderResources renderResources;

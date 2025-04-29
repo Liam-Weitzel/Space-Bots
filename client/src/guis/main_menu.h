@@ -2,7 +2,7 @@
 
 #include "game_state.h"
 
-void UpdateMainMenu(MainMenu& state);
+void UpdateMainMenu(MainMenu& state, Settings& s);
 void DrawMainMenu(GUI& state);
 void RealtimeButton();                // Button: realtimeButton logic
 void ArenaButton();                // Button: arenaButton logic

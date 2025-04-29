@@ -28,15 +28,15 @@ bool CompareTexture(const Texture &a, const Texture &b);
 static constexpr uint32_t ArenaIndexSize = 100;
 using ArenaIndex = MapCT<const char*, void*, ArenaIndexSize>;
 
-// NOTE: UI stuff
+// NOTE: Common UI stuff
 struct UIScale {
     float baseWidth = 1920.0f;
     float baseHeight = 1080.0f;
     float scaleX;
     float scaleY;
     float uniformScale;
-    float userScaleMultiplier = 1.5f;  // User can modify this through settings (e.g. 0.8 to 1.5)
+    // User Scale Multiplier is in settings
 };
 
-UIScale CalculateUIScale();
+UIScale CalculateUIScale(float uiScale);
 float ScaleSize(float baseSize, float scaleFactor);
