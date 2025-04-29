@@ -22,6 +22,26 @@
 #define GLSL_VERSION 330
 #define SHADOWMAP_RESOLUTION 2048
 
+void UpdateSettings(GameState& state) { //TODO: Where should I put this? Also make ray impl files to solve include problems
+  // Update UI Style
+  if(state.renderResources.gui->loaded_style != state.settings.uiStyle) {
+    if (strcmp(state.renderResources.gui->styles[state.settings.uiStyle], "default") == 0) GuiLoadStyleDefault();
+    else {
+        int idStyle = rresGetResourceId(*state.renderResources.dir, state.renderResources.gui->styles[state.settings.uiStyle]);
+        rresResourceChunk chunkStyle = rresLoadResourceChunk("resources.rres", idStyle);
+        if(UnpackResourceChunk(&chunkStyle) == RRES_SUCCESS) {
+            GuiLoadStyleFromMemory((const unsigned char*) chunkStyle.data.raw, chunkStyle.info.baseSize);
+        }
+        rresUnloadResourceChunk(chunkStyle);
+    }
+    state.renderResources.gui->loaded_style = state.settings.uiStyle;
+  }
+
+  // Update target fps
+  SetTargetFPS(state.settings.fpsLimit);
+}
+
+
 void init(GameState& state) {
   SetConfigFlags(FLAG_MSAA_4X_HINT);
   SetConfigFlags(FLAG_WINDOW_RESIZABLE);
@@ -240,7 +260,7 @@ void render(GameState& state) {
                GetColor(GuiGetStyle(DEFAULT, LINE_COLOR)));
 
       DrawMainMenu(*state.renderResources.gui);
-      DrawSettingsMenu(state.renderResources.gui->settingsMenu);
+      DrawSettingsMenu(state);
       EndDrawing();
     } break;
     case GameMode::REALTIME: {
@@ -261,6 +281,9 @@ void update(GameState& state) {
           shaders.shadowShader.locs[SHADER_LOC_VECTOR_VIEW],
           &cameras.camera.position, SHADER_UNIFORM_VEC3);
       UpdateCamera(&cameras.camera, CAMERA_ORBITAL);
+      // TODO: Build raylib from source clamping zooming on scroll in camera orbital &
+      // slowing speed for more cinematic effect &
+      // add minor sine wave wobble to orbit?
 
       const float cameraSpeed = 0.05f;
       if (IsKeyDown(KEY_LEFT)) {
@@ -283,6 +306,7 @@ void update(GameState& state) {
           shaders.lightDir.z -=
               cameraSpeed * 60.0f * state.deltaTime;
       }
+
       shaders.lightDir =
           Vector3Normalize(shaders.lightDir);
       cameras.lightCamera.position =
@@ -291,8 +315,8 @@ void update(GameState& state) {
                      shaders.lightDirLoc,
                      &shaders.lightDir, SHADER_UNIFORM_VEC3);
 
-      UpdateSettingsMenu(state.renderResources.gui->settingsMenu);
-      UpdateMainMenu(state.renderResources.gui->mainMenu);
+      UpdateSettingsMenu(state.renderResources.gui->settingsMenu, state.settings);
+      UpdateMainMenu(state.renderResources.gui->mainMenu, state.settings);
     } break;
     case GameMode::REALTIME: {
     } break;

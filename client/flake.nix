@@ -36,6 +36,7 @@
         pkgs.bear
         pkgs.clang-tools
         pkgs.libGL
+        pkgs.cmake
 
         # X11 dependencies
         pkgs.xorg.libX11

@@ -389,7 +389,7 @@ bool CompareTexture(const Texture &a, const Texture &b) {
 }
 
 // NOTE: UI stuff
-UIScale CalculateUIScale() {
+UIScale CalculateUIScale(float uiScalePercent) {
     UIScale scale;
     float width = GetScreenWidth();
     float height = GetScreenHeight();
@@ -401,7 +401,9 @@ UIScale CalculateUIScale() {
     scale.uniformScale = (scale.scaleX < scale.scaleY) ? scale.scaleX : scale.scaleY;
 
     // Apply user's preference to the final scale
-    scale.uniformScale *= scale.userScaleMultiplier;
+    // Normalize from [0, 100] to [0.25, 4.0]
+    float normalizedUIScale = 0.25f + (uiScalePercent / 100.0f) * (2.0f - 0.5f);
+    scale.uniformScale *= normalizedUIScale;
 
     return scale;
 }

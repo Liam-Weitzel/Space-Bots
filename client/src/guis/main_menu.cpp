@@ -5,14 +5,14 @@
 #include "utils_client.h"
 #include <cmath>
 
-void UpdateMainMenu(MainMenu& m) {
+void UpdateMainMenu(MainMenu& m, Settings& s) {
   if(IsWindowResized()) m.dirty = true;
   if(m.dirty) {
     m.dirty = false;
     float width = GetScreenWidth();
     float height = GetScreenHeight();
 
-    UIScale scale = CalculateUIScale();
+    UIScale scale = CalculateUIScale(s.uiScale);
 
     // Scale the base font size (12) with the UI
     int scaledFontSize = (int)ScaleSize(12.0f, scale.uniformScale);
