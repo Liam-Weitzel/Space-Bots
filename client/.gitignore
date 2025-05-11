@@ -1,5 +1,4 @@
 # Build outputs
-compile_commands.json
 libclient.so
 libsteam_api.so
 client
