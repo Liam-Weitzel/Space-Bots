@@ -29,18 +29,33 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+      with:
+        submodules: recursive
 
-    - name: Configure CMake
+    - name: Install Dependencies
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libgl1-mesa-dev libx11-dev xorg-dev
+
+    - name: Configure Client CMake
       run: >
-        cmake -B ${{ github.workspace }}/build
+        cmake -B ${{ github.workspace }}/client/build
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=Release
-        -S ${{ github.workspace }}
+        -S ${{ github.workspace }}/client
 
-    - name: Build
-      run: cmake --build ${{ github.workspace }}/build --config Release
+    - name: Build and Test Client
+      run: cmake --build ${{ github.workspace }}/client/build --config Release --target client_build_test
 
-    - name: Test
-      working-directory: ${{ github.workspace }}/build
-      run: ctest --build-config Release --output-on-failure
+    - name: Configure Server CMake
+      run: >
+        cmake -B ${{ github.workspace }}/server/build
+        -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
+        -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
+        -DCMAKE_BUILD_TYPE=Release
+        -S ${{ github.workspace }}/server
+
+    - name: Build and Test Server
+      run: cmake --build ${{ github.workspace }}/server/build --config Release --target server_build_test
