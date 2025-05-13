@@ -14,29 +14,103 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Windows - MSVC
+          # Windows
           - os: windows-latest
             c_compiler: cl
             cpp_compiler: cl
-          # Linux - GCC
+            arch: x64
+          - os: windows-latest
+            c_compiler: cl
+            cpp_compiler: cl
+            arch: x86
+          - os: windows-latest
+            c_compiler: cl
+            cpp_compiler: cl
+            arch: arm64
+            
+          # Linux - x64
           - os: ubuntu-latest
             c_compiler: gcc
             cpp_compiler: g++
-          # macOS - Clang
+            arch: x64
+            display: x11
+          - os: ubuntu-latest
+            c_compiler: gcc
+            cpp_compiler: g++
+            arch: x64
+            display: wayland
+            
+          # Linux - x86
+          - os: ubuntu-latest
+            c_compiler: gcc
+            cpp_compiler: g++
+            arch: x86
+            display: x11
+          - os: ubuntu-latest
+            c_compiler: gcc
+            cpp_compiler: g++
+            arch: x86
+            display: wayland
+            
+          # Linux - ARM64
+          - os: ubuntu-latest
+            c_compiler: gcc
+            cpp_compiler: g++
+            arch: arm64
+            display: x11
+          - os: ubuntu-latest
+            c_compiler: gcc
+            cpp_compiler: g++
+            arch: arm64
+            display: wayland
+            
+          # macOS
           - os: macos-latest
             c_compiler: clang
             cpp_compiler: clang++
+            arch: x64
+          - os: macos-latest
+            c_compiler: clang
+            cpp_compiler: clang++
+            arch: arm64
+          - os: macos-11
+            c_compiler: clang
+            cpp_compiler: clang++
+            arch: x64
+            osx_deployment_target: "10.14"
 
     steps:
     - uses: actions/checkout@v4
       with:
         submodules: recursive
 
-    - name: Install Dependencies
+    - name: Set up QEMU
+      if: matrix.os == 'ubuntu-latest' && (matrix.arch == 'arm64' || matrix.arch == 'x86')
+      uses: docker/setup-qemu-action@v3
+
+    - name: Install Linux Dependencies
       if: matrix.os == 'ubuntu-latest'
       run: |
+        sudo dpkg --add-architecture i386
         sudo apt-get update
-        sudo apt-get install -y libgl1-mesa-dev libx11-dev xorg-dev
+        sudo apt-get install -y \
+          libgl1-mesa-dev \
+          libx11-dev \
+          xorg-dev \
+          xvfb \
+          weston \
+          mesa-utils \
+          libegl1-mesa-dev \
+          libgles2-mesa-dev \
+          libwayland-dev \
+          wayland-protocols \
+          libxkbcommon-dev
+        if [ "${{ matrix.arch }}" = "x86" ]; then
+          sudo apt-get install -y gcc-multilib g++-multilib
+        fi
+        if [ "${{ matrix.arch }}" = "arm64" ]; then
+          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+        fi
 
     - name: Configure Client CMake
       run: >
@@ -44,10 +118,25 @@ jobs:
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=Release
+        -DCMAKE_SYSTEM_PROCESSOR=${{ matrix.arch }}
+        ${{ matrix.osx_deployment_target && format('-DCMAKE_OSX_DEPLOYMENT_TARGET={0}', matrix.osx_deployment_target) || '' }}
         -S ${{ github.workspace }}/client
 
     - name: Build and Test Client
+      if: matrix.os != 'ubuntu-latest'
       run: cmake --build ${{ github.workspace }}/client/build --config Release --target client_build_test
+
+    - name: Build and Test Client (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        if [ "${{ matrix.display }}" = "x11" ]; then
+          xvfb-run -a cmake --build ${{ github.workspace }}/client/build --config Release --target client_build_test
+        else
+          weston --backend=headless-backend.so --socket=wayland-1 --idle-time=0 &
+          export WAYLAND_DISPLAY=wayland-1
+          cmake --build ${{ github.workspace }}/client/build --config Release --target client_build_test
+          killall weston
+        fi
 
     - name: Configure Server CMake
       run: >
@@ -55,6 +144,8 @@ jobs:
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=Release
+        -DCMAKE_SYSTEM_PROCESSOR=${{ matrix.arch }}
+        ${{ matrix.osx_deployment_target && format('-DCMAKE_OSX_DEPLOYMENT_TARGET={0}', matrix.osx_deployment_target) || '' }}
         -S ${{ github.workspace }}/server
 
     - name: Build and Test Server
