@@ -276,16 +276,9 @@ add_custom_target(run
 )
 
 add_custom_target(client_build_test
-    # Print debug info
-    COMMAND ${CMAKE_COMMAND} -E echo "CMAKE_SOURCE_DIR: ${CMAKE_SOURCE_DIR}"
-    COMMAND ${CMAKE_COMMAND} -E echo "CMAKE_BINARY_DIR: ${CMAKE_BINARY_DIR}"
-    COMMAND ${CMAKE_COMMAND} -E echo "Current working directory:"
-    COMMAND pwd
     # First build and run prep_models
     COMMAND ${CMAKE_COMMAND} --build . --target prep_models
     COMMAND ${CMAKE_COMMAND} -E echo "Running prep_models..."
-    COMMAND ${CMAKE_COMMAND} -E echo "Looking for prep_models in:"
-    COMMAND ls -la ${CMAKE_SOURCE_DIR}
     COMMAND ${CMAKE_COMMAND} -E chdir ${CMAKE_SOURCE_DIR} ./prep_models
     # Then build shared library
     COMMAND ${CMAKE_COMMAND} --build . --target client_lib
