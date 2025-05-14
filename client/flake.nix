@@ -30,6 +30,7 @@
       packages = [
         pkgs.blender
         pkgs.steam
+        pkgs.pkg-config
         pkgs.gcc
         pkgs.gdb
         pkgs.valgrind
@@ -45,7 +46,18 @@
         pkgs.xorg.libXi
         pkgs.xorg.libXinerama
         pkgs.xorg.libXrandr
+
+        # Wayland dependencies
+        pkgs.wayland
+        pkgs.wayland-protocols
+        pkgs.wayland-scanner
+        pkgs.libxkbcommon
+        pkgs.libffi
       ];
+
+      shellHook = ''
+        export LD_LIBRARY_PATH=${pkgs.wayland}/lib:${pkgs.libxkbcommon}/lib:${pkgs.libffi}/lib:$LD_LIBRARY_PATH
+      '';
     };
   };
 }

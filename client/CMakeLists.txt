@@ -25,11 +25,83 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose the type of build (Debug or Release)" FORCE)
 endif()
 
-# Build raylib
+# Set OpenGL preference to GLVND
+if(POLICY CMP0072)
+    cmake_policy(SET CMP0072 NEW)
+endif()
+
+# Platform options with defaults
+if(UNIX AND NOT APPLE)
+    # Linux-specific setup
+    option(USE_WAYLAND "Build with Wayland support" OFF)
+    option(USE_X11 "Build with X11 support" ON)
+
+    # Check for required packages based on options
+    if(USE_WAYLAND)
+        message(STATUS "Checking Wayland dependencies...")
+        
+        # Try to find pkg-config first
+        find_package(PkgConfig)
+        if(NOT PKG_CONFIG_FOUND)
+            message(STATUS "pkg-config not found - required for Wayland support")
+            message(STATUS "On Nix, add pkgconfig to your development environment")
+            set(USE_WAYLAND OFF)
+            set(USE_X11 ON)
+        else()
+            # If pkg-config is found, check for Wayland
+            pkg_check_modules(WAYLAND wayland-client wayland-protocols wayland-egl wayland-cursor xkbcommon libffi)
+            find_program(WAYLAND_SCANNER wayland-scanner)
+            
+            if(NOT WAYLAND_FOUND)
+                message(STATUS "Wayland libraries not found")
+                set(USE_WAYLAND OFF)
+                set(USE_X11 ON)
+            else()
+                link_directories(${WAYLAND_LIBRARY_DIRS})
+                include_directories(${WAYLAND_INCLUDE_DIRS})
+            endif()
+            
+            if(NOT WAYLAND_SCANNER)
+                message(STATUS "wayland-scanner not found")
+                set(USE_WAYLAND OFF)
+                set(USE_X11 ON)
+            endif()
+        endif()
+    endif()
+
+    if(USE_X11)
+        find_package(X11)
+        if(NOT X11_FOUND)
+            message(STATUS "X11 not found - building without X11 support")
+            set(USE_X11 OFF)
+        endif()
+    endif()
+
+    find_package(OpenGL)
+    find_package(Threads)
+endif()
+
+# Build raylib with platform-appropriate settings
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+set(PLATFORM "Desktop" CACHE STRING "Platform to build for." FORCE)
+set(USE_EXTERNAL_GLFW "OFF" CACHE STRING "Link raylib against system GLFW instead of embedded one" FORCE)
+
+# Configure GLFW based on platform
+if(UNIX AND NOT APPLE)
+    set(GLFW_BUILD_WAYLAND ${USE_WAYLAND} CACHE BOOL "Build GLFW with Wayland support" FORCE)
+    set(GLFW_BUILD_X11 ${USE_X11} CACHE BOOL "Build GLFW with X11 support" FORCE)
+else()
+    # Windows and MacOS don't need Wayland or X11
+    set(GLFW_BUILD_WAYLAND OFF CACHE BOOL "Build GLFW with Wayland support" FORCE)
+    set(GLFW_BUILD_X11 OFF CACHE BOOL "Build GLFW with X11 support" FORCE)
+endif()
+
+# Common raylib settings
 set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(BUILD_GAMES    OFF CACHE BOOL "" FORCE)
+set(OPENGL_VERSION "3.3" CACHE STRING "" FORCE)
 
+# Add raylib
 add_subdirectory(libs/raylib)
 
 # Create interface target for external libraries with warnings disabled
