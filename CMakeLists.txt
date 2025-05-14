@@ -10,6 +10,10 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose the type of build (Debug or Release)" FORCE)
 endif()
 
+# Platform options with defaults
+option(USE_WAYLAND "Build with Wayland support" OFF)
+option(USE_X11 "Build with X11 support" ON)
+
 # Enable testing for the whole project
 enable_testing()
 
@@ -26,6 +30,8 @@ execute_process(
         -S "${CMAKE_SOURCE_DIR}/client"
         -B "${CMAKE_SOURCE_DIR}/client/build"
         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+        -DUSE_WAYLAND=${USE_WAYLAND}
+        -DUSE_X11=${USE_X11}
 )
 
 # Configure and build server
@@ -38,7 +44,7 @@ execute_process(
 
 # Add a target to build and test everything
 add_custom_target(full_check
-    COMMAND ${CMAKE_COMMAND} --build "${CMAKE_SOURCE_DIR}/client/build" --target build_test
+    COMMAND ${CMAKE_COMMAND} --build "${CMAKE_SOURCE_DIR}/client/build" --target client_build_test
     COMMAND ${CMAKE_COMMAND} --build "${CMAKE_SOURCE_DIR}/server/build" --target server_build_test
     COMMENT "Building and testing everything"
 )

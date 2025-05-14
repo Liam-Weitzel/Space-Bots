@@ -64,20 +64,17 @@ jobs:
             arch: arm64
             display: wayland
             
-          # macOS
-          - os: macos-latest
+          # macOS - 
+          - os: macos-13 # Intel
             c_compiler: clang
             cpp_compiler: clang++
-            arch: x64
-          - os: macos-latest
+            arch: x64 # 64 bit
+            osx_deployment_target: "10.14" # compatible down to Mojave
+          - os: macos-14 # Apple Silicon
             c_compiler: clang
             cpp_compiler: clang++
-            arch: arm64
-          - os: macos-11
-            c_compiler: clang
-            cpp_compiler: clang++
-            arch: x64
-            osx_deployment_target: "10.14"
+            arch: arm64 # ARM
+            osx_deployment_target: "11.0" # minimum 11.0 required
 
     steps:
     - uses: actions/checkout@v4
@@ -120,9 +117,10 @@ jobs:
         -DCMAKE_BUILD_TYPE=Release
         -DCMAKE_SYSTEM_PROCESSOR=${{ matrix.arch }}
         ${{ matrix.osx_deployment_target && format('-DCMAKE_OSX_DEPLOYMENT_TARGET={0}', matrix.osx_deployment_target) || '' }}
+        ${{ matrix.display == 'wayland' && '-DUSE_WAYLAND=ON -DUSE_X11=OFF' || '' }}
         -S ${{ github.workspace }}/client
 
-    - name: Build and Test Client
+    - name: Build and Test Client (Mac & Windows)
       if: matrix.os != 'ubuntu-latest'
       run: cmake --build ${{ github.workspace }}/client/build --config Release --target client_build_test
 
@@ -132,10 +130,16 @@ jobs:
         if [ "${{ matrix.display }}" = "x11" ]; then
           xvfb-run -a cmake --build ${{ github.workspace }}/client/build --config Release --target client_build_test
         else
+          eval $(dbus-launch --sh-syntax)
           weston --backend=headless-backend.so --socket=wayland-1 --idle-time=0 &
           export WAYLAND_DISPLAY=wayland-1
+          export NO_AT_BRIDGE=1
+          export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus
+          export GDK_BACKEND=wayland
+          export GTK_A11Y=none
           cmake --build ${{ github.workspace }}/client/build --config Release --target client_build_test
           killall weston
+          kill ${DBUS_SESSION_BUS_PID}
         fi
 
     - name: Configure Server CMake
