@@ -1,5 +1,5 @@
 {
-  description = "Server dev environment";
+  description = "Dev environment";
 
   nixConfig = {
     allow-impure = true;
@@ -30,13 +30,37 @@
       packages = [
         pkgs.blender
         pkgs.steam
-        pkgs.gcc
         pkgs.gdb
         pkgs.valgrind
         pkgs.bear
         pkgs.clang-tools
+
+        pkgs.gcc
+        pkgs.gnumake
+        pkgs.cmake
+
+        pkgs.pkg-config
         pkgs.libGL
+
+        # X11 dependencies
+        pkgs.xorg.libX11
+        pkgs.xorg.libX11.dev
+        pkgs.xorg.libXcursor
+        pkgs.xorg.libXi
+        pkgs.xorg.libXinerama
+        pkgs.xorg.libXrandr
+
+        # Wayland dependencies
+        pkgs.wayland
+        pkgs.wayland-protocols
+        pkgs.wayland-scanner
+        pkgs.libxkbcommon
+        pkgs.libffi
       ];
+
+      shellHook = ''
+        export LD_LIBRARY_PATH=${pkgs.wayland}/lib:${pkgs.libxkbcommon}/lib:${pkgs.libffi}/lib:$LD_LIBRARY_PATH
+      '';
     };
   };
 }

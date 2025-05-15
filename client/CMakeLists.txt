@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
 project(client)
-include(CTest)
 
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 17)
@@ -12,13 +11,6 @@ set(CMAKE_INSTALL_RPATH "$ORIGIN")
 
 # Enable compilation database
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
-# Symlink compilation database to parent if needed by LSP
-# execute_process(
-#     COMMAND ${CMAKE_COMMAND} -E create_symlink
-#     ${CMAKE_BINARY_DIR}/compile_commands.json
-#     ${CMAKE_SOURCE_DIR}/compile_commands.json
-# )
 
 # Add build type parameter with DEBUG as default
 if(NOT CMAKE_BUILD_TYPE)
@@ -275,8 +267,6 @@ target_link_libraries(client_test PRIVATE
 )
 target_compile_options(client_test PRIVATE ${COMMON_COMPILE_OPTIONS})
 
-add_test(NAME ClientTests COMMAND client_test)
-
 # Create the main executable
 add_executable(client src/main.cpp)
 
@@ -326,47 +316,3 @@ add_custom_command(TARGET client POST_BUILD
 
 add_dependencies(client client_lib)
 add_dependencies(client_test client_lib)
-add_dependencies(prep_models client_lib)
-
-# Add custom target for running full build process
-add_custom_target(run
-    # First build and run prep_models
-    COMMAND ${CMAKE_COMMAND} --build . --target prep_models
-    COMMAND ${CMAKE_COMMAND} -E echo "Running prep_models..."
-    COMMAND ${CMAKE_COMMAND} -E chdir ${CMAKE_SOURCE_DIR} ./prep_models
-    # Then build shared library
-    COMMAND ${CMAKE_COMMAND} --build . --target client_lib
-    # Then build and run tests
-    COMMAND ${CMAKE_COMMAND} --build . --target client_test
-    COMMAND ${CMAKE_COMMAND} -E echo "Running tests..."
-    COMMAND ${CMAKE_COMMAND} -E chdir ${CMAKE_SOURCE_DIR} ./client_test
-    # Finally build and run the main executable
-    COMMAND ${CMAKE_COMMAND} --build . --target client
-    COMMAND ${CMAKE_COMMAND} -E chdir ${CMAKE_SOURCE_DIR} ./client
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-    COMMENT "Running full build pipeline: prep models -> shared lib -> tests -> main executable"
-)
-
-add_custom_target(client_build_test
-    # First build and run prep_models
-    COMMAND ${CMAKE_COMMAND} --build . --target prep_models
-    COMMAND ${CMAKE_COMMAND} -E echo "Running prep_models..."
-    COMMAND ${CMAKE_COMMAND} -E chdir ${CMAKE_SOURCE_DIR} ./prep_models
-    # Then build shared library
-    COMMAND ${CMAKE_COMMAND} --build . --target client_lib
-    # Then build and run tests
-    COMMAND ${CMAKE_COMMAND} --build . --target client_test
-    COMMAND ${CMAKE_COMMAND} -E echo "Running tests..."
-    COMMAND ${CMAKE_COMMAND} -E chdir ${CMAKE_SOURCE_DIR} ./client_test
-    # Finally build the main executable
-    COMMAND ${CMAKE_COMMAND} --build . --target client
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-    COMMENT "Running build pipeline: prep models -> shared lib -> tests"
-)
-
-# Add hot reload target
-add_custom_target(hot
-    COMMAND ${CMAKE_COMMAND} --build . --target client_lib
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-    COMMENT "Hot reloading - rebuilding shared library only"
-)

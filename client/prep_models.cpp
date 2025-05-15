@@ -1,3 +1,4 @@
+#include "raylib.h"
 #include "utils.h"
 #include "utils_client.h"
 #include <cmath>
@@ -8,6 +9,19 @@
 #include <stdlib.h>
 
 // g++ prep_models.cpp -o prep_models -I ./libs -I ../libs -I ./src/ -I ./libs/raylib/src/ -I ./libs/rres/src/ -L ./libs/raylib/src/ -lraylib -lGL -lm -lpthread -ldl -lrt -lX11 -Wl,-rpath,\$ORIGIN/ -fno-gnu-unique -Wno-format-security -g -O0
+
+#ifdef _WIN32
+  const char* RRESPACKER_PATH = ".\\libs\\rrespacker\\rrespacker.exe";
+  const char* RESOURCE_CMD = "%s -o resources.rres --rrp resources.rrp";
+#elif __linux__
+  const char* RRESPACKER_PATH = "./libs/rrespacker/rrespacker";
+  const char* RESOURCE_CMD = "%s -o resources.rres --rrp resources.rrp";
+#elif __APPLE__
+  const char* RRESPACKER_PATH = "./libs/rrespacker/rrespacker.app";
+  const char* RESOURCE_CMD = "%s -o resources.rres --rrp resources.rrp";
+#else
+  #error "Unsupported platform"
+#endif
 
 #define MAX_MATERIAL_MAPS 12
 #define RL_MAX_SHADER_LOCATIONS 32
@@ -687,6 +701,24 @@ ArrayCT<const char*, 100>& listFiles(const char* path, Arena& arena) {
   return files;
 }
 
+bool PackResources() {
+  // Check if rrespacker exists
+  FILE* test = fopen(RRESPACKER_PATH, "r");
+  if (!test) {
+    LOG_ERROR("Error: rrespacker not found at %s\n", RRESPACKER_PATH);
+    return false;
+  }
+  fclose(test);
+
+  // Create command
+  char cmd[512];
+  snprintf(cmd, sizeof(cmd), RESOURCE_CMD, RRESPACKER_PATH);
+
+  // Execute command
+  int result = system(cmd);
+  return result == 0;
+}
+
 int main(int argc, char *argv[]) {
   InitWindow(800, 450, "prep models");
 
@@ -724,7 +756,10 @@ int main(int argc, char *argv[]) {
     modelMap[persistent_key] = model;
   }
 
-  system("./libs/rrespacker/rrespacker -o resources.rres --rrp resources.rrp");
+  if (!PackResources()) {
+    LOG_ERROR("Failed to pack resources\n");
+    return 1;
+  }
 
   // Testing
   rresCentralDir dir = rresLoadCentralDirectory("resources.rres");
