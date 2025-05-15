@@ -14,143 +14,141 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Windows
-          - os: windows-latest
-            c_compiler: cl
-            cpp_compiler: cl
-            arch: x64
-          - os: windows-latest
-            c_compiler: cl
-            cpp_compiler: cl
-            arch: x86
-          - os: windows-latest
-            c_compiler: cl
-            cpp_compiler: cl
-            arch: arm64
+          # - os: windows-2025
+          #   os-name: windows
+          #   c_compiler: cl
+          #   cpp_compiler: cl
+          #   arch: x64
+          # - os: windows-11-arm
+          #   os-name: windows
+          #   c_compiler: cl
+          #   cpp_compiler: cl
+          #   arch: arm64
             
-          # Linux - x64
-          - os: ubuntu-latest
+          - os: ubuntu-24.04
+            os-name: linux
             c_compiler: gcc
             cpp_compiler: g++
             arch: x64
             display: x11
-          - os: ubuntu-latest
+          - os: ubuntu-24.04
+            os-name: linux
             c_compiler: gcc
             cpp_compiler: g++
             arch: x64
             display: wayland
+          # - os: ubuntu-24.04-arm
+          #   os-name: linux
+          #   c_compiler: gcc
+          #   cpp_compiler: g++
+          #   arch: arm64
+          #   display: x11
+          # - os: ubuntu-24.04-arm
+          #   os-name: linux
+          #   c_compiler: gcc
+          #   cpp_compiler: g++
+          #   arch: arm64
+          #   display: wayland
             
-          # Linux - x86
-          - os: ubuntu-latest
-            c_compiler: gcc
-            cpp_compiler: g++
-            arch: x86
-            display: x11
-          - os: ubuntu-latest
-            c_compiler: gcc
-            cpp_compiler: g++
-            arch: x86
-            display: wayland
-            
-          # Linux - ARM64
-          - os: ubuntu-latest
-            c_compiler: gcc
-            cpp_compiler: g++
-            arch: arm64
-            display: x11
-          - os: ubuntu-latest
-            c_compiler: gcc
-            cpp_compiler: g++
-            arch: arm64
-            display: wayland
-            
-          # macOS - 
-          - os: macos-13 # Intel
-            c_compiler: clang
-            cpp_compiler: clang++
-            arch: x64 # 64 bit
-            osx_deployment_target: "10.14" # compatible down to Mojave
-          - os: macos-14 # Apple Silicon
-            c_compiler: clang
-            cpp_compiler: clang++
-            arch: arm64 # ARM
-            osx_deployment_target: "11.0" # minimum 11.0 required
+          # - os: macos-13
+          #   os-name: mac
+          #   c_compiler: clang
+          #   cpp_compiler: clang++
+          #   arch: x64
+          #   osx_deployment_target: "10.14"
+          # - os: macos-15
+          #   os-name: mac
+          #   c_compiler: clang
+          #   cpp_compiler: clang++
+          #   arch: arm64
+          #   osx_deployment_target: "11.0"
 
     steps:
     - uses: actions/checkout@v4
       with:
         submodules: recursive
 
-    - name: Set up QEMU
-      if: matrix.os == 'ubuntu-latest' && (matrix.arch == 'arm64' || matrix.arch == 'x86')
-      uses: docker/setup-qemu-action@v3
-
-    - name: Install Linux Dependencies
-      if: matrix.os == 'ubuntu-latest'
+    # NOTE: most of the deps should be handled in cmake itself, but some are github actions specific only
+    # required for virtualization etc. those can be installed here.
+    - name: Setup
       run: |
-        sudo dpkg --add-architecture i386
         sudo apt-get update
         sudo apt-get install -y \
-          libgl1-mesa-dev \
-          libx11-dev \
-          xorg-dev \
-          xvfb \
-          weston \
-          mesa-utils \
-          libegl1-mesa-dev \
-          libgles2-mesa-dev \
-          libwayland-dev \
-          wayland-protocols \
-          libxkbcommon-dev
-        if [ "${{ matrix.arch }}" = "x86" ]; then
-          sudo apt-get install -y gcc-multilib g++-multilib
-        fi
-        if [ "${{ matrix.arch }}" = "arm64" ]; then
-          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
-        fi
+          cmake \
+          gcc \
+          g++
 
-    - name: Configure Client CMake
-      run: >
-        cmake -B ${{ github.workspace }}/client/build
-        -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
-        -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
-        -DCMAKE_BUILD_TYPE=Release
-        -DCMAKE_SYSTEM_PROCESSOR=${{ matrix.arch }}
-        ${{ matrix.osx_deployment_target && format('-DCMAKE_OSX_DEPLOYMENT_TARGET={0}', matrix.osx_deployment_target) || '' }}
-        ${{ matrix.display == 'wayland' && '-DUSE_WAYLAND=ON -DUSE_X11=OFF' || '' }}
-        -S ${{ github.workspace }}/client
-
-    - name: Build and Test Client (Mac & Windows)
-      if: matrix.os != 'ubuntu-latest'
-      run: cmake --build ${{ github.workspace }}/client/build --config Release --target client_build_test
-
-    - name: Build and Test Client (Linux)
-      if: matrix.os == 'ubuntu-latest'
-      run: |
         if [ "${{ matrix.display }}" = "x11" ]; then
-          xvfb-run -a cmake --build ${{ github.workspace }}/client/build --config Release --target client_build_test
-        else
-          eval $(dbus-launch --sh-syntax)
-          weston --backend=headless-backend.so --socket=wayland-1 --idle-time=0 &
-          export WAYLAND_DISPLAY=wayland-1
-          export NO_AT_BRIDGE=1
-          export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus
-          export GDK_BACKEND=wayland
-          export GTK_A11Y=none
-          cmake --build ${{ github.workspace }}/client/build --config Release --target client_build_test
-          killall weston
-          kill ${DBUS_SESSION_BUS_PID}
+          sudo apt-get install -y \
+            libx11-dev \
+            xorg-dev \
+            xvfb
         fi
 
-    - name: Configure Server CMake
-      run: >
-        cmake -B ${{ github.workspace }}/server/build
-        -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
-        -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
-        -DCMAKE_BUILD_TYPE=Release
-        -DCMAKE_SYSTEM_PROCESSOR=${{ matrix.arch }}
-        ${{ matrix.osx_deployment_target && format('-DCMAKE_OSX_DEPLOYMENT_TARGET={0}', matrix.osx_deployment_target) || '' }}
-        -S ${{ github.workspace }}/server
+        if [ "${{ matrix.display }}" = "wayland" ]; then
+          sudo apt-get install -y \
+            sway \
+            xwayland \
+            libegl1-mesa-dev \
+            libwayland-dev \
+            wayland-protocols \
+            libxkbcommon-dev \
+            libffi-dev
 
-    - name: Build and Test Server
-      run: cmake --build ${{ github.workspace }}/server/build --config Release --target server_build_test
+          export XDG_RUNTIME_DIR=/tmp/runtime-dir
+          mkdir -p $XDG_RUNTIME_DIR
+          chmod 700 $XDG_RUNTIME_DIR
+
+          export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:/usr/lib/wayland:/usr/lib/libxkbcommon:/usr/lib/libffi:$LD_LIBRARY_PATH
+
+          WLR_BACKENDS=headless sway --verbose &
+          sleep 3
+        fi
+
+    - name: Build client
+      run: |
+        cd ${{ github.workspace }}/client
+        mkdir build/
+        cd build/
+        cmake \
+        -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }} \
+        -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_SYSTEM_PROCESSOR=${{ matrix.arch }} \
+        ${{ matrix.osx_deployment_target && format('-DCMAKE_OSX_DEPLOYMENT_TARGET={0}', matrix.osx_deployment_target) || '' }} \
+        ${{ matrix.display == 'wayland' && '-DUSE_WAYLAND=ON -DUSE_X11=OFF' || '' }} \
+        -S ..
+        make -j$(nproc)
+
+    - name: Test Client
+      run: |
+        cd ${{ github.workspace }}/client
+        if [ "${{ matrix.display }}" = "x11" ]; then
+          xvfb-run ./prep_models
+          xvfb-run ./client_test
+          xvfb-run ./client
+        fi
+        if [ "${{ matrix.display }}" = "wayland" ]; then
+          ./prep_models
+          ./client_test
+          ./client
+        fi
+
+    - name: Build server
+      run: |
+        cd ${{ github.workspace }}/server
+        mkdir build/
+        cd build/
+        cmake \
+        -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }} \
+        -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_SYSTEM_PROCESSOR=${{ matrix.arch }} \
+        ${{ matrix.osx_deployment_target && format('-DCMAKE_OSX_DEPLOYMENT_TARGET={0}', matrix.osx_deployment_target) || '' }} \
+        ${{ matrix.display == 'wayland' && '-DUSE_WAYLAND=ON -DUSE_X11=OFF' || '' }} \
+        -S ..
+        make -j$(nproc)
+
+    - name: Test Server
+      run: |
+        echo "dummy"

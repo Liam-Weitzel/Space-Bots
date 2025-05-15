@@ -3,7 +3,3 @@ libserver.so
 libsteam_api.so
 server
 build/
-
-# Dependencies
-.cache/
-.direnv/
