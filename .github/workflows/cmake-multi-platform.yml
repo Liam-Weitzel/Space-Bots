@@ -24,7 +24,7 @@ jobs:
           #   c_compiler: cl
           #   cpp_compiler: cl
           #   arch: arm64
-            
+
           - os: ubuntu-24.04
             os-name: linux
             c_compiler: gcc
@@ -37,19 +37,19 @@ jobs:
             cpp_compiler: g++
             arch: x64
             display: wayland
-          # - os: ubuntu-24.04-arm
-          #   os-name: linux
-          #   c_compiler: gcc
-          #   cpp_compiler: g++
-          #   arch: arm64
-          #   display: x11
-          # - os: ubuntu-24.04-arm
-          #   os-name: linux
-          #   c_compiler: gcc
-          #   cpp_compiler: g++
-          #   arch: arm64
-          #   display: wayland
-            
+          - os: ubuntu-24.04-arm
+            os-name: linux
+            c_compiler: gcc
+            cpp_compiler: g++
+            arch: arm64
+            display: x11
+          - os: ubuntu-24.04-arm
+            os-name: linux
+            c_compiler: gcc
+            cpp_compiler: g++
+            arch: arm64
+            display: wayland
+
           # - os: macos-13
           #   os-name: mac
           #   c_compiler: clang
@@ -68,20 +68,18 @@ jobs:
       with:
         submodules: recursive
 
-    # NOTE: most of the deps should be handled in cmake itself, but some are github actions specific only
-    # required for virtualization etc. those can be installed here.
     - name: Setup
       run: |
         sudo apt-get update
         sudo apt-get install -y \
           cmake \
           gcc \
-          g++
+          g++ \
+          libx11-dev \
+          xorg-dev
 
         if [ "${{ matrix.display }}" = "x11" ]; then
           sudo apt-get install -y \
-            libx11-dev \
-            xorg-dev \
             xvfb
         fi
 
@@ -93,16 +91,34 @@ jobs:
             libwayland-dev \
             wayland-protocols \
             libxkbcommon-dev \
-            libffi-dev
+            libffi-dev \
+            seatd
 
-          export XDG_RUNTIME_DIR=/tmp/runtime-dir
+          # Get the correct XDG_RUNTIME_DIR
+          export XDG_RUNTIME_DIR=/run/user/$(id -u)
           mkdir -p $XDG_RUNTIME_DIR
           chmod 700 $XDG_RUNTIME_DIR
 
-          export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:/usr/lib/wayland:/usr/lib/libxkbcommon:/usr/lib/libffi:$LD_LIBRARY_PATH
+          # Create seat group and add runner user
+          sudo groupadd seat
+          sudo usermod -aG seat runner
 
-          WLR_BACKENDS=headless sway --verbose &
-          sleep 3
+          # Start seatd daemon
+          sudo /usr/sbin/seatd -g seat &
+          export LIBSEAT_BACKEND=seatd
+
+          # Create minimal Sway config
+          printf "bar {\n    mode invisible\n    status_command \"\"\n    tray_output none\n}\n" > $XDG_RUNTIME_DIR/config
+
+          # Export variables for subsequent steps
+          echo "XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR" >> $GITHUB_ENV
+          echo "WAYLAND_DISPLAY=wayland-1" >> $GITHUB_ENV
+          echo "XDG_SESSION_TYPE=wayland" >> $GITHUB_ENV
+          echo "WLR_NO_HARDWARE_CURSORS=1" >> $GITHUB_ENV
+          echo "WLR_RENDERER=pixman" >> $GITHUB_ENV
+          echo "DISPLAY=:0" >> $GITHUB_ENV
+          echo "SWAYSOCK=$XDG_RUNTIME_DIR/sway-ipc.sock" >> $GITHUB_ENV
+          echo "LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:/usr/lib/wayland:/usr/lib/libxkbcommon:/usr/lib/libffi:$LD_LIBRARY_PATH" >> $GITHUB_ENV
         fi
 
     - name: Build client
@@ -125,14 +141,41 @@ jobs:
         cd ${{ github.workspace }}/client
         if [ "${{ matrix.display }}" = "x11" ]; then
           xvfb-run ./prep_models
-          xvfb-run ./client_test
-          xvfb-run ./client
+          sleep 3
+          pkill -9 Xvfb || true
+          sleep 3
+          xvfb-run -a ./client_test
         fi
         if [ "${{ matrix.display }}" = "wayland" ]; then
+          # Debug Wayland setup
+          echo "Current directory: $(pwd)"
+          echo "XDG_RUNTIME_DIR contents:"
+          ls -la $XDG_RUNTIME_DIR
+          echo "Wayland socket:"
+          ls -la $XDG_RUNTIME_DIR/wayland-1 || true
+          echo "Sway socket:"
+          ls -la $XDG_RUNTIME_DIR/sway-ipc.sock || true
+          echo "Active processes:"
+          ps aux | grep -i sway
+          echo "Environment:"
+          env | grep -i wayland
+          
+          # Start Sway in headless mode
+          WLR_BACKENDS=headless sway --verbose --config $XDG_RUNTIME_DIR/config &
+          sleep 3
+
           ./prep_models
           ./client_test
-          ./client
         fi
+
+    - name: Upload client artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: client-${{ matrix.os-name }}-${{ matrix.arch }}${{ matrix.os-name == 'linux' && format('-{0}', matrix.display) || '' }}
+        path: |
+          ${{ github.workspace }}/client/client
+          ${{ github.workspace }}/client/client_test
+          ${{ github.workspace }}/client/prep_models
 
     - name: Build server
       run: |
@@ -145,10 +188,15 @@ jobs:
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_SYSTEM_PROCESSOR=${{ matrix.arch }} \
         ${{ matrix.osx_deployment_target && format('-DCMAKE_OSX_DEPLOYMENT_TARGET={0}', matrix.osx_deployment_target) || '' }} \
-        ${{ matrix.display == 'wayland' && '-DUSE_WAYLAND=ON -DUSE_X11=OFF' || '' }} \
         -S ..
         make -j$(nproc)
 
     - name: Test Server
       run: |
         echo "dummy"
+
+    - name: Upload server artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: server-${{ matrix.os-name }}-${{ matrix.arch }}${{ matrix.os-name == 'linux' && format('-{0}', matrix.display) || '' }}
+        path: ${{ github.workspace }}/server/build/Makefile #dummy
