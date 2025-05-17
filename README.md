@@ -11,7 +11,15 @@ Space Bots is an early-stage RTS (Real-Time Strategy) game where players code th
 - Designed for tech-savvy players interested in coding and strategy.
 - Early development — expect frequent changes and ongoing improvements.
 
----
+## Steamworks SDK
+
+This project requires the Steamworks SDK, which is proprietary and must be downloaded separately from Valve's website:
+
+https://partner.steamgames.com/downloads/steamworks_sdk
+
+Place the SDK files in `libs/steam`.
+
+The SDK is not included in this repository due to licensing restrictions.
 
 ## Getting Started
 
