@@ -1,2 +1,4 @@
 libs/utils_benchmark
 .direnv/
+libs/steam/*
+!libs/steam/README.md
