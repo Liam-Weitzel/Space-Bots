@@ -45,6 +45,7 @@ void UpdateSettings(GameState& state) { //TODO: Where should I put this? Also ma
 void init(GameState& state) {
   SetConfigFlags(FLAG_MSAA_4X_HINT);
   SetConfigFlags(FLAG_WINDOW_RESIZABLE);
+  SetConfigFlags(FLAG_WINDOW_HIGHDPI);
   // SetConfigFlags(FLAG_WINDOW_TOPMOST | FLAG_WINDOW_UNDECORATED);
 
   rini_config config = rini_load_config("settings.ini");

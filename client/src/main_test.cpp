@@ -13,9 +13,8 @@ struct Client {
 Client load_client() {
     LOG_TRACE("Loading client code...");
     Client client{};
-    const char* LIB_PATH = "./libclient.so";
 
-    client.library = dlopen(LIB_PATH, RTLD_NOW | RTLD_DEEPBIND | RTLD_LOCAL);
+    client.library = dlopen(CLIENT_LIB_PATH, RTLD_NOW);
     if (!client.library) {
         LOG_ERROR("Failed to open library: ", dlerror());
         return client;

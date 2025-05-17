@@ -8,21 +8,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-// g++ prep_models.cpp -o prep_models -I ./libs -I ../libs -I ./src/ -I ./libs/raylib/src/ -I ./libs/rres/src/ -L ./libs/raylib/src/ -lraylib -lGL -lm -lpthread -ldl -lrt -lX11 -Wl,-rpath,\$ORIGIN/ -fno-gnu-unique -Wno-format-security -g -O0
-
-#ifdef _WIN32
-  const char* RRESPACKER_PATH = ".\\libs\\rrespacker\\rrespacker.exe";
-  const char* RESOURCE_CMD = "%s -o resources.rres --rrp resources.rrp";
-#elif __linux__
-  const char* RRESPACKER_PATH = "./libs/rrespacker/rrespacker";
-  const char* RESOURCE_CMD = "%s -o resources.rres --rrp resources.rrp";
-#elif __APPLE__
-  const char* RRESPACKER_PATH = "./libs/rrespacker/rrespacker.app";
-  const char* RESOURCE_CMD = "%s -o resources.rres --rrp resources.rrp";
-#else
-  #error "Unsupported platform"
-#endif
-
 #define MAX_MATERIAL_MAPS 12
 #define RL_MAX_SHADER_LOCATIONS 32
 
@@ -720,6 +705,7 @@ bool PackResources() {
 }
 
 int main(int argc, char *argv[]) {
+  SetConfigFlags(FLAG_WINDOW_HIDDEN);
   InitWindow(800, 450, "prep models");
 
   Arena& arena = * new Arena(MB(1));
