@@ -9,3 +9,5 @@ resources/models/*.bin
 settings.ini
 build/
 .cache/
+libs/rrespacker/*
+!libs/rrespacker/Readme.txt

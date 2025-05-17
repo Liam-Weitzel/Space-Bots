@@ -14,17 +14,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # - os: windows-2025
-          #   os-name: windows
-          #   c_compiler: cl
-          #   cpp_compiler: cl
-          #   arch: x64
-          # - os: windows-11-arm
-          #   os-name: windows
-          #   c_compiler: cl
-          #   cpp_compiler: cl
-          #   arch: arm64
-
+          - os: windows-2025
+            os-name: windows
+            c_compiler: cl
+            cpp_compiler: cl
+            arch: x64
           - os: ubuntu-24.04
             os-name: linux
             c_compiler: gcc
@@ -37,31 +31,12 @@ jobs:
             cpp_compiler: g++
             arch: x64
             display: wayland
-          - os: ubuntu-24.04-arm
-            os-name: linux
-            c_compiler: gcc
-            cpp_compiler: g++
-            arch: arm64
-            display: x11
-          - os: ubuntu-24.04-arm
-            os-name: linux
-            c_compiler: gcc
-            cpp_compiler: g++
-            arch: arm64
-            display: wayland
-
-          # - os: macos-13
-          #   os-name: mac
-          #   c_compiler: clang
-          #   cpp_compiler: clang++
-          #   arch: x64
-          #   osx_deployment_target: "10.14"
-          # - os: macos-15
-          #   os-name: mac
-          #   c_compiler: clang
-          #   cpp_compiler: clang++
-          #   arch: arm64
-          #   osx_deployment_target: "11.0"
+          - os: macos-13
+            os-name: mac
+            c_compiler: clang
+            cpp_compiler: clang++
+            arch: x64
+            osx_deployment_target: "10.14"
 
     steps:
     - uses: actions/checkout@v4
@@ -76,7 +51,16 @@ jobs:
           gcc \
           g++ \
           libx11-dev \
-          xorg-dev
+          xorg-dev \
+          unzip \
+          wget
+
+        wget -q ${{ secrets.RESSPACKER_URL }} -O rrespacker.zip
+        unzip -q rrespacker.zip -d ${{ github.workspace }}/client/libs/rrespacker/
+        chmod +x ${{ github.workspace }}/client/libs/rrespacker/*
+
+        wget -q ${{ secrets.STEAM_SDK_URL }} -O steam_sdk.zip
+        unzip -q steam_sdk.zip -d ${{ github.workspace }}/libs/steam/
 
         if [ "${{ matrix.display }}" = "x11" ]; then
           sudo apt-get install -y \
