@@ -31,12 +31,12 @@ jobs:
             cpp_compiler: g++
             arch: x64
             display: wayland
-          - os: macos-13
+          - os: [self-hosted, macOS, x64] # 2015-MacBook-Air
             os-name: mac
             c_compiler: clang
             cpp_compiler: clang++
             arch: x64
-            osx_deployment_target: "10.14"
+            osx_deployment_target: "10.14.6"
 
     steps:
     - uses: actions/checkout@v4
@@ -45,111 +45,125 @@ jobs:
 
     - name: Setup
       run: |
-        sudo apt-get update
-        sudo apt-get install -y \
-          cmake \
-          gcc \
-          g++ \
-          libx11-dev \
-          xorg-dev \
-          unzip \
-          wget
-
-        wget -q ${{ secrets.RESSPACKER_URL }} -O rrespacker.zip
-        unzip -q rrespacker.zip -d ${{ github.workspace }}/client/libs/rrespacker/
-        chmod +x ${{ github.workspace }}/client/libs/rrespacker/*
-
-        wget -q ${{ secrets.STEAM_SDK_URL }} -O steam_sdk.zip
-        unzip -q steam_sdk.zip -d ${{ github.workspace }}/libs/steam/
-
-        if [ "${{ matrix.display }}" = "x11" ]; then
+        if [ "${{ matrix.os-name }}" = "linux" ]; then
+          sudo apt-get update
           sudo apt-get install -y \
-            xvfb
+            cmake \
+            gcc \
+            g++ \
+            libx11-dev \
+            xorg-dev \
+            unzip \
+            wget
+
+          wget -q ${{ secrets.RESSPACKER_URL }} -O rrespacker.zip
+          unzip -q rrespacker.zip -d ${{ github.workspace }}/client/libs/rrespacker/
+          chmod +x ${{ github.workspace }}/client/libs/rrespacker/*
+
+          wget -q ${{ secrets.STEAM_SDK_URL }} -O steam_sdk.zip
+          unzip -q steam_sdk.zip -d ${{ github.workspace }}/libs/steam/
+
+          if [ "${{ matrix.display }}" = "x11" ]; then
+            sudo apt-get install -y \
+              xvfb
+          fi
+
+          if [ "${{ matrix.display }}" = "wayland" ]; then
+            sudo apt-get install -y \
+              sway \
+              xwayland \
+              libegl1-mesa-dev \
+              libwayland-dev \
+              wayland-protocols \
+              libxkbcommon-dev \
+              libffi-dev \
+              seatd
+
+            # Get the correct XDG_RUNTIME_DIR
+            export XDG_RUNTIME_DIR=/run/user/$(id -u)
+            mkdir -p $XDG_RUNTIME_DIR
+            chmod 700 $XDG_RUNTIME_DIR
+
+            # Create seat group and add runner user
+            sudo groupadd seat
+            sudo usermod -aG seat runner
+
+            # Start seatd daemon
+            sudo /usr/sbin/seatd -g seat &
+            export LIBSEAT_BACKEND=seatd
+
+            # Create minimal Sway config
+            printf "bar {\n    mode invisible\n    status_command \"\"\n    tray_output none\n}\n" > $XDG_RUNTIME_DIR/config
+
+            # Export variables for subsequent steps
+            echo "XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR" >> $GITHUB_ENV
+            echo "WAYLAND_DISPLAY=wayland-1" >> $GITHUB_ENV
+            echo "XDG_SESSION_TYPE=wayland" >> $GITHUB_ENV
+            echo "WLR_NO_HARDWARE_CURSORS=1" >> $GITHUB_ENV
+            echo "WLR_RENDERER=pixman" >> $GITHUB_ENV
+            echo "DISPLAY=:0" >> $GITHUB_ENV
+            echo "SWAYSOCK=$XDG_RUNTIME_DIR/sway-ipc.sock" >> $GITHUB_ENV
+            echo "LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:/usr/lib/wayland:/usr/lib/libxkbcommon:/usr/lib/libffi:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+          fi
         fi
+        if [ "${{ matrix.os-name }}" = "mac" ]; then
+          if ! command -v brew &> /dev/null; then
+            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+            echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
+            eval "$(/opt/homebrew/bin/brew shellenv)"
+          fi
 
-        if [ "${{ matrix.display }}" = "wayland" ]; then
-          sudo apt-get install -y \
-            sway \
-            xwayland \
-            libegl1-mesa-dev \
-            libwayland-dev \
-            wayland-protocols \
-            libxkbcommon-dev \
-            libffi-dev \
-            seatd
+          brew install \
+            cmake \
+            wget
 
-          # Get the correct XDG_RUNTIME_DIR
-          export XDG_RUNTIME_DIR=/run/user/$(id -u)
-          mkdir -p $XDG_RUNTIME_DIR
-          chmod 700 $XDG_RUNTIME_DIR
+          wget -q ${{ secrets.RESSPACKER_URL }} -O rrespacker.zip
+          unzip -q rrespacker.zip -d ${{ github.workspace }}/client/libs/rrespacker/
+          chmod +x ${{ github.workspace }}/client/libs/rrespacker/*
 
-          # Create seat group and add runner user
-          sudo groupadd seat
-          sudo usermod -aG seat runner
-
-          # Start seatd daemon
-          sudo /usr/sbin/seatd -g seat &
-          export LIBSEAT_BACKEND=seatd
-
-          # Create minimal Sway config
-          printf "bar {\n    mode invisible\n    status_command \"\"\n    tray_output none\n}\n" > $XDG_RUNTIME_DIR/config
-
-          # Export variables for subsequent steps
-          echo "XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR" >> $GITHUB_ENV
-          echo "WAYLAND_DISPLAY=wayland-1" >> $GITHUB_ENV
-          echo "XDG_SESSION_TYPE=wayland" >> $GITHUB_ENV
-          echo "WLR_NO_HARDWARE_CURSORS=1" >> $GITHUB_ENV
-          echo "WLR_RENDERER=pixman" >> $GITHUB_ENV
-          echo "DISPLAY=:0" >> $GITHUB_ENV
-          echo "SWAYSOCK=$XDG_RUNTIME_DIR/sway-ipc.sock" >> $GITHUB_ENV
-          echo "LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:/usr/lib/wayland:/usr/lib/libxkbcommon:/usr/lib/libffi:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+          wget -q ${{ secrets.STEAM_SDK_URL }} -O steam_sdk.zip
+          unzip -q steam_sdk.zip -d ${{ github.workspace }}/libs/steam/
         fi
 
     - name: Build client
       run: |
-        cd ${{ github.workspace }}/client
-        mkdir build/
-        cd build/
-        cmake \
-        -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }} \
-        -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DCMAKE_SYSTEM_PROCESSOR=${{ matrix.arch }} \
-        ${{ matrix.osx_deployment_target && format('-DCMAKE_OSX_DEPLOYMENT_TARGET={0}', matrix.osx_deployment_target) || '' }} \
-        ${{ matrix.display == 'wayland' && '-DUSE_WAYLAND=ON -DUSE_X11=OFF' || '' }} \
-        -S ..
-        make -j$(nproc)
+        if [ "${{ matrix.os-name }}" = "linux" ] || [ "${{ matrix.os-name }}" = "mac" ]; then
+          cd ${{ github.workspace }}/client
+          mkdir build/
+          cd build/
+          cmake \
+          -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }} \
+          -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_SYSTEM_PROCESSOR=${{ matrix.arch }} \
+          ${{ matrix.osx_deployment_target && format('-DCMAKE_OSX_DEPLOYMENT_TARGET={0}', matrix.osx_deployment_target) || '' }} \
+          ${{ matrix.display == 'wayland' && '-DUSE_WAYLAND=ON -DUSE_X11=OFF' || '' }} \
+          -S ..
+          make -j$(nproc)
+        fi
 
     - name: Test Client
       run: |
-        cd ${{ github.workspace }}/client
-        if [ "${{ matrix.display }}" = "x11" ]; then
-          xvfb-run ./prep_models
-          sleep 3
-          pkill -9 Xvfb || true
-          sleep 3
-          xvfb-run -a ./client_test
-        fi
-        if [ "${{ matrix.display }}" = "wayland" ]; then
-          # Debug Wayland setup
-          echo "Current directory: $(pwd)"
-          echo "XDG_RUNTIME_DIR contents:"
-          ls -la $XDG_RUNTIME_DIR
-          echo "Wayland socket:"
-          ls -la $XDG_RUNTIME_DIR/wayland-1 || true
-          echo "Sway socket:"
-          ls -la $XDG_RUNTIME_DIR/sway-ipc.sock || true
-          echo "Active processes:"
-          ps aux | grep -i sway
-          echo "Environment:"
-          env | grep -i wayland
-          
-          # Start Sway in headless mode
-          WLR_BACKENDS=headless sway --verbose --config $XDG_RUNTIME_DIR/config &
-          sleep 3
-
-          ./prep_models
-          ./client_test
+        if [ "${{ matrix.os-name }}" = "linux" ] || [ "${{ matrix.os-name }}" = "mac" ]; then
+          cd ${{ github.workspace }}/client
+          if [ "${{ matrix.display }}" = "x11" ]; then
+            xvfb-run ./prep_models
+            sleep 3
+            pkill -9 Xvfb || true
+            sleep 3
+            xvfb-run -a ./client_test
+          fi
+          if [ "${{ matrix.display }}" = "wayland" ]; then
+            # Start Sway in headless mode
+            WLR_BACKENDS=headless sway --verbose --config $XDG_RUNTIME_DIR/config &
+            sleep 3
+            ./prep_models
+            ./client_test
+          fi
+          if [ "${{ matrix.os-name }}" = "mac" ]; then
+            ./prep_models
+            ./client_test
+          fi
         fi
 
     - name: Upload client artifacts
@@ -157,27 +171,36 @@ jobs:
       with:
         name: client-${{ matrix.os-name }}-${{ matrix.arch }}${{ matrix.os-name == 'linux' && format('-{0}', matrix.display) || '' }}
         path: |
-          ${{ github.workspace }}/client/client
-          ${{ github.workspace }}/client/client_test
-          ${{ github.workspace }}/client/prep_models
+          client/client
+          client/client.exe
+          client/resources.rres
+          client/libclient.so
+          client/libsteam_api.so
+          client/libclient.dylib
+          client/libsteam_api.dylib
+          client/client.dll
+          client/steam_api64.dll
+        if-no-files-found: warn
 
     - name: Build server
       run: |
-        cd ${{ github.workspace }}/server
-        mkdir build/
-        cd build/
-        cmake \
-        -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }} \
-        -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DCMAKE_SYSTEM_PROCESSOR=${{ matrix.arch }} \
-        ${{ matrix.osx_deployment_target && format('-DCMAKE_OSX_DEPLOYMENT_TARGET={0}', matrix.osx_deployment_target) || '' }} \
-        -S ..
-        make -j$(nproc)
+        if [ "${{ matrix.os-name }}" = "linux" ] || [ "${{ matrix.os-name }}" = "mac" ]; then
+          cd ${{ github.workspace }}/server
+          mkdir build/
+          cd build/
+          cmake \
+          -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }} \
+          -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_SYSTEM_PROCESSOR=${{ matrix.arch }} \
+          ${{ matrix.osx_deployment_target && format('-DCMAKE_OSX_DEPLOYMENT_TARGET={0}', matrix.osx_deployment_target) || '' }} \
+          -S ..
+          make -j$(nproc)
+        fi
 
     - name: Test Server
       run: |
-        echo "dummy"
+        echo "To be implemented"
 
     - name: Upload server artifacts
       uses: actions/upload-artifact@v4
