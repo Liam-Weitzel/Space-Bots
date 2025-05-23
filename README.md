@@ -9,6 +9,10 @@ Space Bots is an early-stage RTS (Real-Time Strategy) game where players code th
 - Designed for tech-savvy players interested in coding and strategy.
 - Early development — expect frequent changes and ongoing improvements.
 
+## Want to try it out?
+
+Contact me directly (details in my bio) to get a steam key and download the latest release for your platform.
+
 ## Build Dependencies
 
 ### Steamworks SDK
@@ -31,13 +35,17 @@ Place Rrespacker files in `client/libs/rrespacker`.
 
 Rrespacker is not included in this repository due to licensing restrictions.
 
-## Getting Started
+## License
 
-Clone the repository and explore the code to learn how units are programmed and interact. You can build and run the game locally to experiment with your own unit AI.
+This project is licensed under the [Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)](https://creativecommons.org/licenses/by-nc/4.0/). You are free to view, learn, modify, and run the code locally, but **commercial use is prohibited**.
+
+The repository includes git submodules with third-party code licensed separately under [MIT/GPL/etc.]. Please refer to that submodule’s license for details.
+
+## Building from source
 
 ```bash
 git clone --recurse-submodules https://github.com/Liam-Weitzel/Space-Bots.git
-cd space-bots/client
+cd Space-Bots/client
 mkdir build
 cd build
 cmake ..
@@ -45,12 +53,6 @@ make
 cd ..
 ./client
 ```
-
-## License
-
-This project is licensed under the [Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)](https://creativecommons.org/licenses/by-nc/4.0/). You are free to view, learn, modify, and run the code locally, but **commercial use is prohibited**.
-
-The repository includes git submodules with third-party code licensed separately under [MIT/GPL/etc.]. Please refer to that submodule’s license for details.
 
 ## Contributing
 
@@ -66,4 +68,4 @@ Space Bots is in very early development. Features are subject to change, and the
 
 ---
 
-Thanks for checking out Space Bots
+Thanks for checking out Space Bots!
