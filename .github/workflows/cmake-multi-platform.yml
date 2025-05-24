@@ -14,7 +14,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: windows-2025
+          - os: [self-hosted, Windows, x64] # Lenovo ThinkPad T410
             os-name: windows
             c_compiler: cl
             cpp_compiler: cl

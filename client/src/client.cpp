@@ -19,8 +19,8 @@
 #define RINI_IMPLEMENTATION
 #include "rini.h"
 
-#define GLSL_VERSION 330
-#define SHADOWMAP_RESOLUTION 2048
+#define GLSL_VERSION 120
+#define SHADOWMAP_RESOLUTION 1024
 
 void UpdateSettings(GameState& state) { //TODO: Where should I put this? Also make ray impl files to solve include problems
   // Update UI Style
