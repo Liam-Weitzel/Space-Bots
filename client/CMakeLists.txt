@@ -103,15 +103,6 @@ else()
     set(GLFW_BUILD_X11 OFF CACHE BOOL "Build GLFW with X11 support" FORCE)
 endif()
 
-# Set up warning suppression for external libraries before adding raylib
-if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /w")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /w")
-else()
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -w")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -w")
-endif()
-
 # Common raylib settings
 set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(BUILD_GAMES    OFF CACHE BOOL "" FORCE)
@@ -120,21 +111,15 @@ set(OPENGL_VERSION "3.3" CACHE STRING "" FORCE)
 # Add raylib
 add_subdirectory(libs/raylib)
 
-# Reset warning flags for our own code
-if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-    string(REPLACE " /w" "" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
-    string(REPLACE " /w" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-else()
-    string(REPLACE " -w" "" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
-    string(REPLACE " -w" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-endif()
-
 # Create interface target for external libraries with warnings disabled
 add_library(external_libs INTERFACE)
-target_include_directories(external_libs INTERFACE
+target_include_directories(external_libs SYSTEM INTERFACE
     ${CMAKE_SOURCE_DIR}/libs/raylib/src
     ${CMAKE_SOURCE_DIR}/libs/raygui/src
     ${CMAKE_SOURCE_DIR}/libs/rres/src
+    ${CMAKE_SOURCE_DIR}/libs/raylib/examples/shaders
+    ${CMAKE_SOURCE_DIR}/libs/raylib/examples/others
+    ${CMAKE_SOURCE_DIR}/libs/rini/src
 )
 
 # Define source files for the shared library
@@ -151,9 +136,6 @@ set(LIB_SOURCES
 set(COMMON_INCLUDE_DIRS
     ${CMAKE_SOURCE_DIR}/../libs
     ${CMAKE_SOURCE_DIR}/libs
-    ${CMAKE_SOURCE_DIR}/libs/raylib/examples/shaders
-    ${CMAKE_SOURCE_DIR}/libs/raylib/examples/others
-    ${CMAKE_SOURCE_DIR}/libs/rini/src
     ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}/src/guis
 )
@@ -173,15 +155,6 @@ else()
     set(STEAM_LIB_DIR "${CMAKE_SOURCE_DIR}/../libs/steam/redistributable_bin/linux64")
     set(STEAM_LIB_FILE "${STEAM_LIB_DIR}/libsteam_api.so")
     set(LIB_EXTENSION "so")
-endif()
-
-# Add Windows-specific definitions
-# Making sure raylib ShowCursor and CloseWindow don't clash with windows API
-if(WIN32)
-    add_compile_definitions(
-        WIN32_LEAN_AND_MEAN
-        NOMINMAX
-    )
 endif()
 
 # Create shared library
@@ -228,51 +201,61 @@ target_link_libraries(client_lib PRIVATE
 # Common compiler flags for both Debug and Release
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     set(COMMON_COMPILE_OPTIONS
-        /W4       # Warning level 4
-        /WX       # Treat warnings as errors
-        /wd4100   # Unreferenced formal parameter
-        /wd4189   # Local variable initialized but not referenced
-        /wd4996   # Unsafe function warnings
-        /MP       # Multi-processor compilation
+        /W4               # Warning level 4
+        /WX               # Treat warnings as errors
+        /wd4100           # Unreferenced formal parameter
+        /wd4189           # Local variable initialized but not referenced
+        /wd4996           # Unsafe function warnings
+        /wd4505           # Unreferenced local function removed (similar to -Wno-unused-result)
+        /wd4706           # Assignment within conditional expression
+        /wd4127           # Conditional expression is constant
+        /wd4200           # Zero-sized array in struct/union (similar to -Wno-missing-field-initializers)
+        /MP               # Multi-processor compilation
+        /permissive-      # Enables GNU-like behavior
     )
-else()
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     set(COMMON_COMPILE_OPTIONS
         -Wall
         -Wextra
         -pedantic
         -Werror
-    )
-endif()
-
-# Compiler-specific flags
-if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-    set(APPEND COMMON_COMPILE_OPTIONS
-        /wd4505           # Unreferenced local function removed (similar to -Wno-unused-result)
-        /wd4706           # Assignment within conditional expression
-        /wd4127           # Conditional expression is constant
-        /wd4200           # Zero-sized array in struct/union (similar to -Wno-missing-field-initializers)
-    )
-elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    list(APPEND COMMON_COMPILE_OPTIONS
-        -Wno-unused-parameter
-        -Wno-unused-variable
-        -Wno-unused-but-set-variable
-        -Wno-unused-result
-        -Wno-format-security
-        -Wno-write-strings
-        -Wno-missing-field-initializers
-        -fno-gnu-unique
-        -fPIC
-    )
-elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    list(APPEND COMMON_COMPILE_OPTIONS
         -Wno-unused-parameter
         -Wno-unused-variable
         -Wno-format-security
-        -Wno-writable-strings
         -Wno-missing-field-initializers
+        # -Wstrict-aliasing=3
+        # -fstrict-aliasing
+        # -Wcast-align
+        # -Wcast-qual
+        # -Wpointer-arith
+        # -Wconversion
+        # -Wsign-conversion
+        # -Wfloat-conversion
+        # -Wstrict-overflow=5
+        # -Wdouble-promotion
+        # -Wold-style-cast
+        # -Wuseless-cast
+        # -Wuninitialized
+        # -Wmaybe-uninitialized
         -fPIC
     )
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        list(APPEND COMMON_COMPILE_OPTIONS
+            -Wno-unused-but-set-variable
+            -Wno-unused-result
+            -Wno-write-strings
+            -fno-gnu-unique
+        )
+    elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        list(APPEND COMMON_COMPILE_OPTIONS
+            -fgnu-keywords
+            -fgnu89-inline
+            -fpermissive
+            -Wno-gnu
+            -Wno-gnu-zero-variadic-macro-arguments
+            -Wno-writable-strings
+        )
+    endif()
 endif()
 
 # Debug-specific flags
@@ -282,20 +265,18 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
         /Zi     # Generate debug info
         /RTC1   # Runtime error checks
     )
-elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     set(DEBUG_COMPILE_OPTIONS
-        -Wno-error=cpp
-        -fsanitize=undefined
-        -fno-sanitize-recover=all
         -O0
         -g
-    )
-elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    set(DEBUG_COMPILE_OPTIONS
         -fsanitize=undefined
-        -O0
-        -g
     )
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        list(APPEND DEBUG_COMPILE_OPTIONS
+            -Wno-error=cpp
+            -fno-sanitize-recover=all
+        )
+    endif()
 endif()
 
 # Release-specific flags
@@ -305,13 +286,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
         /GL     # Whole program optimization
         /Gy     # Function-level linking
     )
-elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    set(RELEASE_COMPILE_OPTIONS
-        -O3
-        -flto
-        -march=native
-    )
-elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     set(RELEASE_COMPILE_OPTIONS
         -O3
         -flto

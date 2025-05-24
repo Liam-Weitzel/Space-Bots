@@ -329,7 +329,7 @@ void update(GameState& state) {
 void reload(GameState& state) {
   state.renderResources.reload();
   state.reloadArena.clear();
-  CloseWindow();
+  RCloseWindow();
 }
 
 EXPORT_FN void client_main(GameState& state) {
