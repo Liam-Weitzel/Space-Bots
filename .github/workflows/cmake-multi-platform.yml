@@ -139,7 +139,7 @@ jobs:
           ${{ matrix.osx_deployment_target && format('-DCMAKE_OSX_DEPLOYMENT_TARGET={0}', matrix.osx_deployment_target) || '' }} \
           ${{ matrix.display == 'wayland' && '-DUSE_WAYLAND=ON -DUSE_X11=OFF' || '' }} \
           -S ..
-          make -j$(nproc)
+          cmake --build . -j$(nproc) --verbose
         fi
 
     - name: Test Client
@@ -195,7 +195,7 @@ jobs:
           -DCMAKE_SYSTEM_PROCESSOR=${{ matrix.arch }} \
           ${{ matrix.osx_deployment_target && format('-DCMAKE_OSX_DEPLOYMENT_TARGET={0}', matrix.osx_deployment_target) || '' }} \
           -S ..
-          make -j$(nproc)
+          cmake --build . -j$(nproc) --verbose
         fi
 
     - name: Test Server
